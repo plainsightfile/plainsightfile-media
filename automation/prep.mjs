@@ -4,7 +4,7 @@
 
   node prep.mjs numbers   --files files.json --queue queue.json
         -> {file:"006", memo:"003"}   next numbers (highest used in HQ's files and queue, plus one)
-  node prep.mjs checker-prompt --packet packet.json --story story.json --frames <dir>
+  node prep.mjs checker-prompt --packet packet.json --story story.json --frames <dir> [--sources <dir of fetched source texts>]
         -> the filled CHECKER.md text (stdout, plain text)
   node prep.mjs queue-doc --packet packet.json --story story.json --checker checker.json --lint lint.json
                           --slot noon|evening --date YYYY-MM-DD --summary summary.json --rounds N [--note "..."]
@@ -52,6 +52,7 @@ if (cmd === "numbers") {
   if (s.narrative_echo) src.push("", "This is a narrative-echo topic.");
   const t = fs.readFileSync(path.join(HERE, "CHECKER.md"), "utf8")
     .replace("{TODAY}", todayVan()).replace("{NUMBER}", label(p)).replace("{FRAMES}", frames.join(", "))
+    .replace("{SAVED}", opt.sources && fs.existsSync(opt.sources) ? (fs.readdirSync(opt.sources).filter(f => /\.(txt|md)$/i.test(f)).sort().map(f => path.resolve(opt.sources, f)).join(", ") || "(none)") : "(none)")
     .replace("{SCRIPT}", p.script || "").replace("{CAPTION}", p.caption || "").replace("{PINNED}", p.pinned || "").replace("{SOURCES}", src.join("\n"));
   out(t);
 } else if (cmd === "queue-doc") {
