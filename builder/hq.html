@@ -153,6 +153,26 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
 .settings input[type=text]{width:100%;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:14px/1.45 var(--mono);padding:10px}
 .tabs{overflow-x:auto;scrollbar-width:none}
 @media (max-width:520px){.tab{padding:10px 9px;letter-spacing:.05em;font-size:12px;white-space:nowrap}}
+/* ---------- approve ---------- */
+.tabcount:not(:empty){background:var(--hi);color:var(--hi-fg);border-radius:9px;padding:1px 6px;margin-left:4px}
+.qbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:16px 0 4px}
+.qlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:18px;align-items:start}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.qcard h2{font:700 clamp(22px,3vw,30px)/1.1 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+.qplayer{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.qstage{width:min(100%,300px);aspect-ratio:9/16;background:var(--line);border-radius:6px;overflow:hidden;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.qstage img{width:100%;height:100%;display:block;object-fit:cover}
+.qticks{display:flex;gap:3px;width:min(100%,300px)}
+.qticks span{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.qticks span.on{background:var(--accent)}
+.qtext{margin:0 0 8px;background:var(--field);border:1px solid var(--line);border-radius:4px;padding:10px;font:14px/1.5 var(--body);overflow-wrap:anywhere;white-space:pre-wrap}
+.qclaim{margin:0;font:700 17px/1.3 var(--display)}
+.qquote{margin:4px 0;border-left:4px solid var(--hi);padding-left:10px;font:14px/1.5 var(--body)}
+.qact{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.qact .actions button{min-height:44px;min-width:96px}
+.qfix{display:flex;flex-direction:column;gap:8px}
+.qfix textarea{width:100%}
+#qDoneWrap{margin-top:22px}
 @media (max-width:900px){.board{position:static;max-height:none;overflow:visible}.pullbox{align-items:stretch}.pullbox .row{justify-content:flex-start}.pullbox .status{text-align:left}}
 </style>
 
@@ -179,11 +199,22 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
   </header>
 
   <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tabApprove" aria-selected="false" aria-controls="paneApprove">Approve <span id="approveCount" class="tabcount"></span></button>
     <button class="tab" role="tab" id="tabStories" aria-selected="true" aria-controls="paneStories">Stories <span id="storyCount"></span></button>
     <button class="tab" role="tab" id="tabStudio" aria-selected="false" aria-controls="paneStudio">Studio</button>
     <button class="tab" role="tab" id="tabSources" aria-selected="false" aria-controls="paneSources">Sources <span id="sourceCount"></span></button>
     <button class="tab" role="tab" id="tabSettings" aria-selected="false" aria-controls="paneSettings">Settings</button>
   </div>
+
+  <section id="paneApprove" role="tabpanel" aria-labelledby="tabApprove" hidden>
+    <div class="qbar">
+      <p class="tag" style="max-width:62ch;margin:0">Each morning the producer turns the best stories into finished posts: a File at noon and a Memo at 7 PM. Read the summary, watch the slides, approve. Nothing posts without your tap.</p>
+      <button class="small" id="pauseBtn" aria-pressed="false">Pause posting</button>
+    </div>
+    <p class="status" id="pauseNote" aria-live="polite"></p>
+    <div class="qlist" id="qList"></div>
+    <details id="qDoneWrap" hidden><summary>Recent</summary><ul class="plain" id="qDone"></ul></details>
+  </section>
 
   <section id="paneStories" role="tabpanel" aria-labelledby="tabStories">
     <div class="filters">
@@ -409,12 +440,15 @@ const $=id=>document.getElementById(id);
    an Anthropic API key, a native save dialog). Nothing below it changes.
    ================================================================== */
 const PULL_TRIGGER="trig_011ra6FCrefqeoihApa9RTSz";
+const PRODUCE_TRIGGER="trig_01RWLMBvwpSQ5VanD1uSkN7C"; /* morning producer: drafts, checks and builds the day's posts; also handles Fix */
+const PUBLISH_TRIGGER="trig_01Fawa1d2NJ1iG98BJBK2Lfk"; /* publisher: started by Approve (and Pause); builds the video and schedules it */
 const Platform={
   kind:"browser",
   db:null,   // watch(coll, cb(docs)), get(coll,id), update(coll,id,patch), set(coll,id,data)
   ai:null,   // stream(prompt,{signal,onText}) -> {text},  json(prompt) -> object
   save:null, // save(filename, data) -> Promise
   pull:null, // pull(text?) -> Promise: start a story update
+  fire:null, // fire(triggerId, text?) -> Promise: start the producer or publisher
   pref:{
     get(k){try{return localStorage.getItem("ps:"+k)}catch(e){return null}},
     set(k,v){try{localStorage.setItem("ps:"+k,v)}catch(e){}}
@@ -456,6 +490,7 @@ async function initPlatform(){
     if(dl)Platform.save=(filename,data)=>dl.save({filename,data});
     /* Update stories: starts the "Plain Sight story pull" task (a cloud Claude run that reads the feeds and files stories here). */
     if(mcp)Platform.pull=text=>mcp.callTool("Claude Code Remote","fire_trigger",text?{trigger_id:PULL_TRIGGER,text}:{trigger_id:PULL_TRIGGER});
+    if(mcp)Platform.fire=(trigger_id,text)=>mcp.callTool("Claude Code Remote","fire_trigger",text?{trigger_id,text}:{trigger_id});
   } else {
     Platform.db=localDb();
     Platform.save=browserSave;
@@ -523,10 +558,10 @@ function initPull(){
   });
 }
 function showTab(name){
-  ["Stories","Studio","Sources","Settings"].forEach(n=>{const on=n.toLowerCase()===name;$("pane"+n).hidden=!on;$("tab"+n).setAttribute("aria-selected",String(on))});
+  ["Approve","Stories","Studio","Sources","Settings"].forEach(n=>{const on=n.toLowerCase()===name;$("pane"+n).hidden=!on;$("tab"+n).setAttribute("aria-selected",String(on))});
   Platform.pref.set("tab",name);
 }
-["Stories","Studio","Sources","Settings"].forEach(n=>$("tab"+n).addEventListener("click",()=>showTab(n.toLowerCase())));
+["Approve","Stories","Studio","Sources","Settings"].forEach(n=>$("tab"+n).addEventListener("click",()=>showTab(n.toLowerCase())));
 
 function Studio(){
 const W=1080,H=1350,H0=1350;
@@ -1947,6 +1982,22 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 window.addEventListener("pagehide",()=>{flushSave()});
 
 boot().then(restoreLast);
+/* Draw a queued post's slides with the Studio's own renderer, without touching the Studio's current work:
+   the inputs the renderer reads are swapped in for the duration of one synchronous render, then put back. */
+function renderPacket(p){
+  const ids=["postType","fileno","look","locPlace","locCountry","script"],keep={};
+  ids.forEach(id=>keep[id]=$(id).value);const keepSize=ttSize;
+  try{
+    $("postType").value=p.type==="memo"?"memo":"file";$("fileno").value=String(p.fileno||"000");
+    $("look").value=["auto","dark","light","classic"].includes(p.look)?p.look:"auto";
+    $("locPlace").value=p.locPlace||"";$("locCountry").value=p.locCountry||"";$("script").value=p.script||"";ttSize="full";
+    const slides=parseScript(p.script||"");if(slides.length)slides.push({type:"end",text:"",items:[],notes:[]});
+    return slides.map((sl,i)=>({url:renderTikTok(sl,i,slides.length).toDataURL("image/jpeg",0.86),secs:slideSecs(sl),alt:`Slide ${i+1}: ${String(sl.text||"").replace(/[*|]/g,"")}`}));
+  }finally{ids.forEach(id=>$(id).value=keep[id]);ttSize=keepSize}
+}
+/* The automation (builder/hq_tool.mjs) runs these same functions headlessly, so drafts and checks follow one rulebook. */
+window.PSHQ=Object.assign(window.PSHQ||{},{renderPacket,parseScript,wordIssues,emphasisIssues,timingInfo,slideSecs,dashes,noDash,fixQuotes,takeLocation,
+  tiktokCaption,cleanTags,draftRules,captionPrompt,isoDay,SHORTEN_RULES,CAP_LIMIT,BANNED_TAGS});
 return {
   loadStory(id,title,text,receipts,location){
     $("story").value=text;store("story",text);setLinked(id,title,receipts);$("thList").replaceChildren();
@@ -1958,6 +2009,7 @@ return {
 }
 
 function Desk(studio){
+(window.PSHQ=window.PSHQ||{}).studioText=studioText;
 const TYPE={primary:"Primary record",wire:"Wire",mainstream:"Mainstream",independent:"Independent",factcheck:"Fact-check"};
 const REGION={bc:"B.C.",canada:"Canada",us:"U.S.",uk:"U.K.",europe:"Europe",world:"World"};
 const VERIF={verified:"Verified",partly:"Partly verified",unverified:"Unverified"};
@@ -2224,10 +2276,231 @@ $("importFile").addEventListener("change",async e=>{
 });
 }
 
+/* ---------- Approve tab: the day's queue from the morning producer ----------
+   Each queue doc is one finished post: summary, script, caption, pinned comment, the checker's report.
+   Approve stores a hash of exactly what will post, then starts the publisher (a cloud run) for that post.
+   Nothing posts without Approve. Pause stops all posting until Resume. */
+function Approvals(){
+const PT={timeZone:"America/Vancouver"};
+const elA=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
+const chipA=(text,cls)=>elA("span","chip"+(cls?" "+cls:""),text);
+const arrA=x=>Array.isArray(x)?x:[];
+const fmtWhen=iso=>{const d=new Date(iso);if(isNaN(d))return "";
+  const day=new Intl.DateTimeFormat("en-CA",Object.assign({weekday:"short",month:"short",day:"numeric"},PT)).format(d);
+  const today=new Intl.DateTimeFormat("en-CA",Object.assign({weekday:"short",month:"short",day:"numeric"},PT)).format(new Date());
+  const tm=new Intl.DateTimeFormat("en-CA",Object.assign({hour:"numeric",minute:"2-digit"},PT)).format(d);
+  return (day===today?"today":day)+" at "+tm};
+const STATUS={ready:["Waiting for you","warn"],needs_you:["Needs you","bad"],fixing:["Being fixed",""],approved:["Approved, scheduling",""],
+  publishing:["Scheduling",""],scheduled:["Scheduled","ok"],posted:["Posted","ok"],held:["Held (paused)","warn"],skipped:["Skipped",""],
+  expired:["Expired",""],error:["Problem","bad"]};
+const ACTIVE=["ready","needs_you","fixing","approved","publishing","scheduled","held","error"];
+const safeHref=u=>{try{const x=new URL(u);return x.protocol==="https:"||x.protocol==="http:"?x.href:null}catch(e){return null}};
+const pane=$("paneApprove"),listEl=$("qList"),doneEl=$("qDone"),pauseBtn=$("pauseBtn"),pauseNote=$("pauseNote");
+let docs=[],control=null,busy=false;const cache=new Map(),notes=new Map(),fireFailed=new Set();
+/* status lines outlive a card rebuild (a db change redraws the card while a run is still starting) */
+function say(id,text,err){notes.set(id,{text,err:!!err});const e=document.getElementById("qmsg-"+id);if(e){e.className="status"+(err?" err":"");e.textContent=text}}
+
+/* The same canonical form as builder/hq_tool.mjs packetHash(). */
+const HASH_FIELDS=["type","fileno","script","caption","pinned","locPlace","locCountry","look"];
+async function packetHash(p){
+  const o={};HASH_FIELDS.forEach(k=>o[k]=p[k]==null?"":String(p[k]));
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(o)));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function fireErr(e){const c=e&&e.code;
+  return c==="server_not_connected"||c==="server_not_found"?"Add the Claude Code Remote connector in claude.ai Settings, then try again."
+    :c==="needs_reauth"?"Reconnect Claude Code Remote in claude.ai Settings, then try again."
+    :c==="not_in_manifest"||c==="not_granted"?"This page isn't allowed to start runs yet. Allow it when asked, then try again."
+    :c==="server_unavailable"||c==="upstream_error"?"Couldn't confirm the run started. Wait a minute, then check the status here before trying again."
+    :"Couldn't start the run"+(e&&e.message?": "+e.message:".")}
+
+/* ---- slide preview: HQ's own renderer, same frames the video is built from ---- */
+function player(p){
+  const box=elA("div","qplayer");
+  const stage=elA("div","qstage");const img=document.createElement("img");img.alt="";stage.append(img);
+  const ticks=elA("div","qticks");
+  const bar=elA("div","row");const prev=elA("button","small","Back"),play=elA("button","small primary","Play"),next=elA("button","small","Next");
+  [prev,play,next].forEach(b=>b.type="button");
+  const where=elA("span","meta","");bar.append(prev,play,next,where);
+  const note=elA("p","hint","Silent preview of the exact slides and timing. The posted video adds the music track.");
+  box.append(stage,ticks,bar,note);
+  let frames=null,i=0,timer=null;
+  function show(n){i=Math.max(0,Math.min(frames.length-1,n));img.src=frames[i].url;img.alt=frames[i].alt;
+    where.textContent=`${i+1} / ${frames.length} · ${frames[i].secs} s`;[...ticks.children].forEach((t,k)=>t.classList.toggle("on",k<=i))}
+  function stop(){clearTimeout(timer);timer=null;play.textContent="Play"}
+  function run(){timer=setTimeout(()=>{if(i<frames.length-1){show(i+1);run()}else stop()},frames[i].secs*1000)}
+  function ensure(){
+    if(frames)return true;
+    try{frames=window.PSHQ.renderPacket(p)}catch(e){frames=null;where.textContent="The preview couldn't be drawn here.";return false}
+    ticks.replaceChildren(...frames.map(()=>elA("span")));show(0);return true}
+  play.addEventListener("click",()=>{if(!ensure())return;if(timer){stop();return}if(i>=frames.length-1)show(0);play.textContent="Pause";run()});
+  prev.addEventListener("click",()=>{if(!ensure())return;stop();show(i-1)});
+  next.addEventListener("click",()=>{if(!ensure())return;stop();show(i+1)});
+  stage.addEventListener("click",()=>play.click());
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(()=>ensure()));
+  return box;
+}
+
+function copyBlock(label,text,limitNote){
+  const s=elA("div","sec");s.append(elA("h3",null,label));
+  const pre=elA("p","qtext",text||"");s.append(pre);
+  const row=elA("div","actions");const b=elA("button","small","Copy");b.type="button";
+  const n=elA("span","meta",limitNote||"");row.append(b,n);s.append(row);
+  b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(text||"");b.textContent="Copied";setTimeout(()=>b.textContent="Copy",2000)}
+    catch(e){const f=$("fallback");f.hidden=false;f.value=text||"";f.focus();f.select();n.textContent="Copy the selected text at the bottom of the page."}});
+  return s;
+}
+
+function card(p){
+  const st=STATUS[p.status]||[p.status||"",""];
+  const c=elA("article","qcard");
+  const chips=elA("div","chips");
+  chips.append(chipA((p.type==="memo"?"Memo ":"File ")+(p.fileno||"")),chipA(st[0],st[1]));
+  const ck=p.checker||{};const nf=arrA(ck.flags).length;
+  chips.append(ck.verdict==="PASS"?chipA("Checker: pass","ok"):ck.verdict?chipA(`Checker: ${nf} flag${nf===1?"":"s"}`,"bad"):chipA("Not checked","warn"));
+  if(p.tick&&p.tick.required)chips.append(chipA("Extra check","warn"));
+  c.append(chips);
+  c.append(elA("h2",null,p.title||"Untitled"));
+  const when=p.status==="scheduled"&&p.publish&&p.publish.scheduledFor?"Posts "+fmtWhen(p.publish.scheduledFor)
+    :p.status==="posted"?"Posted "+fmtWhen(p.postedAt||(p.publish&&p.publish.scheduledFor))
+    :p.slotAt?(new Date(p.slotAt)-Date.now()>15*60e3?("Slot: "+fmtWhen(p.slotAt)+".").replace(/\.\.$/,".")+" Approve at least 15 minutes before."
+      :"Its slot ("+fmtWhen(p.slotAt)+") has passed. Approve and it takes the next free slot."):"";
+  if(when)c.append(elA("p","meta",when));
+  if(p.statusNote)c.append(elA("p","status"+(p.status==="error"||p.status==="needs_you"?" err":""),p.statusNote));
+
+  /* 1. the news item */
+  const sum=elA("div","sec");sum.append(elA("h3",null,"The story"));
+  const ul=elA("ul","plain");arrA(p.summary).forEach(t=>ul.append(elA("li",null,t)));sum.append(ul);
+  if(p.sourceLine)sum.append(elA("p","meta","Source: "+p.sourceLine));
+  c.append(sum);
+
+  /* checker flags come first when there are any */
+  if(nf){const s=elA("div","sec");s.append(elA("h3","caution","What the checker flagged"));const l=elA("ul","plain");
+    arrA(ck.flags).forEach(f=>{const li=elA("li");li.append(elA("strong",null,(f.severity||"FLAG")+(f.location?" · "+f.location:"")+": "),document.createTextNode((f.problem||f.claim||"")+(f.suggested_fix?" Suggested fix: "+f.suggested_fix:"")));l.append(li)});
+    s.append(l);c.append(s)}
+
+  /* 2. the finished product */
+  const prod=elA("div","sec");prod.append(elA("h3",null,"The video"));prod.append(player(p));c.append(prod);
+
+  if(ck.riskiest_claim&&ck.riskiest_claim.claim){const r=ck.riskiest_claim;const s=elA("div","sec");s.append(elA("h3",null,"Riskiest claim"));
+    s.append(elA("p","qclaim",r.claim));if(r.source_quote)s.append(elA("p","qquote","Source says: “"+r.source_quote+"”"));
+    const h=safeHref(r.url);if(h){const a=elA("a","meta","Open source");a.href=h;a.target="_blank";a.rel="noopener";s.append(a)}c.append(s)}
+  if(arrA(ck.quotes).length){const s=elA("div","sec");s.append(elA("h3",null,"Every direct quote"));const l=elA("ul","plain");
+    arrA(ck.quotes).forEach(q=>l.append(elA("li",null,`“${q.quote}”: ${q.speaker||"speaker not named"}. ${q.verdict==="PASS"?"Matches the source.":"Check: "+(q.note||q.verdict||"")}`)));s.append(l);c.append(s)}
+
+  c.append(copyBlock("Caption",p.caption,(p.caption||"").length.toLocaleString()+" characters"));
+  c.append(copyBlock("Receipts comment",p.pinned,(p.pinned||"").length+" / 150. After it posts, paste this as a comment and pin it."));
+  if(arrA(p.lint&&p.lint.warnings).length){const s=elA("div","sec");s.append(elA("h3",null,"Notes"));const l=elA("ul","plain");arrA(p.lint.warnings).forEach(w=>l.append(elA("li",null,w)));s.append(l);c.append(s)}
+
+  /* 3. one approval */
+  const act=elA("div","sec qact");const msg=elA("p","status","");msg.id="qmsg-"+p.id;msg.setAttribute("aria-live","polite");
+  if(p.status==="ready"||p.status==="needs_you"||p.status==="error"&&!p.approvedAt){
+    let tick=null;
+    if(p.tick&&p.tick.required){tick=document.createElement("input");tick.type="checkbox";tick.id="tick-"+p.id;
+      const lab=elA("label","check");lab.htmlFor=tick.id;lab.append(tick,elA("span",null,"I've read the riskiest claim and the quotes, and I'm fine posting this. ("+arrA(p.tick.reasons).join("; ")+")"));act.append(lab)}
+    const row=elA("div","actions");
+    const ap=elA("button","primary","Approve");ap.type="button";
+    const fx=elA("button",null,"Fix…");fx.type="button";const sk=elA("button",null,"Skip");sk.type="button";
+    if(p.status==="needs_you"){ap.disabled=true;msg.textContent="The checker couldn't clear this one. Use Fix with a note, or Skip."}
+    if(tick){ap.disabled=true;tick.addEventListener("change",()=>{ap.disabled=!tick.checked||p.status==="needs_you"})}
+    if(control&&control.paused){ap.disabled=true;msg.textContent="Posting is paused. Resume to approve."}
+    row.append(ap,fx,sk);act.append(row);
+    const fixBox=elA("div","qfix");fixBox.hidden=true;const ta=document.createElement("textarea");ta.rows=3;ta.placeholder="What should change? e.g. “soften slide 3, the report says 'may'”";
+    const send=elA("button","small primary","Send fix");send.type="button";fixBox.append(ta,send);act.append(fixBox);
+    fx.addEventListener("click",()=>{fixBox.hidden=!fixBox.hidden;if(!fixBox.hidden)ta.focus()});
+    ap.addEventListener("click",()=>approve(p,ap,msg));
+    sk.addEventListener("click",()=>setStatus(p,{status:"skipped",statusNote:"Skipped "+fmtWhen(new Date().toISOString())},msg));
+    send.addEventListener("click",()=>fix(p,ta.value.trim(),send,msg));
+  } else if(p.status==="approved"&&p.approvedAt&&(fireFailed.has(p.id)||Date.now()-new Date(p.approvedAt)>10*60e3)){
+    const row=elA("div","actions");const again=elA("button","small","Start scheduling again");again.type="button";row.append(again);act.append(row);
+    msg.textContent=fireFailed.has(p.id)?"Approved, but the scheduler didn't start.":"Approved, but scheduling hasn't reported back yet.";
+    again.addEventListener("click",()=>firePublish(p,p.approvedHash,again,msg));
+  } else if(p.status==="posted"){msg.textContent="Posted. Paste and pin the receipts comment above."}
+  const n=notes.get(p.id);if(n&&n.text){msg.className="status"+(n.err?" err":"");msg.textContent=n.text}
+  act.append(msg);c.append(act);
+  return c;
+}
+
+async function setStatus(p,patch,msg){
+  if(busy)return;busy=true;
+  try{await Platform.db.update("queue",p.id,Object.assign({updatedAt:new Date().toISOString()},patch))}
+  catch(e){say(p.id,"Couldn't save. Check your connection.",true)}
+  finally{busy=false}
+}
+async function firePublish(p,hash,btn,msg){
+  if(!Platform.fire){fireFailed.add(p.id);say(p.id,"Approving needs the Claude Code Remote connector on claude.ai.",true);paint();return}
+  btn.disabled=true;say(p.id,"Starting the scheduler…");
+  try{await Platform.fire(PUBLISH_TRIGGER,`APPROVED ${p.id} ${hash}`);fireFailed.delete(p.id);say(p.id,"Approved. Scheduling usually takes 3 to 6 minutes; this card updates on its own.")}
+  catch(e){btn.disabled=false;fireFailed.add(p.id);say(p.id,fireErr(e),true)}
+  paint();
+}
+async function approve(p,btn,msg){
+  if(busy)return;
+  const fresh=await Platform.db.get("queue",p.id).catch(()=>null);
+  if(!fresh){say(p.id,"Couldn't load this post. Try again.",true);return}
+  if(fresh.status!==p.status){say(p.id,"This post just changed. Look it over again.",true);return}
+  const hash=await packetHash(fresh);
+  if(!fresh.hash||hash!==fresh.hash){say(p.id,"This post changed after it was checked, so it can't be approved. Use Fix.",true);return}
+  btn.disabled=true;busy=true;
+  try{await Platform.db.update("queue",p.id,{status:"approved",approvedAt:new Date().toISOString(),approvedHash:hash,statusNote:"",updatedAt:new Date().toISOString()})}
+  catch(e){busy=false;btn.disabled=false;say(p.id,"Couldn't save the approval. Check your connection.",true);return}
+  busy=false;await firePublish(p,hash,btn,msg);
+}
+async function fix(p,note,btn,msg){
+  if(!note){say(p.id,"Write what should change first.",true);return}
+  if(!Platform.fire){say(p.id,"Fixing needs the Claude Code Remote connector on claude.ai.",true);return}
+  btn.disabled=true;
+  try{await Platform.fire(PRODUCE_TRIGGER,`FIX ${p.id}: ${note}`)}
+  catch(e){btn.disabled=false;say(p.id,"The fix didn't start: "+fireErr(e),true);return}
+  say(p.id,"Fix started. A new draft and check usually take 10 to 20 minutes.");
+  await Platform.db.update("queue",p.id,{status:"fixing",fixNote:note,fixRequestedAt:new Date().toISOString(),statusNote:"Fix requested: "+note,updatedAt:new Date().toISOString()}).catch(()=>{});
+}
+
+function paint(){
+  const paused=!!(control&&control.paused);
+  pauseBtn.textContent=paused?"Resume posting":"Pause posting";pauseBtn.setAttribute("aria-pressed",String(paused));
+  pauseNote.className="status"+(paused?" err":"");
+  pauseNote.textContent=paused?"Posting is paused"+(control.pausedAt?" since "+fmtWhen(control.pausedAt):"")+". Scheduled posts were turned back into drafts; nothing will post.":"";
+  const cut=Date.now()-3*864e5;
+  /* a post stays on screen for a day after it goes live, so the receipts comment is one tap away */
+  const live=d=>ACTIVE.includes(d.status)||(d.status==="posted"&&Date.now()-new Date(d.postedAt||d.updatedAt||0)<24*3600e3);
+  const act=docs.filter(live).sort((a,b)=>String(a.slotAt).localeCompare(String(b.slotAt)));
+  const done=docs.filter(d=>!live(d)&&new Date(d.updatedAt||d.createdAt||0)>cut).sort((a,b)=>String(b.slotAt).localeCompare(String(a.slotAt)));
+  const waiting=act.filter(d=>d.status==="ready"||d.status==="needs_you").length;
+  $("approveCount").textContent=waiting?String(waiting):"";
+  const scroll=window.scrollY;
+  /* rebuild a card only when its post (or the pause state) changed, so a playing preview or a half-typed fix note survives */
+  const sigOf=d=>JSON.stringify(d)+"|"+paused+"|"+(d.status==="approved"&&d.approvedAt&&Date.now()-new Date(d.approvedAt)>10*60e3)+"|"+(d.slotAt&&new Date(d.slotAt)-Date.now()>15*60e3)+"|"+fireFailed.has(d.id);
+  const cards=act.map(d=>{const sig=sigOf(d),old=cache.get(d.id);if(old&&old.sig===sig)return old.el;const e=card(d);cache.set(d.id,{sig,el:e});return e});
+  listEl.replaceChildren(...(act.length?cards:[(()=>{const e=elA("div","empty");e.append(elA("strong",null,"Nothing waiting"),
+    document.createTextNode("The producer builds the day's posts each morning after the story update. They appear here with a summary, the video and one Approve button."));return e})()]));
+  doneEl.replaceChildren(...done.map(d=>{const li=elA("li","meta",`${d.type==="memo"?"Memo":"File"} ${d.fileno||""}: ${d.title||""}. ${(STATUS[d.status]||[d.status])[0]}${d.status==="posted"&&d.postedAt?" "+fmtWhen(d.postedAt):""}`);return li}));
+  $("qDoneWrap").hidden=!done.length;
+  window.scrollTo(0,scroll);
+}
+pauseBtn.addEventListener("click",async()=>{
+  if(!Platform.db)return;const paused=!!(control&&control.paused);pauseBtn.disabled=true;
+  try{
+    const ctl=Object.assign({},control||{},{paused:!paused,pausedAt:!paused?new Date().toISOString():(control&&control.pausedAt)||null,updatedAt:new Date().toISOString()});
+    delete ctl.id;await Platform.db.set("meta","control",ctl);
+    if(!paused){if(Platform.fire)await Platform.fire(PUBLISH_TRIGGER,"PAUSE").catch(e=>{pauseNote.className="status err";pauseNote.textContent="Paused here, but scheduled posts couldn't be pulled back: "+fireErr(e)+" Open Metricool to check."})}
+    else{for(const d of docs.filter(d=>d.status==="held"))await Platform.db.update("queue",d.id,{status:"ready",statusNote:"Was held while paused. Approve again to post.",updatedAt:new Date().toISOString()})}
+  }catch(e){pauseNote.className="status err";pauseNote.textContent="Couldn't change the pause setting. Check your connection."}
+  finally{pauseBtn.disabled=false}
+});
+if(Platform.db){
+  Platform.db.watch("queue",d=>{docs=d;paint()});
+  Platform.db.watch("meta",d=>{control=d.find(x=>x.id==="control")||null;paint()});
+} else {listEl.replaceChildren(elA("div","empty","Approvals work on claude.ai."));pauseBtn.hidden=true}
+paint();
+setInterval(paint,60e3); /* slot wording and the "scheduling hasn't reported back" retry depend on the clock */
+}
+
 initPlatform().catch(()=>{}).then(()=>{
   const studio=Studio();
   Desk(studio);
-  const t=Platform.pref.get("tab");if(t==="studio"||t==="sources"||t==="settings")showTab(t);
+  Approvals();
+  const t=Platform.pref.get("tab");if(t==="approve"||t==="studio"||t==="sources"||t==="settings")showTab(t);else if(!t)showTab("approve");
   initPull();
 });
 })();
