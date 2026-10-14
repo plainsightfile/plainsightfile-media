@@ -1254,7 +1254,7 @@ function n9Meta(ctx,T,idx,total,sl){
   n9Ticks(ctx,T,idx,total,342);
 }
 function n9Foot(ctx,T){
-  return; /* decluttered: TikTok already shows the handle */
+  /* the handle stays on every slide so reposts and cross-posts carry the account name */
   ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
   ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),TTN.left,N9.handleY);spaced(ctx,"0px");
 }
@@ -1294,6 +1294,7 @@ function n9Exhibit(ctx,T,notes,idx,doc,measureOnly,y){
 /* Rubber stamp for the hook: the account's one prop. Ink (the page's text colour) only, so lime stays reserved for
    highlights. The asterisk footnote keeps it literally true: the "leak" is public record. Returns the height used. */
 function n9Stamp(ctx,T,word,y,measureOnly){
+  return measureOnly?{w:0,h:0}:0; /* stamp retired October 14 (owner preference) */
   const size=80,foot=26,label=word+"*",seed=word.length*7919+3;
   ctx.save();ctx.font=`900 ${size}px ${DISP}`;spaced(ctx,"4px");
   const tw=ctx.measureText(label).width;ctx.font=`700 ${foot}px ${JBM}`;spaced(ctx,"3px");const fw=ctx.measureText("*PUBLIC RECORD").width;

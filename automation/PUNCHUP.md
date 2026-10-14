@@ -9,7 +9,6 @@ Improve the script:
 4. One self-aware wink at the conspiracy genre that adds no fact ("In fairness, which conspiracy accounts never are:", "Our sources: their website.").
 5. A callback: the hook's costume phrase returns, answered, in CASE STATUS, the TAKE or the last body slide.
 6. Shorter punchlines. Cut words that serve neither setup nor puncture.
-7. Choose the STAMP line (LEAKED, TOP SECRET, CLASSIFIED, EYES ONLY or CONFIDENTIAL) that best fits the hook; add or change the "STAMP: " header line.
 
 Hard limits (break none of them):
 - Change WORDING, never FACTS. Keep every number, name, date, quote, qualifier and caveat exactly as the draft has it, on the same slide. Add no fact, number, quote or claim that is not already in the draft or the story notes below.
