@@ -47,6 +47,7 @@ if (cmd === "numbers") {
   arr(s.receipts).forEach(r => src.push(`- ${r.cite || r.label || ""} [${r.kind || ""}] ${r.url || ""}${r.note ? " (" + r.note + ")" : ""}`));
   if (arr(s.facts).length) { src.push("", "Story desk facts (leads, not evidence):"); arr(s.facts).forEach(f => src.push("- " + f)); }
   if (s.gap) src.push("", "Gap as filed: " + s.gap);
+  if (s.falsity_evidence) src.push("", "Evidence the claim is false or harmful, as filed: " + s.falsity_evidence);
   if (s.institution_response) src.push("", "Institution's response as filed: " + s.institution_response);
   if (s.strongest_caveat) src.push("", "Strongest caveat as filed: " + s.strongest_caveat);
   if (s.narrative_echo) src.push("", "This is a narrative-echo topic.");

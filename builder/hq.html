@@ -666,6 +666,11 @@ FACTS (non-negotiable):
 - Write for an international English-speaking audience: name the country and explain local institutions in a few words (e.g. "Alberta's health agency").
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
 
+SPINE (the account's stance; every accuracy rule still applies): this account is not afraid to call nonsense nonsense. When a politician, official, influencer, outlet, company or institution with real reach pushes a claim the sources show is false, or a view the sources show does documented harm, say so plainly in the account's own voice after the puncture: "That's false." "Not disputed. False." "Made up. Page 4 says otherwise." Never soften a clear falsehood into "questions remain".
+- Quote the claim and name who made it and when, then the record that answers it, on the same slide or the next. Calling a claim false, wrong, made up or nonsense needs a source that establishes it (official record, data, a ruling, or a fact-check that shows its evidence). Calling something dangerous or harmful needs a source that documents the harm. "Lied" or "knowingly" still need a finding or admission: say the claim is false, not that the person knew.
+- The contempt is for the claim and for the people with power or reach who push it. Blunt words about a claim or someone's public conduct are fine ("nonsense", "a made-up number", "a stupid claim"). Never insult anyone's identity, appearance, health or personal traits; never target private individuals or ordinary users; never mock the people who were misled or harmed, or the viewer.
+- One standard for everyone: the test is the evidence, never which side said it.
+
 SATIRE (this is why anyone follows the account; every accuracy rule above still applies to every word):
 - The joke is a collision of two voices. THE COSTUME: the setup talks like a real "they don't want you to know" post, loud and dramatic: UPPERCASE alarm, "they", "the documents", "leaked", ominous one-line beats ("Hidden.", "Until now."). THE PUNCTURE: the payoff answers in flat, boring, sentence-case public record: the press release, the spreadsheet, page 4 of the annual report. The bigger the costume, the harder the puncture lands. Deadpan belongs to the puncture, never to the costume.
 - Costume words (they mock the genre, not the subject): TOP SECRET, CLASSIFIED, LEAKED, EYES ONLY, REDACTED, THEY DON'T WANT YOU TO KNOW, WHAT THEY'RE NOT TELLING YOU, THE DOCUMENTS, OUR SOURCES, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS, I'M JUST ASKING QUESTIONS. Use 2 to 4 across the post, each at most once, and answer every one with its boring public payoff on the SAME slide (e.g. "LEAKED: the employment figures. Leaked by: the government's own statistics office."). Never WAKE UP, FOLLOW THE MONEY, SHEEPLE, COVER-UP, RIGGED or any phrase that belongs to a live conspiracy movement.
@@ -706,7 +711,8 @@ const MEMO_RULES=`You write MEMO slides for a TikTok slideshow video from "Hidde
 Rules:
 - It is opinion, but every FACT it uses must come from the source material below and be attributable. Never invent numbers, names, dates, quotes or sources.
 - Facts follow the account's integrity rules: every claim, including implied ones, matches a source sentence at the same strength; each slide read alone is accurate and does not read as a sincere conspiracy post; side-by-side facts refer to the same thing; no cause, intent or guilt unless a source states it; quotes are word for word; numbers carry unit, period and base; never state the false version of a claim, even ironically or as a question.
-- Opinion can be sharp: comment freely on true, stated facts about public matters. Punch up at institutions, officials and corporations. Never mock ordinary people, victims or the viewer. No personal insults.
+- Opinion can be sharp: comment freely on true, stated facts about public matters. Punch up at institutions, officials, corporations and anyone with reach who pushes a false or harmful claim. Never mock ordinary people, victims or the viewer, and never insult identity, appearance or personal traits.
+- Spine: a Memo is where the account calls it. If the sources show a claim is false, the TAKE says so plainly ("That's false. Not 'contested'. False."); if they document harm, say what the harm is. Name who pushed it and quote them. Calling a claim false needs a source that establishes it; "lied" or "knowingly" still need a finding or admission. One standard for everyone: the evidence, never the side.
 - Be fair: if the material includes the other side's explanation, acknowledge it.
 - Health, vaccines, climate, elections, public debt or "elites": aim only at an official's words or an institution's records, never at the science or the data.
 - 5 to 8 slides in total, including CASE STATUS and RECEIPTS. Body slides 12 to 22 words, one idea each; if a slide falls short, add the qualifier, the actor or the date from the material, never filler. Highlight with *asterisks*: at most 2 per slide (1 on the HOOK), each 1 to 3 words, only on the number, the contradiction or the one quoted word that carries the point; never a whole clause or the opinion itself.
@@ -1858,7 +1864,7 @@ IN THIS ORDER:
 8. Then: {NUMLINE}
 9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject (e.g. #euaudit) and one is the country or region (e.g. #europeanunion). No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
 
-- Voice: active verbs, short sentences, attribution on every claim, no adjectives doing the arguing. Two to four costume beats in the whole caption, each punctured by a sourced fact; costume words point at the public record, never at an accusation. No exclamation marks.
+- Voice: active verbs, short sentences, attribution on every claim. Where the sources establish that a claim is false, say so plainly ("That claim is false."), naming who made it; call it harmful only when a source documents the harm. Contempt for false claims and the powerful people pushing them is fine; never insult identity, appearance or personal traits, private individuals, the misled or the viewer. Two to four costume beats in the whole caption, each punctured by a sourced fact; costume words point at the public record, never at an accusation. No exclamation marks.
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
 - Write for an international English-speaking audience: name the country, explain local institutions in a few words, label currencies (C$, US$, £, €).
 - Length: 500 to 1,200 characters in total, hashtags included. HARD LIMIT: 2,000.
@@ -2145,6 +2151,8 @@ function studioText(s){
   L.push("","FACTS:");arr(s.facts).forEach(f=>L.push("- "+f));
   if(s.reveal){L.push("","KEY FACT: "+s.reveal)}
   if(s.gap){L.push("","THE GAP (what they say vs what the record shows): "+s.gap)}
+  if(s.callout){L.push("","CALL-OUT: a claim the record shows is false or harmful. Quote it, answer it with the evidence, and say plainly what it is.")}
+  if(s.falsity_evidence){L.push("","EVIDENCE AGAINST THE CLAIM: "+s.falsity_evidence)}
   if(s.institution_response){L.push("","INSTITUTION'S RESPONSE: "+s.institution_response)}
   if(s.strongest_caveat){L.push("","STRONGEST CAVEAT (must appear on a slide): "+s.strongest_caveat)}
   if(s.narrative_echo){L.push("","NARRATIVE-ECHO TOPIC: aim the conspiratorial register only at officials' words or records, never at the science or data; state the consensus plainly by slide 2.")}

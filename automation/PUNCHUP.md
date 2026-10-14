@@ -17,6 +17,7 @@ Hard limits (break none of them):
 - Every slide read alone must stay accurate and must not read as a sincere conspiracy post: the puncture sits on the same slide as its costume.
 - Keep the structure and labels (HOOK, REVEAL, SPIN, RECORD, TRANSLATION, TAKE, CASE STATUS, RECEIPTS), the "---" separators, every "SOURCE:" and "CLASSIFIED LOCATION:" line, the DEVICE and LOCATION lines, and the RECEIPTS entries exactly.
 - Word counts: HOOK 8 to 14; REVEAL and body slides 12 to 22; CASE STATUS 8 to 16; TAKE 12 to 26 (SOURCE lines don't count). At most 2 *highlights* per slide (1 on the HOOK), each 1 to 3 words.
+- Spine: where the draft (or the story notes) shows a claim is false, the account may say so bluntly in its own voice after the puncture ("That's false." "Made up. Page 4 says otherwise."), naming who pushed it. Only when the draft or notes establish it is false; "lied" or "knowingly" still need a finding. Contempt goes to claims and to people with power or reach, never to identity, appearance or personal traits, private individuals, the misled, or the viewer.
 - Aim at institutions and officials, never at ordinary people, the people affected, or the viewer. Never use em dashes. No exclamation marks.
 
 Reply with ONLY the full improved script, nothing before or after it.
