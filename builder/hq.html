@@ -2376,7 +2376,8 @@ function card(p){
 
   /* checker flags come first when there are any */
   if(nf){const s=elA("div","sec");s.append(elA("h3","caution","What the checker flagged"));const l=elA("ul","plain");
-    arrA(ck.flags).forEach(f=>{const li=elA("li");li.append(elA("strong",null,(f.severity||"FLAG")+(f.location?" · "+f.location:"")+": "),document.createTextNode((f.problem||f.claim||"")+(f.suggested_fix?" Suggested fix: "+f.suggested_fix:"")));l.append(li)});
+    arrA(ck.flags).forEach(f=>{const li=elA("li");li.append(elA("strong",null,(f.severity||"FLAG")+(f.location?" · "+f.location:"")+": "),document.createTextNode((f.problem||f.claim||"")+(f.suggested_fix?" Suggested fix: "+f.suggested_fix:"")+" "));
+      const h=safeHref(f.url);if(h){const a=elA("a",null,"Source");a.href=h;a.target="_blank";a.rel="noopener";li.append(a)}l.append(li)});
     s.append(l);c.append(s)}
 
   /* 2. the finished product */
@@ -2401,9 +2402,14 @@ function card(p){
     const row=elA("div","actions");
     const ap=elA("button","primary","Approve");ap.type="button";
     const fx=elA("button",null,"Fix…");fx.type="button";const sk=elA("button",null,"Skip");sk.type="button";
-    if(p.status==="needs_you"){ap.disabled=true;msg.textContent="The checker couldn't clear this one. Use Fix with a note, or Skip."}
-    if(tick){ap.disabled=true;tick.addEventListener("change",()=>{ap.disabled=!tick.checked||p.status==="needs_you"})}
-    if(control&&control.paused){ap.disabled=true;msg.textContent="Posting is paused. Resume to approve."}
+    /* the checker couldn't clear it: Alex may still approve, but only after saying he checked the flagged items himself */
+    let own=null;
+    if(p.status==="needs_you"){own=document.createElement("input");own.type="checkbox";own.id="own-"+p.id;
+      const lab=elA("label","check");lab.htmlFor=own.id;lab.append(own,elA("span",null,"I checked every flagged item above against the sources myself, and it's accurate as written."));
+      act.insertBefore(lab,act.firstChild);msg.textContent="The checker couldn't clear this one. Fix it with a note, Skip it, or check the flags yourself."}
+    const gate=()=>{ap.disabled=(tick&&!tick.checked)||(own&&!own.checked)||!!(control&&control.paused)};
+    gate();if(tick)tick.addEventListener("change",gate);if(own)own.addEventListener("change",gate);
+    if(control&&control.paused)msg.textContent="Posting is paused. Resume to approve.";
     row.append(ap,fx,sk);act.append(row);
     const fixBox=elA("div","qfix");fixBox.hidden=true;const ta=document.createElement("textarea");ta.rows=3;ta.placeholder="What should change? e.g. “soften slide 3, the report says 'may'”";
     const send=elA("button","small primary","Send fix");send.type="button";fixBox.append(ta,send);act.append(fixBox);
