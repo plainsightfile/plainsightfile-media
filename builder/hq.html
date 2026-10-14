@@ -1247,23 +1247,20 @@ function n9Ticks(ctx,T,idx,total,y){
   for(let i=0;i<total;i++){ctx.fillStyle=i===idx?T.acc:i<idx?T.muted:T.rule;ctx.fillRect(X+i*(w+gap),y,w,i===idx?10:6)}
 }
 function n9Meta(ctx,T,idx,total,sl){
+  /* Decluttered: progress ticks on every slide; the File/Memo number and date only on the hook. */
   const X=TTN.left,R=TTN.right,fno=(filenoEl.value.trim()||"000");
-  ctx.textBaseline="alphabetic";ctx.font=`400 30px ${JBM}`;spaced(ctx,"1px");
-  const left=`[ ${typeWord().toUpperCase()}_${fno} ] CLEARANCE: PUBLIC`;
-  ctx.textAlign="left";ctx.fillStyle=T.muted;ctx.fillText(left,X,316);
-  const room=R-(X+ctx.measureText(left).width+36);ctx.textAlign="right";
-  if(sl.type==="hook"){ctx.fillStyle=T.muted;ctx.fillText(isoDay(),R,316)}
-  else{const page=sl.type==="receipts"?"RECEIPTS":sl.type==="end"?"END":`${String(idx+1).padStart(2,"0")}/${String(total).padStart(2,"0")}`;
-    ctx.fillStyle=T.muted;ctx.fillText(ctx.measureText(page).width<=room?page:"",R,316)}
-  ctx.textAlign="left";spaced(ctx,"0px");
+  if(sl.type==="hook"){ctx.textBaseline="alphabetic";ctx.font=`400 28px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.muted;
+    ctx.textAlign="left";ctx.fillText(`${typeWord().toUpperCase()} ${fno}`,X,316);ctx.textAlign="right";ctx.fillText(isoDay(),R,316);ctx.textAlign="left";spaced(ctx,"0px")}
   n9Ticks(ctx,T,idx,total,342);
 }
 function n9Foot(ctx,T){
+  return; /* decluttered: TikTok already shows the handle */
   ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
   ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),TTN.left,N9.handleY);spaced(ctx,"0px");
 }
 /* Brand band under TikTok's caption row: decorative only, fine to be partly covered. */
 function n9Band(ctx,T){
+  return; /* decluttered: no band, brand line or big number watermark */
   const fno=(filenoEl.value.trim()||"000"),X=TTN.left;
   ctx.save();ctx.textBaseline="alphabetic";ctx.textAlign="left";
   ctx.fillStyle=T.bar;ctx.fillRect(X,1466,1080-2*X,5);
@@ -1279,28 +1276,15 @@ function n9Band(ctx,T){
 /* Exhibit tag: the slide's SOURCE / CLASSIFIED LOCATION lines (and the hook's SATIRE label) as an evidence label.
    It always sits below y 840, so it stays left of the button rail (x 880). */
 function n9Exhibit(ctx,T,notes,idx,doc,measureOnly,y){
+  /* Decluttered (October 14): sources print as one or two quiet lines, no box, no exhibit number. */
   if(!notes||!notes.length)return 0;
-  const X=TTN.left,MAXW=TTN.railRight-TTN.left,pad=28,inner=MAXW-pad*2-10,ls=26,ts=34,lh=1.32;
-  const rows=notes.map(n=>{ctx.font=`400 ${ts}px ${JBM}`;return {lines:wrap(ctx,[{t:n.label.replace(/[:.]$/,"").toUpperCase(),s:"L"}].concat(tokenize(n.text)),inner,0)}});
-  const head=ls+20;
-  let h=pad+head;rows.forEach((r,i)=>{h+=r.lines.length*ts*lh+(i<rows.length-1?24:0)});h+=pad-8;
+  const X=TTN.left,MAXW=TTN.railRight-TTN.left,ts=28,lh=1.35,gap=10;
+  const rows=notes.map(n=>{ctx.font=`400 ${ts}px ${JBM}`;return {lines:wrap(ctx,[{t:n.label.replace(/[:.]$/,"").toUpperCase(),s:"L"}].concat(tokenize(n.text)),MAXW,0)}});
+  let h=0;rows.forEach((r,i)=>{h+=r.lines.length*ts*lh+(i<rows.length-1?gap:0)});
   if(measureOnly)return h;
-  ctx.fillStyle=T.bg;ctx.fillRect(X,y,MAXW,h);
-  ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.strokeRect(X+1,y+1,MAXW-2,h-2);
-  ctx.fillStyle=T.muted;ctx.fillRect(X,y,10,h);
-  const cx=X+10+pad;let cy=y+pad;
-  ctx.font=`700 ${ls}px ${JBM}`;spaced(ctx,"3px");ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";
-  ctx.fillText(`EXHIBIT ${String(idx+1).padStart(2,"0")}`,cx,cy+ls*0.8);
-  if(doc){const ix=X+MAXW-pad-30,iy=cy-4;ctx.strokeStyle=T.muted;ctx.lineWidth=3;ctx.beginPath();
-    ctx.moveTo(ix,iy);ctx.lineTo(ix+20,iy);ctx.lineTo(ix+30,iy+10);ctx.lineTo(ix+30,iy+38);ctx.lineTo(ix,iy+38);ctx.closePath();ctx.stroke();
-    ctx.beginPath();ctx.moveTo(ix+6,iy+20);ctx.lineTo(ix+24,iy+20);ctx.moveTo(ix+6,iy+29);ctx.lineTo(ix+24,iy+29);ctx.stroke();}
-  cy+=head;ctx.setLineDash([6,8]);
-  rows.forEach((r,i)=>{
-    spaced(ctx,"0.5px");drawLines(ctx,{s:ts,lines:r.lines,pad:0},s=>`400 ${s}px ${JBM}`,cx,cy,lh,{text:T.fg,lab:T.muted,emText:T.fg,emBg:null,redact:T.fg});
-    cy+=r.lines.length*ts*lh;
-    if(i<rows.length-1){cy+=9;ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(X+MAXW-pad,cy);ctx.stroke();cy+=15}
-  });
-  ctx.setLineDash([]);spaced(ctx,"0px");
+  let cy=y;spaced(ctx,"0.5px");
+  rows.forEach(r=>{drawLines(ctx,{s:ts,lines:r.lines,pad:0},s=>`400 ${s}px ${JBM}`,X,cy,lh,{text:T.muted,lab:T.muted,emText:T.muted,emBg:null,redact:T.muted});cy+=r.lines.length*ts*lh+gap});
+  spaced(ctx,"0px");
   return h;
 }
 /* Emphasis (pass 3). One technique in both looks: a lime box behind ink text, with an ink keyline.
@@ -1350,7 +1334,7 @@ function renderSignal916(sl,idx,total){
   signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
   const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
   const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
-  const TAGS={hook:postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",reveal:"STATUS: IN PLAIN SIGHT",status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE",receipts:"STATUS: PUBLIC RECORD",end:"STATUS: FILED"};
+  const TAGS={hook:postType()==="memo"?"OPINION":null,status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
   const tag=TAGS[sl.type]||null;
   let y=TOP+4;
   /* hook stamp: beside the status and location rows when they leave room on the right, otherwise in its own row */
