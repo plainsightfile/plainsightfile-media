@@ -1062,7 +1062,7 @@ function renderSignal(sl,idx,total,bg){
   drawNotes(ctx,T,np);
   if(sl.type==="end"){
     const E=endLines();
-    let y=172;y+=sigTag(ctx,T,"STATUS: CASE CLOSED",X,y)+64;
+    let y=172;y+=sigTag(ctx,T,"STATUS: FILED",X,y)+64;
     const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,tokenize(E.signoff),f,MAXW,560,1.06,104,52);
     y+=drawLines(ctx,res,f,X,y,1.06,col)+70;
     ctx.font=`700 44px ${JBM}`;spaced(ctx,"2px");ctx.fillStyle=T.meta;ctx.textBaseline="alphabetic";ctx.fillText(E.next,X,y+40);
@@ -1292,7 +1292,7 @@ function renderSignal916(sl,idx,total){
   signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
   const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
   const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
-  const TAGS={hook:postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",reveal:"STATUS: IN PLAIN SIGHT",status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE",receipts:"STATUS: PUBLIC RECORD",end:"STATUS: CASE CLOSED"};
+  const TAGS={hook:postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",reveal:"STATUS: IN PLAIN SIGHT",status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE",receipts:"STATUS: PUBLIC RECORD",end:"STATUS: FILED"};
   const tag=TAGS[sl.type]||null;
   let y=TOP+4;
   if(tag){y+=n9Tag(ctx,T,tag,X,y)+40}
