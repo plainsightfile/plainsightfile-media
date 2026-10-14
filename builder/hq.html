@@ -1191,9 +1191,12 @@ function takeLocation(text){
    Readable content: x 72 to 930 and y 210 to 1440; below y 840 the right edge steps in to x 880 for TikTok's
    like/comment/share column. Under y 1440 (TikTok's name, caption and sound row) sits a brand band that is
    fine to be covered: nothing a viewer must read goes there. */
-const TTN={w:1080,h:1920,top:210,bottom:1440,left:72,right:930,railFrom:840,railRight:880};
+/* Measured on a posted video (iPhone, October 14, 2026): the video is scaled to fill the screen height, so about 49 px
+   is cropped from each side; TikTok's search bar and tabs cover y 0 to 250; the button rail covers x 900 and up from y 840
+   to 1570; the name and caption start near y 1600. */
+const TTN={w:1080,h:1920,top:280,bottom:1440,left:88,right:930,railFrom:840,railRight:880};
 const NATIVE916=true;
-const N9={top:300,handleY:1426,exBottom:1376,maxS:170};
+const N9={top:372,handleY:1426,exBottom:1376,maxS:170};
 function n9Right(lineTop,lineH){return lineTop+lineH>TTN.railFrom?TTN.railRight:TTN.right}
 /* wrap() with a width that depends on the line: lines reaching below y 840 get the narrower width */
 function n9Wrap(ctx,toks,widthOf,pad){
@@ -1241,13 +1244,13 @@ function n9Meta(ctx,T,idx,total,sl){
   const X=TTN.left,R=TTN.right,fno=(filenoEl.value.trim()||"000");
   ctx.textBaseline="alphabetic";ctx.font=`400 30px ${JBM}`;spaced(ctx,"1px");
   const left=`[ ${typeWord().toUpperCase()}_${fno} ] CLEARANCE: PUBLIC`;
-  ctx.textAlign="left";ctx.fillStyle=T.muted;ctx.fillText(left,X,246);
+  ctx.textAlign="left";ctx.fillStyle=T.muted;ctx.fillText(left,X,316);
   const room=R-(X+ctx.measureText(left).width+36);ctx.textAlign="right";
-  if(sl.type==="hook"){ctx.fillStyle=T.muted;ctx.fillText(isoDay(),R,246)}
+  if(sl.type==="hook"){ctx.fillStyle=T.muted;ctx.fillText(isoDay(),R,316)}
   else{const page=sl.type==="receipts"?"RECEIPTS":sl.type==="end"?"END":`${String(idx+1).padStart(2,"0")}/${String(total).padStart(2,"0")}`;
-    ctx.fillStyle=T.muted;ctx.fillText(ctx.measureText(page).width<=room?page:"",R,246)}
+    ctx.fillStyle=T.muted;ctx.fillText(ctx.measureText(page).width<=room?page:"",R,316)}
   ctx.textAlign="left";spaced(ctx,"0px");
-  n9Ticks(ctx,T,idx,total,272);
+  n9Ticks(ctx,T,idx,total,342);
 }
 function n9Foot(ctx,T){
   ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
