@@ -114,6 +114,7 @@ if (cmd === "prompts") {
     const rec = body.find(s => s.type === "receipts");
     if (rec && !rec.items.length) issues.push("the RECEIPTS slide lists no sources");
     if (p.type === "memo" && !types.includes("take")) warnings.push("a Memo usually has a TAKE slide");
+    if (!/^[\s*_]*STAMP[*_]*\s*:/im.test(p.script || "")) warnings.push("no STAMP line: the hook stamp falls back to CLASSIFIED");
     H.wordIssues(slides).forEach(t => issues.push(t));
     H.emphasisIssues(slides).forEach(t => issues.push(t));
     if (tm.pre > 40) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 40 s or less)`);

@@ -63,7 +63,9 @@ if (cmd === "numbers") {
   if (ck.allegation_present) reasons.push("mentions an allegation");
   if (arr(ck.source_changes).length) reasons.push("a source has an update or correction notice");
   if (p.type === "memo") reasons.push("Memo (opinion)");
-  const ok = ck.verdict === "PASS" && !flags.length && !issues.length;
+  const comedy = ck.comedy && typeof ck.comedy === "object" ? ck.comedy : null;
+  const flat = !!(comedy && Number(comedy.score) > 0 && Number(comedy.score) < 3);
+  const ok = ck.verdict === "PASS" && !flags.length && !issues.length && !flat;
   const now = new Date().toISOString();
   const {execFileSync} = await import("node:child_process");
   const slot = JSON.parse(execFileSync(process.execPath, [path.join(HERE, "slot.mjs"), "--day", opt.date, "--slot", opt.slot], {encoding: "utf8"}));
@@ -73,11 +75,14 @@ if (cmd === "numbers") {
     script: p.script, caption: p.caption, pinned: p.pinned, locPlace: p.locPlace || "", locCountry: p.locCountry || "", look: p.look || "auto",
     secs: lint.stats ? lint.stats.secs_total : null, slides: lint.stats ? lint.stats.slides : null,
     checker: {verdict: ck.verdict || "FLAG", flags, riskiest_claim: ck.riskiest_claim || null, quotes: arr(ck.quotes), allegation_present: !!ck.allegation_present,
-      source_changes: arr(ck.source_changes), injection_suspected: arr(ck.injection_suspected), rounds: Number(opt.rounds || 1), checkedAt: now},
+      source_changes: arr(ck.source_changes), injection_suspected: arr(ck.injection_suspected), rounds: Number(opt.rounds || 1), checkedAt: now,
+      comedy: comedy ? {score: Number(comedy.score) || null, best_line: comedy.best_line || "", flattest_slide: comedy.flattest_slide || "", suggestion: comedy.suggestion || ""} : null},
     lint: {issues, warnings: arr(lint.warnings)},
     tick: {required: reasons.length > 0, reasons},
     status: ok ? "ready" : "needs_you",
-    statusNote: ok ? (opt.note || "") : (issues.length ? "Checks still failing: " + issues.join("; ") : "The checker flagged something it couldn't clear. See below."),
+    statusNote: ok ? (opt.note || "") : (issues.length ? "Checks still failing: " + issues.join("; ")
+      : flags.length || ck.verdict !== "PASS" ? "The checker flagged something it couldn't clear. See below."
+      : "Accurate, but the joke check says it's flat (" + comedy.score + "/5). Use Fix with a note, or approve if you like it."),
     hash: packetHash(p), createdAt: now, updatedAt: now,
     approvedAt: null, approvedHash: null
   };

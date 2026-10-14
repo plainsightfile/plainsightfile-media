@@ -15,9 +15,9 @@ STEP 2. Split the slides, caption and pinned comment into atomic claims, includi
 - Time words: "just", "now", "this week", "today" need a source date within 7 days of TODAY.
 - Location lines, page numbers and "classified location" claims must be literally true.
 - Receipts: authors, titles and dates appear in the sources; nothing invented.
-Satire devices are fine when they are obviously framing (TOP SECRET, CLASSIFIED, a fake "case status", a mock ledger) as long as the literal truth test below passes.
+The account's satire works by wearing the conspiracy-post COSTUME (loud, UPPERCASE, "they", "leaked", "the documents") and puncturing it with the public record. Costume words are framing, not claims: TOP SECRET, CLASSIFIED, LEAKED, EYES ONLY, REDACTED, THEY DON'T WANT YOU TO KNOW, WHAT THEY'RE NOT TELLING YOU, THE DOCUMENTS, OUR SOURCES, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS, I'M JUST ASKING QUESTIONS, the hook's rubber stamp (with its "*PUBLIC RECORD" footnote), a fake "case status", a mock ledger. They are fine when the puncture (the public source) is on the same slide. FAIL costume that is pointed at an accusation instead of the record ("they hid", "cover-up", "rigged", "lied") without an official finding, and FAIL alarm words ("SHOCKING", "BOMBSHELL") that describe the subject rather than the dullness of the source.
 
-STEP 3. Literal truth test: for each slide and the caption's first sentence, delete stock satire phrases (TOP SECRET, CLASSIFIED, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS) and state what a reasonable viewer concludes. FAIL if that conclusion is stronger than the sources.
+STEP 3. Literal truth test: for each slide and the caption's first sentence, delete the costume words listed above and state what a reasonable viewer concludes. FAIL if that conclusion is stronger than the sources.
 
 STEP 4. Screenshot test: for each slide alone, FAIL if it is inaccurate on its own, separates a claim from its limiting qualifier, states a false claim even ironically or as a question, or would work as a sincere conspiracy post. Health, vaccine, climate, election, public debt or "elites" topics: FAIL if the conspiratorial register points at the science or the data rather than an official's words or an institution's records.
 
@@ -26,6 +26,8 @@ STEP 5. Frames: view every image with Read. FAIL any frame with text outside the
 STEP 6. Consistency: every number and name in the caption appears on a slide or in a source; caption and slides do not disagree. A Memo's caption begins "Opinion: " and its opinion is clearly marked as the account's view.
 
 STEP 7. Pick the single riskiest claim (the one most damaging if wrong) and quote its source sentence. List every direct quote in the post with its speaker and the verbatim source sentence.
+
+STEP 8 (does not affect the verdict). Joke check: rate how well the satire lands for an ordinary viewer scrolling past, 1 to 5. 1 = reads as a news report or fact-check; 2 = one joke, mostly a report; 3 = a clear parody voice and a few lines land; 4 = most slides have a costume setup and a puncture, with at least one line people would share; 5 = funny all the way through. Name the best line, the flattest slide, and one specific suggestion that would make it funnier WITHOUT changing any fact.
 
 Output ONLY this JSON, nothing before or after it:
 {"verdict":"PASS|FLAG",
@@ -36,7 +38,8 @@ Output ONLY this JSON, nothing before or after it:
  "allegation_present":false,
  "source_changes":[{"url":"","note":""}],
  "injection_suspected":[],
- "frames":[{"frame":1,"verdict":"PASS|FAIL","note":""}]}
+ "frames":[{"frame":1,"verdict":"PASS|FAIL","note":""}],
+ "comedy":{"score":3,"best_line":"","flattest_slide":"","suggestion":""}}
 verdict is PASS only if flags is empty. allegation_present is true if the post mentions any wrongdoing that is alleged rather than ruled on. source_changes lists any update or correction notice you saw. Never use em dashes.
 
 TODAY: {TODAY}
