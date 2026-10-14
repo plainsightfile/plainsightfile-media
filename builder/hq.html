@@ -348,7 +348,7 @@ _title_   = italics
             <button id="capBuild">Build from script</button>
             <button id="capCopy">Copy</button>
           </div>
-          <p class="hint">One paragraph, as TikTok shows it. About the first 125 characters show before "more". Aim for 500 to 1,200 characters; 2,000 is the hard cap.</p>
+          <p class="hint">Short paragraphs with blank lines between them. About the first 125 characters show before "more". Aim for 500 to 1,200 characters; 2,000 is the hard cap.</p>
           <label for="pinText" class="label" style="margin-top:6px"><span>Pinned comment</span><span id="pinCount" class="status" style="letter-spacing:0;text-transform:none"></span></label>
           <textarea id="pinText" readonly style="min-height:70px" aria-label="Pinned comment"></textarea>
           <div class="row"><button id="pinCopy">Copy pinned comment</button></div>
@@ -694,6 +694,8 @@ STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL an
 - The last slide starts with "RECEIPTS: " followed by a short line, then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
 - Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words. Highlight only what the eye must land on: the number, the contradiction, or the one quoted word that carries the joke. Never a whole clause or a source name. A limiting qualifier ("not fraud", "estimate") stays on the same slide in full-size type whether or not it is highlighted. A slide may have no highlight. ||words|| draws a redaction bar and is not a highlight.
 
+LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
+
 Output format (output ONLY this, nothing else):
 - Line 1: "DEVICE: " plus the name of the device you used.
 - Line 2: "LOCATION: City, Region / Country" for where the story happened (country only, or a region like European Union, if there is no single city). Use only places stated in the material.
@@ -720,6 +722,8 @@ Rules:
 - Comedy: most slides get a beat (costume, then puncture). Include one self-aware wink at the genre that adds no fact (e.g. "In fairness, which conspiracy accounts never are:") and a callback to the hook in the TAKE or CASE STATUS. The TAKE is the sharpest line in the memo: short, dry, and following only from facts shown. Read each slide as a stranger scrolling past; if they wouldn't smile, sharpen it.
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
 - Write for an international English-speaking audience: name the country, explain local institutions briefly, label currencies (C$, US$, £, €).
+
+LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
 
 Output format (output ONLY the script, nothing else):
 - Line 1: "DEVICE: Spin and record" (or the name of the toolkit device you used instead).
@@ -836,8 +840,10 @@ function fit(ctx,toks,font,maxW,maxH,lh,maxS,minS){
 function drawLines(ctx,res,font,x,y,lh,col){
   const {s,lines,pad}=res; ctx.font=font(s); ctx.textBaseline="alphabetic";
   const sp=ctx.measureText(" ").width;
+  let gaps=0;
   lines.forEach((line,i)=>{
-    const base=y+s*0.82+i*s*lh; let cx=x;
+    if(line.para&&i>0)gaps+=(typeof PARA==="number"?PARA:0);
+    const base=y+s*0.82+(i+gaps)*s*lh; let cx=x;
     // group runs
     const runs=[]; line.forEach(tk=>{const last=runs[runs.length-1]; if(last&&last.s===tk.s&&!tk.glue)last.words.push(tk.t); else runs.push({s:tk.s,words:[tk.t],glue:!!tk.glue})});
     runs.forEach((r,ri)=>{
@@ -861,7 +867,7 @@ function drawLines(ctx,res,font,x,y,lh,col){
       if(ri<runs.length-1&&!runs[ri+1].glue)cx+=sp;
     });
   });
-  return lines.length*s*lh;
+  return (lines.length+gaps)*s*lh;
 }
 
 /* A highlighter stroke around a box: ragged ends, slightly uneven edges and a small tilt, seeded by the words so a
@@ -1205,12 +1211,15 @@ const NATIVE916=true;
 const N9={top:372,handleY:1426,exBottom:1376,maxS:170};
 function n9Right(lineTop,lineH){return lineTop+lineH>TTN.railFrom?TTN.railRight:TTN.right}
 /* wrap() with a width that depends on the line: lines reaching below y 840 get the narrower width */
+/* A line break the writer typed starts a new beat: it gets PARA of a line of extra space above it. */
+const PARA=0.45;
+function paraLines(lines){return lines.reduce((a,l,i)=>a+(l.para&&i>0?PARA:0),0)}
 function n9Wrap(ctx,toks,widthOf,pad){
-  const sp=ctx.measureText(" ").width,lines=[];let cur=[],w=0;
+  const sp=ctx.measureText(" ").width,lines=[];let cur=[],w=0,paras=0;
   const tw=tk=>textW(ctx,tk)+((tk.s==="e"||tk.s==="r")?pad*2:0);
   for(const tk of toks){
-    if(tk.nl){lines.push(cur);cur=[];w=0;continue}
-    const maxW=widthOf(lines.length),t=tw(tk),add=cur.length&&!tk.glue?sp:0;
+    if(tk.nl){lines.push(cur);cur=[];cur.para=true;paras++;w=0;continue}
+    const maxW=widthOf(lines.length+paras*PARA),t=tw(tk),add=cur.length&&!tk.glue?sp:0;
     if(cur.length&&!tk.glue&&w+add+t>maxW){
       /* never split a highlight: carry the whole run (e.g. "9 of 37") to the next line */
       let j=cur.length;if(tk.s==="e")while(j>0&&cur[j-1].s==="e")j--;
@@ -1234,7 +1243,7 @@ function n9Fit(ctx,toks,font,x,top,room,lh,maxS,minS,bias){
     ctx.font=font(s);const pad=s*0.12,widest=Math.max(0,...toks.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width));
     let y=top,lines,h;
     for(let pass=0;pass<3;pass++){
-      lines=n9Wrap(ctx,toks,i=>n9Right(y+i*s*lh,s*1.1)-x,pad);h=lines.length*s*lh;
+      lines=n9Wrap(ctx,toks,i=>n9Right(y+i*s*lh,s*1.1)-x,pad);h=(lines.length+paraLines(lines))*s*lh;
       const ny=top+Math.max(0,room-h)*bias;if(Math.abs(ny-y)<1)break;y=ny;
     }
     out={s,lines,pad,y,h};
@@ -1740,7 +1749,7 @@ function capStats(){
   checkDash();scheduleSave();
   const v=capEl.value, n=(v.match(/#[\wÀ-ɏ]+/g)||[]).length, bad=(v.match(/#[\wÀ-ɏ]+/g)||[]).filter(t=>BANNED_TAGS.includes(t.toLowerCase()));
   const el=$("capCount");
-  el.textContent=`${v.length.toLocaleString()} characters (aim 500 to 1,200, cap 2,000) · ${n} hashtag${n===1?"":"s"}`+(n>5?" · use 5 or fewer":"")+(bad.length?" · remove "+bad.join(" "):"")+(/\n/.test(v.trim())?" · has line breaks: TikTok will strip them":"");
+  el.textContent=`${v.length.toLocaleString()} characters (aim 500 to 1,200, cap 2,000) · ${n} hashtag${n===1?"":"s"}`+(n>5?" · use 5 or fewer":"")+(bad.length?" · remove "+bad.join(" "):"")+"";
   el.className="status"+((v.length>CAP_LIMIT||n>5||bad.length)?" err":"");
   const pc=capEl.value.trim()||scriptEl.value.trim()?pinnedComment():"";
   $("pinText").value=pc;$("pinCount").textContent=pc?`${pc.length} / 150`:"";$("pinCount").className="status"+(pc.length>150?" err":"");
@@ -1755,7 +1764,7 @@ function storyFacts(){
 }
 /* ---------- TikTok caption: hard cap 2,000 characters (TikTok allows 2,200; v2 keeps room) ---------- */
 const CAP_LIMIT=2000;
-const SHORTEN_RULES=`Shorten this TikTok caption to at most {N} characters in total. It is one paragraph. Keep the first sentence, the "Receipts:" list, the comment question, the sign-off, the File No. or Memo No. and the hashtags exactly as they are. Cut or tighten the context sentences only, keeping the kicker and any "unknown", "denied" or other-side sentence; keep facts and attributions accurate and never add anything. One paragraph, no line breaks. Never use em dashes. Output ONLY the caption.\n\nCaption:\n`;
+const SHORTEN_RULES=`Shorten this TikTok caption to at most {N} characters in total. Keep its paragraph layout and line breaks. Keep the first sentence, the "Receipts:" list, the comment question, the sign-off, the File No. or Memo No. and the hashtags exactly as they are. Cut or tighten the context sentences only, keeping the kicker and any "unknown", "denied" or other-side sentence; keep facts and attributions accurate and never add anything. Keep the blank lines between paragraphs. Never use em dashes. Output ONLY the caption.\n\nCaption:\n`;
 function fitCaption(t,max){
   if(t.length<=max)return t;
   const blocks=t.split(/\n\s*\n/);
@@ -1834,7 +1843,7 @@ Rules:
 - If something is an allegation, say who alleges it and include the other side's response.
 - Aim the irony at powerful institutions, companies and officials, never at ordinary people, the people affected, or the viewer.
 - Never state the false or exaggerated version of a claim, not even ironically or as a question.
-- Write ONE paragraph with no line breaks (TikTok strips them).
+- Layout: short paragraphs separated by one blank line, so it's easy to read on a phone. One idea per paragraph, 1 to 3 sentences each. Follow the order below; each numbered item starts its own paragraph (items 7 and 8 share one).
 
 IN THIS ORDER:
 1. First sentence: 100 characters or fewer, names the institution and the country, ends with 📁. Sharp through contrast, not outrage: a jarring contrast, a surprising number or an exact quote. Loaded verbs need proof: "buried" (the fact sits deep in a document), "quietly" (no announcement was found), "admitted" (the actor said it themselves). Never "cover-up", "lied" or "hid" unless an official finding says so. No question marks, no "you won't believe", no fake urgency. It must be accurate, and read as satire, even if it is the only thing someone sees.
@@ -1844,7 +1853,7 @@ IN THIS ORDER:
 3. What is still unknown, if anything, in one sentence.
 4. Kicker: one short line landing the irony on a fact already stated. It may call back to the hook's catchphrase, now answered (e.g. "The money was in the annual report.").
 5. One comment question about a document, an institution or the next File. Never about a group of people, never "who's to blame" (e.g. "Which public document should File 008 read?").
-6. "Receipts:" then the sources as Chicago-style bibliography entries (18th edition) without URLs and without underscores, separated by " / ". Use only authors, titles and dates stated in the material.
+6. "Receipts:" on its own line, then each source on its own line starting with "• ", as a Chicago-style bibliography entry (18th edition) without URL and without underscores. Use only authors, titles and dates stated in the material.
 7. This exact sign-off: {SIGNOFF}
 8. Then: {NUMLINE}
 9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject (e.g. #euaudit) and one is the country or region (e.g. #europeanunion). No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
@@ -1888,17 +1897,26 @@ async function writeCaption(fromDraft){
 }
 $("capAI").addEventListener("click",()=>writeCaption(false));
 $("capBuild").addEventListener("click",()=>{capEl.value=fitCaption(buildCaption(),CAP_LIMIT-60);store("caption",capEl.value);capStats();$("capStatus").className="status";$("capStatus").textContent="Built from the script. Edit freely."});
-/* TikTok (via Metricool) drops line breaks. Rebuild the caption as flowing sentences, receipts joined with semicolons. */
+/* Caption layout (October 14): short paragraphs separated by blank lines; "Receipts:" then one "• " line per source;
+   hashtags last. Lines inside a paragraph are joined into sentences. */
 function tiktokCaption(t){
-  const out=[];let rec=[],tags="";
-  const flush=()=>{if(rec.length){out.push(rec.join(" / ")+".");rec=[]}};
-  String(t).split("\n").map(l=>l.trim()).filter(Boolean).forEach(l=>{
-    if(/^#/.test(l)){tags=l;return}
-    if(/^[•\-]\s+/.test(l)){rec.push(l.replace(/^[•\-]\s+/,"").replace(/[.;]$/,""));return}
-    flush();out.push(/[.!?:\u{1F4C1}"')]$/u.test(l)||/#[\wÀ-ɏ]+$/.test(l)?l:l+".");
+  const paras=String(t).replace(/\r/g,"").split(/\n\s*\n/).map(p=>p.split("\n").map(l=>l.trim()).filter(Boolean)).filter(p=>p.length);
+  const out=[];let tags="";
+  const end=l=>/[.!?:\u{1F4C1}"')\u201D\u2019]$/u.test(l)||/#[\wÀ-ɏ]+$/.test(l)?l:l+".";
+  paras.forEach(lines=>{
+    const block=[];let prose=[];
+    const flush=()=>{if(prose.length){block.push(prose.map(end).join(" "));prose=[]}};
+    lines.forEach(l=>{
+      if(/^#/.test(l)&&!/\s[^#\s]/.test(l.replace(/#[\wÀ-ɏ]+/g,""))){tags=(tags?tags+" ":"")+l;return}
+      if(/^[•\-]\s+/.test(l)){flush();block.push("• "+l.replace(/^[•\-]\s+/,"").replace(/[;]$/,""));return}
+      if(/^Receipts:?$/i.test(l)){flush();block.push("Receipts:");return}
+      if(/^(File|Memo) No\. ?\w+$/.test(l)){flush();block.push(l);return}
+      prose.push(l);
+    });
+    flush();if(block.length)out.push(block.join("\n"));
   });
-  flush();if(tags)out.push(tags);
-  return noDash(out.join(" "));
+  if(tags)out.push(tags);
+  return noDash(out.join("\n\n"));
 }
 $("thBuild").addEventListener("click",renderThreads);
 $("pinCopy").addEventListener("click",async e=>{

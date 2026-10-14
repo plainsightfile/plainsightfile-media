@@ -8,7 +8,7 @@ Improve the script:
 3. Costume words, 2 to 4 across the post, each once, each answered by its public payoff on the SAME slide: TOP SECRET, CLASSIFIED, LEAKED, EYES ONLY, REDACTED, THEY DON'T WANT YOU TO KNOW, WHAT THEY'RE NOT TELLING YOU, THE DOCUMENTS, OUR SOURCES, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS, I'M JUST ASKING QUESTIONS. Never WAKE UP, FOLLOW THE MONEY, SHEEPLE, COVER-UP, RIGGED.
 4. One self-aware wink at the conspiracy genre that adds no fact ("In fairness, which conspiracy accounts never are:", "Our sources: their website.").
 5. A callback: the hook's costume phrase returns, answered, in CASE STATUS, the TAKE or the last body slide.
-6. Shorter punchlines. Cut words that serve neither setup nor puncture.
+6. Line breaks: each beat on its own line within the slide (costume line, then puncture line), usually 2 or 3 short lines per slide. Shorter punchlines. Cut words that serve neither setup nor puncture.
 
 Hard limits (break none of them):
 - Change WORDING, never FACTS. Keep every number, name, date, quote, qualifier and caveat exactly as the draft has it, on the same slide. Add no fact, number, quote or claim that is not already in the draft or the story notes below.

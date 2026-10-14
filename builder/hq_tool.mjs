@@ -133,7 +133,6 @@ if (cmd === "prompts") {
     if (cap.length > H.CAP_LIMIT) issues.push(`caption is ${cap.length} characters (cap ${H.CAP_LIMIT})`);
     else if (cap.length > 1200) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
     if (cap.length < 500) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
-    if (/\n/.test(cap.trim())) issues.push("caption has line breaks");
     const num = (p.type === "memo" ? "Memo" : "File") + " No. " + p.fileno;
     if (!cap.includes(num)) issues.push(`caption does not include "${num}"`);
     if (p.type === "memo" && !/^Opinion:/.test(cap.trim())) issues.push('a Memo caption must begin with "Opinion: "');
