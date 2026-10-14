@@ -1,0 +1,2234 @@
+<title>Plain Sight HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one app, four tabs. Stories = wire desk (queue + open story). Studio = file bar, workflow steps on the left, live slide preview on the right. Sources = feed registry. Settings = account, backup, profile pictures. Styled in the Signal brand: grid paper, ink, lime. */
+:root{
+  --bg:#F3F4EF; --panel:#FBFBF8; --line:#D9DCD3; --fg:#0B0D10; --muted:#5E6670;
+  --accent:#3F7A00; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#B42318; --field:#FFFFFF; --ok:#2F6B3A; --warn:#8A5A00; --grid:rgba(11,13,16,.045);
+  --display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono","Courier New",Courier,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0D10; --panel:#14171B; --line:#2A2F36; --fg:#E9ECEF; --muted:#8A929B;
+  --accent:#C6FF3D; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0D10; --panel:#14171B; --line:#2A2F36; --fg:#E9ECEF; --muted:#8A929B;
+  --accent:#C6FF3D; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 56px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:2px solid var(--fg)}
+h1{font:700 clamp(30px,5vw,46px)/1 var(--display);letter-spacing:-.02em;margin:0}
+h1 span{background:var(--hi);color:var(--hi-fg);padding:0 .14em}
+.tag{font:13px/1.4 var(--mono);color:var(--muted);max-width:52ch;margin:6px 0 0}
+a{color:var(--fg)}
+a.btnlink{font:600 14px/1 var(--body);border:1px solid var(--fg);border-radius:4px;padding:10px 14px;text-decoration:none;display:inline-block}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:14px}
+.tab{background:transparent;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:700 13px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+button{font:600 14px/1 var(--body);border-radius:4px;padding:10px 14px;cursor:pointer;border:1px solid var(--fg);background:transparent;color:var(--fg)}
+button.primary{background:var(--hi);border-color:var(--hi);color:var(--hi-fg)}
+button.small{padding:7px 10px;font-size:13px}
+button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+.filters .grow{flex:1}
+select,textarea{background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:14px/1.4 var(--mono);padding:8px}
+.desk{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.desk{grid-template-columns:minmax(0,1fr)}}
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.item{width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:7px;color:var(--fg);font:inherit;cursor:pointer}
+.item[aria-current="true"]{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg)}
+.item .t{font:700 18px/1.2 var(--display);letter-spacing:-.01em}
+.meta{font:12px/1.4 var(--mono);color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:700 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:4px 6px;display:inline-block;color:var(--muted)}
+.chip.ok{color:var(--ok)} .chip.warn{color:var(--warn)} .chip.bad{color:var(--err)}
+.detail{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.detail h2{font:700 clamp(24px,3.2vw,34px)/1.1 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+.sec h3{font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.sec h3.caution{color:var(--err)}
+ul.plain{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+.reveal{border-left:6px solid var(--hi);background:var(--field);padding:12px 14px;font:700 20px/1.3 var(--display);text-wrap:balance}
+.hook{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--line);padding:10px 0}
+.hook:first-child{border-top:0;padding-top:0}
+.hooktext{font:700 17px/1.25 var(--display);min-width:0}
+.rc{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding:9px 0}
+.rc:first-child{border-top:0;padding-top:0}
+.rc .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rc a{overflow-wrap:anywhere}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font:13px/1.4 var(--mono);color:var(--muted);min-height:1.4em}
+.status.err{color:var(--err)}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:6px;padding:22px;color:var(--muted)}
+.empty strong{display:block;font:700 20px/1.1 var(--display);color:var(--fg);margin-bottom:6px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{text-align:left;padding:10px 12px;border-top:1px solid var(--line);vertical-align:top;font-size:14px}
+thead th{border-top:0;font:700 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td .n{font-weight:600}
+td .sub{font:12px/1.4 var(--mono);color:var(--muted);display:block;margin-top:2px}
+td code{font:12px/1.4 var(--mono);overflow-wrap:anywhere;display:block;margin-bottom:6px}
+.srcbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+#fallback{width:100%;min-height:120px;margin-top:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* ---------- studio ---------- */
+.studio{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.studio{grid-template-columns:minmax(0,1fr)}}
+.sdesk{display:flex;flex-direction:column;gap:18px;min-width:0}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.label{font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.studio h2{font:700 22px/1.1 var(--display);margin:0}
+p.hint{margin:0;color:var(--muted);font-size:13.5px}
+.studio textarea,.studio input[type=text],.studio select{width:100%;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:14px/1.45 var(--mono);padding:10px}
+textarea{resize:vertical}
+#script{min-height:320px}
+#story{min-height:120px}
+textarea:focus,input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.studio .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+details summary{cursor:pointer;font:700 13px var(--mono);color:var(--muted)}
+details pre{white-space:pre-wrap;font:13px/1.5 var(--mono);background:var(--field);border:1px solid var(--line);padding:10px;border-radius:4px;margin:8px 0 0;overflow-x:auto}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.approved{font:700 13px var(--mono);color:var(--ok)}
+.board{min-width:0;display:flex;flex-direction:column;gap:14px}
+.boardbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.slides{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+figure.slide{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+figure.slide.tt img{aspect-ratio:9/16}
+figure.slide.sq img{aspect-ratio:1}
+.seg{display:inline-flex;gap:4px}
+.threads{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.thlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.thlist li{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.thlist pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.45 var(--mono)}
+.thlist .row{justify-content:space-between}
+figure.slide img{width:100%;aspect-ratio:4/5;display:block;border-radius:3px;box-shadow:0 1px 0 var(--line),0 6px 18px rgba(0,0,0,.12);background:var(--line)}
+figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font:13px var(--mono);color:var(--muted)}
+.avatars{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:6px}
+.avatar{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0}
+.avatar img{width:100%;max-width:220px;aspect-ratio:1;border-radius:50%;display:block;box-shadow:0 0 0 1px var(--line),0 6px 18px rgba(0,0,0,.14)}
+.avatar figcaption{width:100%;max-width:220px}
+.boardhead{font:800 24px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:18px 0 0;padding-top:18px;border-top:2px solid var(--fg)}
+.note{font:13px/1.45 var(--mono);color:var(--muted);border-left:3px solid var(--accent);padding-left:10px}
+.studiobar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:16px 0}
+.studiobar select{width:auto}
+#regionSel{width:auto}
+.linked{margin:0;font:700 13px/1.4 var(--mono);color:var(--fg);border-left:4px solid var(--hi);padding-left:10px}
+label.btnlink.small{padding:7px 10px;font-size:13px}
+.platform{margin-top:28px;font:12px/1.4 var(--mono);color:var(--muted)}
+#count.over{color:var(--err)}
+/* ---------- layout refresh ---------- */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.pullbox{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0}
+.pullbox .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pullbox select{width:auto}
+.pullbox .status{text-align:right;max-width:44ch}
+.filebar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:16px 0 12px}
+.filebar label{display:flex;flex-direction:column;gap:4px;font:600 12px/1 var(--body);color:var(--muted);min-width:0}
+.filebar input,.filebar select{width:auto;min-width:0;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:14px/1.3 var(--mono);padding:8px}
+.filebar .fb-num input{width:78px}
+.filebar .fb-grow{flex:1 1 180px}
+.filebar .fb-grow input{width:100%}
+.savestate{align-self:center;margin-left:auto;white-space:nowrap}
+.linked{margin:0 0 12px}
+.studio .label{flex-wrap:wrap}
+.studio .label>span:first-child{white-space:nowrap}
+.studio .label .seg{letter-spacing:0;text-transform:none}
+.board{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
+.boardbar{position:sticky;top:0;z-index:1;background:var(--bg);padding:4px 0 10px}
+.boardbar select{width:auto;font:13px var(--mono);padding:6px}
+.boardbar .grow{flex:1}
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;margin-top:16px}
+.settings .wide{grid-column:1/-1}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.settings input[type=text]{width:100%;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:14px/1.45 var(--mono);padding:10px}
+.tabs{overflow-x:auto;scrollbar-width:none}
+@media (max-width:520px){.tab{padding:10px 9px;letter-spacing:.05em;font-size:12px;white-space:nowrap}}
+@media (max-width:900px){.board{position:static;max-height:none;overflow:visible}.pullbox{align-items:stretch}.pullbox .row{justify-content:flex-start}.pullbox .status{text-align:left}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Plain Sight <span>HQ</span></h1>
+      <p class="tag">Hidden in Plain Sight · @plainsightfile</p>
+    </div>
+    <div class="pullbox" id="pullBox">
+      <div class="row">
+        <label class="sr" for="pullFocus">Focus</label>
+        <select id="pullFocus" aria-label="Focus for this update">
+          <option value="">All regions</option>
+          <option value="Canada">Canada</option>
+          <option value="the U.S.">U.S.</option>
+          <option value="the U.K.">U.K.</option>
+          <option value="Europe">Europe</option>
+        </select>
+        <button class="primary" id="pullBtn">Update stories</button>
+      </div>
+      <div class="status" id="pullStatus" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tabStories" aria-selected="true" aria-controls="paneStories">Stories <span id="storyCount"></span></button>
+    <button class="tab" role="tab" id="tabStudio" aria-selected="false" aria-controls="paneStudio">Studio</button>
+    <button class="tab" role="tab" id="tabSources" aria-selected="false" aria-controls="paneSources">Sources <span id="sourceCount"></span></button>
+    <button class="tab" role="tab" id="tabSettings" aria-selected="false" aria-controls="paneSettings">Settings</button>
+  </div>
+
+  <section id="paneStories" role="tabpanel" aria-labelledby="tabStories">
+    <div class="filters">
+      <span class="meta">Show</span>
+      <button class="small" data-filter="all" aria-pressed="true">All</button>
+      <button class="small" data-filter="new" aria-pressed="false">New</button>
+      <button class="small" data-filter="shortlisted" aria-pressed="false">Shortlisted</button>
+      <button class="small" data-filter="used" aria-pressed="false">Used</button>
+      <button class="small" data-filter="skipped" aria-pressed="false">Skipped</button>
+      <span class="grow"></span>
+      <label class="meta" for="regionSel">Region</label>
+      <select id="regionSel">
+        <option value="all">All</option>
+        <option value="bc">B.C.</option>
+        <option value="canada">Canada</option>
+        <option value="us">U.S.</option>
+        <option value="uk">U.K.</option>
+        <option value="europe">Europe</option>
+        <option value="world">World</option>
+      </select>
+    </div>
+    <div class="desk">
+      <ul class="list" id="list"></ul>
+      <article class="detail" id="detail" aria-live="polite"></article>
+    </div>
+  </section>
+
+  <section id="paneSources" role="tabpanel" aria-labelledby="tabSources" hidden>
+    <p class="tag" style="max-width:70ch">Feeds tagged by type and region. "Readable here" feeds are the ones Update stories can read. "Blocked here" feeds still work in a normal RSS reader, so the OPML includes them.</p>
+    <div class="srcbar">
+      <button class="small" id="copyOpml">Copy OPML for an RSS reader</button>
+      <button class="small" id="copyUrls">Copy readable feed URLs</button>
+      <span class="status" id="srcStatus" aria-live="polite"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Source</th><th>Type</th><th>Region</th><th>Status</th><th>Feed</th></tr></thead>
+        <tbody id="srcBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="paneStudio" role="tabpanel" aria-labelledby="tabStudio" hidden>
+    <div class="filebar">
+      <label for="postType">Type<select id="postType">
+        <option value="file">File</option>
+        <option value="memo">Memo (opinion)</option>
+      </select></label>
+      <label for="fileno" class="fb-num"><span id="numLabel">File No.</span><input type="text" id="fileno" value="001"></label>
+      <label for="look" title="Alternating: odd file numbers dark, even light">Look<select id="look">
+        <option value="auto">Alternating</option>
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="classic">Classic manila</option>
+      </select></label>
+      <label for="locPlace" class="fb-grow">Location<input type="text" id="locPlace" placeholder="City, region"></label>
+      <label for="locCountry">Country<input type="text" id="locCountry" placeholder="Country"></label>
+      <label for="example">Load a file<select id="example">
+        <option value="">Choose…</option>
+        <optgroup label="Your saved files" id="savedFiles"></optgroup>
+        <optgroup label="Templates">
+        <option value="cargill">File 001: Cargill report (corrected)</option>
+        <option value="stelco">Stelco layoffs</option>
+        <option value="ban">U.S. import ban</option>
+        <option value="aircanada">Air Canada CEO</option>
+        </optgroup>
+      </select></label>
+      <span class="status savestate" id="saveState" aria-live="polite"></span>
+    </div>
+    <p class="linked" id="linked" hidden></p>
+  <div class="studio">
+    <div class="sdesk">
+      <section class="card" id="draftCard">
+        <div class="label"><span>1 · Facts</span></div>
+        <p class="hint">The story's facts and where each comes from. Claude only uses what's here.</p>
+        <textarea id="story" placeholder="Send a story from the Stories tab, or paste facts and sources here."></textarea>
+        <div class="row">
+          <button class="primary" id="draftBtn" hidden>Draft with Claude</button>
+          <button id="copyPrompt">Copy prompt for any AI</button>
+        </div>
+        <div class="status" id="draftStatus" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <div class="label"><span>2 · Script</span></div>
+        <textarea id="script" spellcheck="true"></textarea>
+        <details>
+          <summary>Script format</summary>
+<pre>DEVICE: Bathos drop                 (optional; not shown)
+LOCATION: City, Region / Country    (optional)
+HOOK: TOP SECRET: the boring public place.
+SOURCE: Publisher, Mon Year         (prints small)
+---
+A normal slide. One idea each.
+SOURCE: Publisher, Mon Day
+---
+REVEAL: The key fact, with a *key word*
+CLASSIFIED LOCATION: the real document or page
+---
+(Memos also take:)
+SPIN: "The official quote, word for word"
+---
+RECORD: The documented fact beside it
+---
+TAKE: Your view, clearly an opinion
+---
+CASE STATUS: Accurate conclusion. Key caveat.
+---
+RECEIPTS: Look it up yourself.
+- Chicago-style citation, _Title in italics_
+
+The end card (sign-off, next File) is added for you.
+
+*word*    = emphasis
+||word||  = redaction bar
+_title_   = italics
+---       = next slide</pre>
+        </details>
+      </section>
+
+      <section class="card">
+        <div class="label"><span>3 · Captions</span>
+          <span class="seg" role="group" aria-label="Caption platform"><button class="small" data-cap="ig" aria-pressed="true">TikTok</button><button class="small" data-cap="th" aria-pressed="false">Threads</button></span></div>
+        <div id="capPaneIG">
+          <textarea id="caption" style="min-height:200px" spellcheck="true"></textarea>
+          <div class="status" id="capCount"></div>
+          <div class="row">
+            <button class="primary" id="capAI" hidden>Write with Claude</button>
+            <button id="capBuild">Build from script</button>
+            <button id="capCopy">Copy</button>
+          </div>
+          <p class="hint">One paragraph, as TikTok shows it. About the first 125 characters show before "more". Aim for 500 to 1,200 characters; 2,000 is the hard cap.</p>
+          <label for="pinText" class="label" style="margin-top:6px"><span>Pinned comment</span><span id="pinCount" class="status" style="letter-spacing:0;text-transform:none"></span></label>
+          <textarea id="pinText" readonly style="min-height:70px" aria-label="Pinned comment"></textarea>
+          <div class="row"><button id="pinCopy">Copy pinned comment</button></div>
+          <p class="hint">Post it, then pin it within an hour. TikTok comments are capped at 150 characters.</p>
+        </div>
+        <div id="capPaneTT" hidden></div>
+        <div id="capPaneTH" hidden>
+          <div class="row"><button id="thBuild">Build Threads posts</button></div>
+          <ol class="thlist" id="thList"></ol>
+          <p class="hint">Threads is paused. If you post there, attach the slides to post 1. Receipts go last, with links.</p>
+        </div>
+        <div class="status" id="capStatus" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <div class="label"><span>4 · Approve</span></div>
+        <label class="check"><input type="checkbox" id="c1"> Every claim, stated or implied, matches a source at the same strength</label>
+        <label class="check"><input type="checkbox" id="c2"> Slide 1 and the caption's first line are accurate, and read as satire, on their own</label>
+        <label class="check"><input type="checkbox" id="c3"> Side-by-side facts share a referent; no unsourced cause, intent or guilt</label>
+        <label class="check"><input type="checkbox" id="c4"> Numbers have unit, period and base; quotes are exact; "just" and "now" are true today</label>
+        <label class="check"><input type="checkbox" id="c5"> The other side's response is in, and the joke lands on the powerful</label>
+        <label class="check"><input type="checkbox" id="c6"> Receipts and pinned comment are ready; the caption matches the slides</label>
+        <div class="row" id="dashBox" hidden><span class="status err" id="dashMsg"></span><button class="small" id="dashFix">Replace with commas</button></div>
+        <div class="approved" id="approved" hidden>Approved. Save and post.</div>
+      </section>
+    </div>
+
+    <div class="board">
+      <div class="boardbar">
+        <span class="seg" role="group" aria-label="Preview format"><button class="small" data-view="ig">Instagram</button><button class="small" data-view="tt">TikTok</button></span>
+        <select id="ttSize" aria-label="TikTok image size">
+          <option value="full">1080 × 1920 video frames (TikTok + Reels)</option>
+          <option value="fit">608 × 1080 video frames (Metricool, softer)</option>
+          <option value="square">1080 × 1080 photo post (Metricool)</option>
+        </select>
+        <label class="check" id="guideBox" style="font-size:13px"><input type="checkbox" id="showGuide"> Show app overlay</label>
+        <span class="label" id="count">Slides</span>
+        <span class="grow"></span>
+        <button id="nextFile" hidden>Start next file</button>
+        <button class="primary" id="saveAll" title="The zip has the TikTok frames, caption, pinned comment and slide timings, plus 4:5 images and Threads posts">Save all (.zip)</button>
+      </div>
+      <p class="note" id="saveNote" hidden>Saving isn't available in this view. Press and hold a slide (or right-click it) to save the image.</p>
+      <div class="slides" id="slides"></div>
+    </div>
+  </div>
+  </section>
+
+  <section id="paneSettings" role="tabpanel" aria-labelledby="tabSettings" hidden>
+    <div class="settings">
+      <section class="card">
+        <div class="label"><span>Account</span></div>
+        <label for="handle">Handle<input type="text" id="handle" value="@plainsightfile"></label>
+        <label for="signoff">Sign-off (end card and caption)<input type="text" id="signoff" value="It was never hidden. You just weren't told."></label>
+        <label for="tags">Brand hashtags (added to every caption)<input type="text" id="tags" value="#plainsightfile"></label>
+      </section>
+      <section class="card">
+        <div class="label"><span>Backup</span></div>
+        <p class="hint">Every story and source in one file. Import restores or moves them, for example into a future Mac version.</p>
+        <div class="row">
+          <button class="small" id="exportBtn">Export backup (.json)</button>
+          <label class="btnlink small" for="importFile" style="cursor:pointer">Import backup</label>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+      </section>
+      <section class="card wide">
+        <div class="label"><span>Profile picture</span></div>
+        <p class="hint">1080 × 1080, sized for Instagram's circle crop. Options follow the Look setting in the Studio.</p>
+        <div class="avatars" id="avatars"></div>
+      </section>
+    </div>
+  </section>
+
+  <textarea id="fallback" hidden aria-label="Text to copy" readonly></textarea>
+  <p class="platform" id="platformNote"></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+
+/* ==================================================================
+   PLATFORM LAYER
+   Everything that depends on WHERE the app runs lives in this block.
+   - On claude.ai: shared database, Claude drafting, and file saves
+     come from the artifact runtime.
+   - In any other browser (or a Mac app wrapper): data is kept on the
+     device, saves are normal downloads, and drafting is off until an
+     AI provider is plugged into Platform.ai.
+   A Mac version replaces only this block (e.g. a local database file,
+   an Anthropic API key, a native save dialog). Nothing below it changes.
+   ================================================================== */
+const PULL_TRIGGER="trig_011ra6FCrefqeoihApa9RTSz";
+const Platform={
+  kind:"browser",
+  db:null,   // watch(coll, cb(docs)), get(coll,id), update(coll,id,patch), set(coll,id,data)
+  ai:null,   // stream(prompt,{signal,onText}) -> {text},  json(prompt) -> object
+  save:null, // save(filename, data) -> Promise
+  pull:null, // pull(text?) -> Promise: start a story update
+  pref:{
+    get(k){try{return localStorage.getItem("ps:"+k)}catch(e){return null}},
+    set(k,v){try{localStorage.setItem("ps:"+k,v)}catch(e){}}
+  }
+};
+function localDb(){
+  const mem={},subs={};
+  const read=c=>{if(!mem[c]){try{mem[c]=JSON.parse(localStorage.getItem("psdb:"+c)||"{}")}catch(e){mem[c]={}}}return mem[c]};
+  const write=c=>{try{localStorage.setItem("psdb:"+c,JSON.stringify(mem[c]))}catch(e){}};
+  const emit=c=>{const o=read(c);const docs=Object.keys(o).map(id=>Object.assign({id},o[id]));(subs[c]||[]).forEach(cb=>cb(docs))};
+  return {
+    watch(c,cb){(subs[c]=subs[c]||[]).push(cb);emit(c)},
+    async get(c,id){const o=read(c);return o[id]?Object.assign({},o[id]):null},
+    async update(c,id,p){const o=read(c);o[id]=Object.assign({},o[id]||{},p);write(c);emit(c)},
+    async set(c,id,d){const o=read(c);o[id]=d;write(c);emit(c)}
+  };
+}
+function browserSave(filename,data){
+  const blob=data instanceof Blob?data:new Blob([data]);
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  return Promise.resolve();
+}
+async function initPlatform(){
+  const C=window.claude;
+  if(C&&C.use){
+    Platform.kind="claude";
+    const [db,sample,dl,mcp]=await Promise.all(["db","sample","downloads","mcp"].map(n=>C.use(n).catch(()=>null)));
+    if(db)Platform.db={
+      watch:(c,cb)=>db.collection(c).onSnapshot(s=>cb(s.docs.map(d=>Object.assign({id:d.id},d.data()||{}))),()=>{}),
+      get:async(c,id)=>{const snap=await db.doc(c+"/"+id).get();return snap.exists?Object.assign({},snap.data()):null},
+      update:(c,id,p)=>db.doc(c+"/"+id).update(p),
+      set:(c,id,d)=>db.doc(c+"/"+id).set(d)
+    };
+    if(sample)Platform.ai={
+      stream:(p,o)=>sample(p,Object.assign({modelTier:"default",cache:false},o)),
+      json:p=>sample.json(p,{cache:false})
+    };
+    if(dl)Platform.save=(filename,data)=>dl.save({filename,data});
+    /* Update stories: starts the "Plain Sight story pull" task (a cloud Claude run that reads the feeds and files stories here). */
+    if(mcp)Platform.pull=text=>mcp.callTool("Claude Code Remote","fire_trigger",text?{trigger_id:PULL_TRIGGER,text}:{trigger_id:PULL_TRIGGER});
+  } else {
+    Platform.db=localDb();
+    Platform.save=browserSave;
+  }
+  $("platformNote").textContent=Platform.kind==="claude"
+    ?"Running on Claude: stories are shared across your devices."+(Platform.ai?"":" Drafting is off in this view.")
+    :"Running on this device: stories are saved in this browser only. Drafting is off. Export backups from the Settings tab.";
+}
+/* ================== end platform layer ================== */
+
+/* House rule: no em dashes anywhere in posts. */
+/* Phone keyboards often insert a closing quote where an opening one belongs (e.g. after * or at the start of a line).
+   Re-pair every double quote and fix single quotes from context: an opening mark follows the start, a space or an opening bracket/markup. */
+function fixQuotes(t){
+  t=String(t);let out="",dq=false;
+  const opener=(i)=>{let j=i-1;while(j>=0&&/[*_|]/.test(t[j]))j--;return j<0||/[\s(\[{—\-\/]/.test(t[j])};
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(c==='"'||c==='“'||c==='”'){
+      if(t[i-1]==="\n")dq=false;
+      const open=opener(i)&&!(dq&&!/\S/.test(t[i+1]||" "));
+      if(open&&/\S/.test(t[i+1]||"")){out+="“";dq=true}else{out+="”";dq=false}
+    }else if(c==="'"||c==="‘"||c==="’"){
+      out+=(opener(i)&&/\S/.test(t[i+1]||""))?"‘":"’";
+    }else out+=c}
+  return out}
+function noDash(t){return fixQuotes(String(t).replace(/\s*—\s*/g,", ").replace(/^, /gm,""))}
+function dashes(t){return (String(t).match(/\u2014/g)||[]).length}
+
+function initPull(){
+  const btn=$("pullBtn"),st=$("pullStatus"),focus=$("pullFocus");let meta=null,holdUntil=0;
+  const fmt=iso=>{const d=new Date(iso);return isNaN(d)?"":new Intl.DateTimeFormat("en-CA",{timeZone:"America/Vancouver",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(d)+" PT"};
+  function paint(){
+    if(!Platform.pull){btn.hidden=true;focus.hidden=true}
+    if(Date.now()<holdUntil&&!(meta&&meta.status==="running"))return;
+    if(!meta){st.className="status";st.textContent=Platform.pull?"No update has run yet.":(Platform.kind==="claude"?"Update stories needs the Claude Code Remote connector.":"Update stories works on claude.ai.");return}
+    const running=meta.status==="running"&&meta.startedAt&&(Date.now()-new Date(meta.startedAt).getTime())<45*60e3;
+    if(Platform.pull){btn.disabled=running;btn.textContent=running?"Updating…":"Update stories"}
+    st.className="status"+(meta.status==="error"?" err":"");
+    st.textContent=running?`Updating since ${fmt(meta.startedAt)}. New stories appear as they're filed.`
+      :meta.status==="done"?`Last updated ${fmt(meta.lastRunAt)} · ${meta.added||0} new`+(meta.note?`. ${meta.note}`:"")
+      :meta.status==="error"?`Last update failed: ${meta.note||"no details"}`
+      :(meta.note||"No update has run yet.");
+  }
+  if(Platform.db)Platform.db.watch("meta",docs=>{meta=docs.find(d=>d.id==="pull")||null;paint()});
+  paint();
+  btn.addEventListener("click",async()=>{
+    if(!Platform.pull||btn.disabled)return;btn.disabled=true;st.className="status";st.textContent="Starting an update…";
+    const f=focus.value;
+    try{
+      await Platform.pull(f?`Focus this run on stories from ${f}.`:"");
+      holdUntil=Date.now()+90e3;st.textContent="Update started. It usually takes 5 to 15 minutes, and new stories appear on the Stories tab as they're filed.";
+      setTimeout(()=>{holdUntil=0;btn.disabled=false;paint()},90e3);
+    }catch(e){
+      btn.disabled=false;st.className="status err";const c=e&&e.code;
+      st.textContent=c==="server_not_connected"||c==="server_not_found"?"Add the Claude Code Remote connector in claude.ai Settings → Connectors, then try again."
+        :c==="needs_reauth"?"Reconnect Claude Code Remote in claude.ai Settings → Connectors, then try again."
+        :c==="selection_required"?"Choose which Claude Code Remote connector to use when claude.ai asks, then try again."
+        :c==="not_in_manifest"?"This page isn't allowed to use Claude Code Remote yet. Allow it when asked, then try again."
+        :c==="blocked_by_policy"||c==="approval_required"?"Your organization's settings don't allow starting updates from here."
+        :c==="tool_error"?"The update couldn't start: "+(e.message||"no details")
+        :c==="server_unavailable"||c==="upstream_error"?"Couldn't confirm the update started. Wait a minute and check this status before pressing again."
+        :c==="not_granted"||c==="capability_disabled"||c==="capability_removed"?"Update stories isn't available in this view."
+        :"The update couldn't start. Try again in a minute.";
+    }
+  });
+}
+function showTab(name){
+  ["Stories","Studio","Sources","Settings"].forEach(n=>{const on=n.toLowerCase()===name;$("pane"+n).hidden=!on;$("tab"+n).setAttribute("aria-selected",String(on))});
+  Platform.pref.set("tab",name);
+}
+["Stories","Studio","Sources","Settings"].forEach(n=>$("tab"+n).addEventListener("click",()=>showTab(n.toLowerCase())));
+
+function Studio(){
+const W=1080,H=1350,H0=1350;
+/* 9:16 frames (1080 x 1920) for TikTok and Instagram Reels. One export has to clear BOTH apps' overlays, so the slide's
+   text and graphics sit inside the strictest edge of each: Meta keeps the top 14% (270px), bottom 35% (672px) and
+   6% each side clear; TikTok's button rail needs ~140px on the right, and Instagram's rail ~227px in the lower frame.
+   Result: all content between y 270 and y 1248, x 108 to x 846. Backgrounds still run full bleed. */
+const SAFE={top:270,bottom:1248,left:65,right:940,rightLow:853,lowFrom:1152};
+const TT={w:1080,h:1920,x:34,y:198,boxW:886};
+let noSwipe=false;
+const INK="#1B1712", PAPER="#EADFC4", RED="#B8281E", MUTED="#5E5546", PAPER_DIM="#BFB396";
+const DISP='"Big Shoulders Display","Arial Narrow",Impact,sans-serif';
+const MONO='"Courier Prime","Courier New",monospace';
+
+const EXAMPLES={
+cargill:`HOOK: Officials blamed carpooling. An internal email shows what else they were worried about.
+---
+Spring 2020. Cargill's meat plant in High River, Alberta. Over *950 workers* test positive.
+---
+Almost *45%* of the workforce. *Two workers died.* Four of their close contacts died too.
+---
+Officials told workers the spread came from *carpooling* and crowded homes. *Not the plant.*
+---
+REVEAL: A public health official's email to Cargill: *"We are trying to prevent shutdowns."*
+---
+Cargill offered a *$500 attendance bonus.* The report says some workers came in *even when ill.*
+---
+Alberta says it's *reviewing* the report. Cargill says its *extensive safety measures* aren't fully reflected in it.
+---
+RECEIPTS: It's all in a 128-page report. Check page 10.
+- Tucker, Sean, and Jason Foster. _Essential and Expendable: How Alberta's COVID-19 Response Failed Cargill Workers_. Parkland Institute, September 28, 2026.
+- Strasser, Scott. "New Report Cites 'Catastrophic Failure' of Government Response to Cargill COVID-19 Outbreak in 2020." _Calgary Herald_, September 28, 2026.`,
+stelco:`HOOK: They don't want you to know who owns Canadian steel
+---
+Hundreds of Hamilton steelworkers are losing their jobs.
+---
+The company blamed *U.S. tariffs.*
+---
+But nobody's asking the obvious question. Who *owns* Stelco?
+---
+REVEAL: An *American* company. Cleveland-Cliffs. Since 2024.
+---
+American owner. American tariffs. *Canadian workers* pay the price.
+---
+RECEIPTS: Don't take our word for it. It's in their own paperwork.
+- Stelco memo to employees, as reported Sept. 28, 2026
+- Cleveland-Cliffs acquisition of Stelco, completed 2024`,
+ban:`HOOK: The "ban" they're all panicking about isn't what you think
+---
+As of midnight, the U.S. banned Canadian booze, dairy byproducts and motorcycles.
+---
+Sounds *huge.* Right?
+---
+REVEAL: About *$1 billion* out of *$880 billion* in yearly trade.
+---
+That's roughly *one-tenth of one percent.*
+---
+Most of these goods were already blocked by *50% tariffs.*
+---
+A ban on things that mostly weren't crossing anyway. Headline, or policy?
+---
+RECEIPTS: The numbers are public. Check them.
+- White House import ban list, effective Sept. 29, 2026
+- American Action Forum analysis of 2025 trade data`,
+aircanada:`HOOK: What is Air Canada's new boss bringing with him?
+---
+Air Canada's next CEO takes over by January.
+---
+He currently runs *Scandinavian Airlines.*
+---
+REVEAL: Where a *pilots' union leader* was just fired.
+---
+Pilots' unions call it *retaliation.* The airline says it was about where he was working.
+---
+Canadian pilots are demanding answers before he even arrives.
+---
+Air Canada's response? ||No comment||. Literally: *"No comment."*
+---
+RECEIPTS: This one's headed to court. Watch it.
+- ALPA Canada letter to Anko van der Werff, Sept. 2026
+- Termination challenge filed in the Swedish Labour Court`
+};
+
+const PROMPT_RULES=`You write the slides for a TikTok slideshow video from "Hidden in Plain Sight" (@plainsightfile). The account presents TRUE, sourced information styled like a "they don't want you to know" conspiracy post. The punchline is always that the "secret" was public all along. Two audiences: conspiracy-minded viewers must come away with accurate information; ordinary viewers must get the joke and follow for the satire.
+
+FACTS (non-negotiable):
+- Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
+- Literal truth test: delete every stock satire phrase from a slide and read what is left. Every claim, including implied ones (who did what, to whom, when, how much, why), must match a source sentence at the same strength. If it fails, rewrite it. Never patch it with "allegedly".
+- Screenshot test: every slide, read alone, must be accurate and must not read as a sincere conspiracy post. Keep each claim, its actor and its limiting qualifier ("estimate", "not a fraud figure", "alleged by") on the same slide.
+- Same referent: facts placed side by side refer to the same thing (same deaths, document, period, place). A quote sits only beside the fact it was actually about.
+- Cause and intent: use "because", "caused", "led to", "to hide", "covered up" or "knew" only when a source says so. Otherwise use sequence words ("then", "weeks later").
+- Allegation level: state wrongdoing as fact only with a court ruling, official finding or admission. Otherwise name who alleges it or who is investigating, and stop there.
+- Numbers carry their unit, period and comparison base. Never merge figures from different years or measures in one sentence. Label currencies (C$, US$, £, €).
+- Quotes are word for word. Paraphrase never goes inside quotation marks.
+- Use "just", "now" or "this week" only if the source dates the event within 7 days of today's date (below).
+- Never state the false or exaggerated version of a claim, not even ironically or as a question.
+- If the material includes the institution's response, one slide gives it in its own words.
+- Health, vaccines, climate, elections, public debt or "elites": the conspiratorial register points only at an official's words or an institution's records, never at the science or the data. State the scientific consensus plainly by slide 2.
+- Aim at powerful institutions, companies and officials. Never mock ordinary people, the people affected, or the viewer. Parody the conspiracy post's style, never the people who read conspiracy posts: no "sheeple", no "tinfoil".
+- Write for an international English-speaking audience: name the country and explain local institutions in a few words (e.g. "Alberta's health agency").
+- Never use em dashes (the long dash). Use a period, comma or colon instead.
+
+SATIRE:
+- Pick ONE primary comic device from this toolkit and build the post around it:
+  Bathos drop (huge conspiratorial build, then the dullest possible location) / Two-line ledger (the official's words and the documented fact side by side, no comment) / Minutes of the meeting (the story as an agenda item and its resolution) / The tally (a deadpan scoreboard of two numbers that should not both exist) / Also official (the "official story vs. the truth" trope, except both halves are on the record) / Take them at their word (treat the euphemism as literally true and keep going) / Investigation procedure (detective language for something that took one click) / Redaction reveal (||redacted|| text that turns out to be the publisher) / Understatement (the mildest bureaucratic note in response to a big gap).
+- Stock catchphrases are seasoning: at most ONE per post, chosen from TOP SECRET, CLASSIFIED, DO YOUR OWN RESEARCH, CONNECT THE DOTS, or WHO BENEFITS (only with the answer on the same slide). Do not use WAKE UP or FOLLOW THE MONEY.
+- Deadpan means: no exclamation marks, no judging adjectives ("shocking", "insane"), the flat nouns of officialdom (agenda item, finding, status, footnote), and numbers and quotes placed side by side without comment.
+- Any "classified location", "hidden in" or page reference must be literally true and from the material. If the source gives no page, name the document instead.
+
+STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL and body slides carry 12 to 22 words, one idea each; CASE STATUS carries 8 to 16; SOURCE and CLASSIFIED LOCATION lines print as exhibit tags and do not count. If a slide falls short, add the qualifier, the actor or the date from the material, never filler. The video before RECEIPTS should run 30 to 40 seconds at 3 words per second plus 1 second per slide):
+- Slide 1, HOOK: 8 to 14 words, readable in 2 seconds, names the institution and the country. It contains BOTH halves of the joke: a short UPPERCASE conspiratorial setup and its boring public payoff in sentence case (e.g. "TOP SECRET: the European Commission's press release."). If the hook would still work as a sincere conspiracy post with the payoff deleted, rewrite it. It sets up a say-vs-record gap or a specific number. Last line of the hook slide: "SOURCE: Publisher or document, Mon Year".
+- Slide 2 states the stakes, or the question the REVEAL answers.
+- The REVEAL slide lands by slide 3 at the latest. Its last line: "CLASSIFIED LOCATION: " plus the real document or page.
+- Every other fact slide ends with a short line "SOURCE: Publisher, Mon Day" naming where that fact comes from.
+- Where the material says where the record is published, include one "Do your own research:" beat pointing there.
+- The second-to-last slide starts with "CASE STATUS: " and states the accurate conclusion and its key caveat in flat words, one short sentence per finding, 8 to 16 words (e.g. "Accounts clean. Spending adverse, seventh year running. Not fraud.").
+- The last slide starts with "RECEIPTS: " followed by a short line, then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
+- Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words. Highlight only what the eye must land on: the number, the contradiction, or the one quoted word that carries the joke. Never a whole clause or a source name. A limiting qualifier ("not fraud", "estimate") stays on the same slide in full-size type whether or not it is highlighted. A slide may have no highlight. ||words|| draws a redaction bar and is not a highlight.
+
+Output format (output ONLY this, nothing else):
+- Line 1: "DEVICE: " plus the name of the device you used.
+- Line 2: "LOCATION: City, Region / Country" for where the story happened (country only, or a region like European Union, if there is no single city). Use only places stated in the material.
+- Then the slides, labelled as above, separated by a line containing only ---
+- Format each receipt as a Chicago-style bibliography entry (18th edition), without the URL. Report: Last, First, and First Last. _Title of Report_. Publisher, Month Day, Year. News article: Last, First. "Headline in Title Case." _Publication_, Month Day, Year. Press release: Organization. "Title." Press release, Month Day, Year. Wrap italic titles in _underscores_. Use only authors, titles and dates stated in the material; if an author is not given, start with the title or the organization. Never invent a detail. Prefer the primary document; a news article with loaded headline wording cannot be the only receipt for a contested number.
+
+Today's date: {TODAY}
+
+Source material:
+`;
+
+const MEMO_RULES=`You write MEMO slides for a TikTok slideshow video from "Hidden in Plain Sight" (@plainsightfile), an account known for TRUE, sourced Files styled like "they don't want you to know" posts. A memo is the account's COMMENTARY: a clearly labelled opinion, dry and sharp, that informed viewers enjoy and conspiracy-minded viewers still come away better informed from.
+
+Rules:
+- It is opinion, but every FACT it uses must come from the source material below and be attributable. Never invent numbers, names, dates, quotes or sources.
+- Facts follow the account's integrity rules: every claim, including implied ones, matches a source sentence at the same strength; each slide read alone is accurate and does not read as a sincere conspiracy post; side-by-side facts refer to the same thing; no cause, intent or guilt unless a source states it; quotes are word for word; numbers carry unit, period and base; never state the false version of a claim, even ironically or as a question.
+- Opinion can be sharp: comment freely on true, stated facts about public matters. Punch up at institutions, officials and corporations. Never mock ordinary people, victims or the viewer. No personal insults.
+- Be fair: if the material includes the other side's explanation, acknowledge it.
+- Health, vaccines, climate, elections, public debt or "elites": aim only at an official's words or an institution's records, never at the science or the data.
+- 5 to 8 slides in total, including CASE STATUS and RECEIPTS. Body slides 12 to 22 words, one idea each; if a slide falls short, add the qualifier, the actor or the date from the material, never filler. Highlight with *asterisks*: at most 2 per slide (1 on the HOOK), each 1 to 3 words, only on the number, the contradiction or the one quoted word that carries the point; never a whole clause or the opinion itself.
+- Satire voice: at most ONE stock catchphrase (TOP SECRET, CLASSIFIED, DO YOUR OWN RESEARCH, CONNECT THE DOTS, or WHO BENEFITS with the answer on the same slide). Never WAKE UP or FOLLOW THE MONEY. Facts delivered deadpan: no exclamation marks, no judging adjectives.
+- Never use em dashes (the long dash). Use a period, comma or colon instead.
+- Write for an international English-speaking audience: name the country, explain local institutions briefly, label currencies (C$, US$, £, €).
+
+Output format (output ONLY the script, nothing else):
+- Line 1: "DEVICE: Spin and record" (or the name of the toolkit device you used instead).
+- Line 2: "LOCATION: City, Region / Country" if the story has a place (omit the line if not).
+- Separate slides with a line containing only ---
+- First slide starts with "HOOK: ": 8 to 14 words, names the institution, contains both the setup and its public payoff, and works as a screenshot on its own. Last line of the hook slide: "SOURCE: Publisher or document, Mon Year".
+- The core device: one or two pairs of a slide starting "SPIN: " (an official's exact words, in quotation marks, with who said it) followed by a slide starting "RECORD: " (a documented fact from the material that sits beside it). A slide starting "TRANSLATION: " is allowed only to put jargon into plain English, never to guess at motive or intent.
+- Then one slide starting "TAKE: " with the account's view in one or two sentences. It must follow from facts already shown and add no new facts.
+- Then one slide starting "CASE STATUS: " with the verdict in five words or fewer, in bureaucratic register (e.g. "Open. Embarrassingly well documented.").
+- The last slide starts with "RECEIPTS: " then 1 to 3 lines starting with "- ", Chicago-style bibliography entries (18th edition) without URLs, italic titles in _underscores_, using only authors, titles and dates stated in the material.
+
+Today's date: {TODAY}
+
+Source material:
+`;
+function postType(){const v=document.getElementById("postType").value;return v==="memo"?"memo":"file"}
+function typeWord(){return postType()==="memo"?"Memo":"File"}
+function numLine(){return `${typeWord()} No. ${filenoEl.value.trim()||"000"}`}
+function draftRules(){return (postType()==="memo"?MEMO_RULES:PROMPT_RULES).replace("{TODAY}",isoDay())}
+
+const $=id=>document.getElementById(id);
+const scriptEl=$("script"), handleEl=$("handle"), filenoEl=$("fileno"), slidesEl=$("slides");
+let rendered=[]; // {blob, name}
+
+const store=(k,v)=>Platform.pref.set(k,v), load=k=>Platform.pref.get(k);
+
+const savedScript=load("script");scriptEl.value=savedScript!==null?savedScript:"";
+const signoffEl=$("signoff");
+const oldHandle=load("handle");
+handleEl.value=(oldHandle&&oldHandle!=="@public.record")?oldHandle:handleEl.value;
+const oldFile=load("fileno");
+filenoEl.value=(oldFile&&oldFile!=="014")?oldFile:filenoEl.value;
+const oldSign=load("signoff"); if(oldSign!==null) signoffEl.value=oldSign;
+$("story").value=load("story")||"";
+let linked=load("linked")||null;
+function setLinked(id,title,receipts){linked=id||null;store("linked",linked||"");store("linkedTitle",title||"");store("linkedReceipts",JSON.stringify(Array.isArray(receipts)?receipts:[]));showLinked()}
+function showLinked(){const e=$("linked");const t=load("linkedTitle");e.hidden=!linked;e.textContent=linked?"Working on: "+(t||linked):""}
+async function markLinkedUsed(){if(!linked||!Platform.db)return;try{await Platform.db.update("stories",linked,{status:"used"});$("capStatus").className="status";$("capStatus").textContent="Saved. The story is marked used on the Stories tab."}catch(e){}}
+showLinked();
+
+/* ---------- parsing ---------- */
+const NOTE_RE=/^[\s*_]*(SOURCE|CLASSIFIED LOCATION)[*_]*\s*[:\uFF1A]/i;
+function scriptDevice(){const m=scriptEl.value.match(/^[\s*_]*DEVICE[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);return m?m[1].replace(/[*_]+$/,"").trim():""}
+function parseScript(src){
+  const blocks=src.replace(/\r/g,"").replace(/^[\s*_]*LOCATION[*_]*\s*[:\uFF1A].*$/im,"").replace(/^[\s*_]*DEVICE[*_]*\s*[:\uFF1A].*$/im,"").split(/\n\s*---\s*\n/).map(b=>b.trim()).filter(Boolean);
+  return blocks.map((b,i)=>{
+    let type="body", text=b;
+    /* Label detection tolerates markdown bold/italics, bullets, numbering, "Slide 3 -", a label on its own line, and full-width colons. */
+    const m=b.match(/^[\s*_#>\-\u2022]*(?:\d+[.)]\s*)?(?:slide\s*\d+\s*[:.\-]?\s*)?[*_]*\s*(HOOK|REVEAL|RECEIPTS|SLIDE|SPIN|TRANSLATION|TAKE|RECORD|CASE\s+STATUS)(?:\s+SLIDE)?\s*[*_]*\s*(?:[:\uFF1A]|\n|$)[\s*_]*/i);
+    if(m){type=m[1].toLowerCase().replace(/\s+/g,""); if(type==="slide")type="body"; if(type==="casestatus")type="status"; text=b.slice(m[0].length);}
+    else if(i===0) type="hook";
+    const items=[]; const lines=[]; const notes=[];
+    /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type */
+    text.split("\n").forEach(l=>{ if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
+      else if(type!=="receipts" && NOTE_RE.test(l)){const mm=l.trim().replace(/^[*_]+|[*_]+$/g,"").match(/^(SOURCE|CLASSIFIED LOCATION)\s*[:\uFF1A]\s*(.*)$/i);if(mm)notes.push({label:mm[1].toUpperCase()+":",text:mm[2].replace(/[*_]+$/,"").trim()})}
+      else if(l.trim()) lines.push(l.trim()); });
+    return {type, text:lines.join("\n"), items, notes};
+  });
+}
+function tokenize(text){
+  text=fixQuotes(text);const toks=[];
+  text.split("\n").forEach((line,li)=>{
+    if(li>0) toks.push({nl:true});
+    let prevEndsSpace=true;
+    line.split(/(\*[^*]+\*|\|\|[^|]+\|\||(?<![\w/])_[^_]+_(?![\w]))/).forEach(seg=>{
+      if(!seg) return;
+      let s="n", t=seg;
+      if(/^\*[^*]+\*$/.test(seg)){s="e";t=seg.slice(1,-1)}
+      else if(/^\|\|[^|]+\|\|$/.test(seg)){s="r";t=seg.slice(2,-2)}
+      else if(/^_[^_]+_$/.test(seg)){s="i";t=seg.slice(1,-1)}
+      const glueFirst=!prevEndsSpace&&!/^\s/.test(seg);
+      t.split(/\s+/).filter(Boolean).forEach((w,k)=>toks.push({t:w,s,glue:k===0&&glueFirst}));
+      prevEndsSpace=/\s$/.test(seg);
+    });
+  });
+  return toks;
+}
+
+/* ---------- text layout ---------- */
+function textW(ctx,tk){if(tk.s!=="i")return ctx.measureText(tk.t).width;const f=ctx.font;ctx.font="italic "+f;const w=ctx.measureText(tk.t).width;ctx.font=f;return w}
+function wrap(ctx,toks,maxW,pad){
+  const sp=ctx.measureText(" ").width, lines=[]; let cur=[], w=0;
+  for(const tk of toks){
+    if(tk.nl){lines.push(cur);cur=[];w=0;continue}
+    const tw=textW(ctx,tk)+((tk.s==="e"||tk.s==="r")?pad*2:0);
+    const add=cur.length&&!tk.glue?sp:0;
+    if(cur.length && !tk.glue && w+add+tw>maxW){lines.push(cur);cur=[tk];w=tw}
+    else if(tk.glue && w+tw>maxW){
+      /* a glued piece like "(" + "SpaceX" overflows: carry the whole glued word to the next line */
+      let j=cur.length-1;while(j>0&&cur[j].glue)j--;
+      if(j>0){const grp=cur.splice(j);lines.push(cur);cur=grp.concat([tk]);
+        w=cur.reduce((a,t)=>a+textW(ctx,t)+((t.s==="e"||t.s==="r")?pad*2:0),0)}
+      else{cur.push(tk);w+=tw}
+    }
+    else{cur.push(tk);w+=add+tw}
+  }
+  if(cur.length)lines.push(cur);
+  return lines;
+}
+function fit(ctx,toks,font,maxW,maxH,lh,maxS,minS){
+  let res;
+  for(let s=maxS;s>=minS;s-=3){
+    ctx.font=font(s);
+    const pad=s*0.12, lines=wrap(ctx,toks,maxW,pad);
+    const widest=Math.max(0,...toks.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width));
+    res={s,lines,pad};
+    if(lines.length*s*lh<=maxH && widest<=maxW) return res;
+  }
+  return res;
+}
+function drawLines(ctx,res,font,x,y,lh,col){
+  const {s,lines,pad}=res; ctx.font=font(s); ctx.textBaseline="alphabetic";
+  const sp=ctx.measureText(" ").width;
+  lines.forEach((line,i)=>{
+    const base=y+s*0.82+i*s*lh; let cx=x;
+    // group runs
+    const runs=[]; line.forEach(tk=>{const last=runs[runs.length-1]; if(last&&last.s===tk.s&&!tk.glue)last.words.push(tk.t); else runs.push({s:tk.s,words:[tk.t],glue:!!tk.glue})});
+    runs.forEach((r,ri)=>{
+      const str=r.words.join(" "); const w=ctx.measureText(str).width;
+      if(r.s==="n"){ctx.fillStyle=col.text;ctx.fillText(str,cx,base);cx+=w}
+      else if(r.s==="i"){const f=ctx.font;ctx.font="italic "+f;const wi=ctx.measureText(str).width;ctx.fillStyle=col.text;ctx.fillText(str,cx,base);ctx.font=f;cx+=wi}
+      else if(r.s==="L"){const f=ctx.font;ctx.font="700 "+f.replace(/^(normal |bold |[1-9]00 )/,"");const wl=ctx.measureText(str).width;ctx.fillStyle=col.lab||col.text;ctx.fillText(str,cx,base);ctx.font=f;cx+=wl}
+      else if(r.s==="e"&&!col.emBg){ctx.fillStyle=col.emText;ctx.fillText(str,cx,base);cx+=w}
+      else{
+        /* keyline mode (native 9:16) clears descenders: box runs from 0.82 s above the baseline to 0.24 s below */
+        const top=col.emLine?base-s*0.82:base-s*0.84, bh=col.emLine?s*1.06:s*1.0;
+        ctx.fillStyle=r.s==="e"?col.emBg:col.redact;
+        ctx.fillRect(cx,top,w+pad*2,bh);
+        if(r.s==="e"&&col.emLine){const k=Math.max(3,Math.round(s*0.03));ctx.strokeStyle=col.emLine;ctx.lineWidth=k;ctx.strokeRect(cx+k/2,top+k/2,w+pad*2-k,bh-k)}
+        if(r.s==="e"){ctx.fillStyle=col.emText;ctx.fillText(str,cx+pad,base)}
+        cx+=w+pad*2;
+      }
+      if(ri<runs.length-1&&!runs[ri+1].glue)cx+=sp;
+    });
+  });
+  return lines.length*s*lh;
+}
+
+/* ---------- textures & marks ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function makeTexture(base,speck,seed,h){
+  const H=h||H0;
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  x.fillStyle=base;x.fillRect(0,0,W,H);
+  const r=rng(seed);
+  for(let i=0;i<Math.round(14000*H/H0);i++){x.fillStyle=speck;x.globalAlpha=r()*0.08;const s=r()*2.2;x.fillRect(r()*W,r()*H,s,s)}
+  for(let i=0;i<60;i++){x.globalAlpha=0.03+r()*0.03;x.strokeStyle=speck;x.lineWidth=1;x.beginPath();const sx=r()*W,sy=r()*H;x.moveTo(sx,sy);x.lineTo(sx+(r()-.5)*140,sy+(r()-.5)*30);x.stroke()}
+  x.globalAlpha=1;
+  const g=x.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.78);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,0.16)");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  return c;
+}
+let PAPER_TEX,INK_TEX,PAPER_TEX_T,INK_TEX_T;
+function stamp(ctx,text,cx,cy,angle,size,color,seed){
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle*Math.PI/180);
+  ctx.font=`900 ${size}px ${DISP}`;ctx.textAlign="center";ctx.textBaseline="middle";
+  const w=ctx.measureText(text).width+size*0.9, h=size*1.35;
+  const off=document.createElement("canvas");off.width=Math.ceil(w+20);off.height=Math.ceil(h+20);
+  const o=off.getContext("2d");o.translate(off.width/2,off.height/2);
+  o.strokeStyle=color;o.fillStyle=color;o.lineWidth=size*0.08;
+  o.strokeRect(-w/2,-h/2,w,h);o.lineWidth=size*0.03;o.strokeRect(-w/2+size*0.14,-h/2+size*0.14,w-size*0.28,h-size*0.28);
+  o.font=`900 ${size}px ${DISP}`;o.textAlign="center";o.textBaseline="middle";o.fillText(text,0,size*0.04);
+  o.globalCompositeOperation="destination-out";const r=rng(seed);
+  for(let i=0;i<(w*h)/60;i++){o.globalAlpha=0.35+r()*0.65;const s=r()*3+0.5;o.fillRect(r()*off.width-off.width/2,r()*off.height-off.height/2,s,s)}
+  ctx.globalAlpha=0.9;ctx.drawImage(off,-off.width/2,-off.height/2);
+  ctx.restore();
+}
+function header(ctx,fg,rule,idx,total){
+  ctx.fillStyle=fg;ctx.font=`700 30px ${MONO}`;ctx.textBaseline="alphabetic";ctx.textAlign="left";
+  ctx.fillText(`${typeWord().toUpperCase()} No. ${filenoEl.value.trim()||"000"} · CLEARANCE: PUBLIC`,90,118);
+  ctx.textAlign="right";ctx.fillText(todayStr(),990,118);ctx.textAlign="left";
+  ctx.fillStyle=rule;ctx.fillRect(90,142,900,3);ctx.fillRect(90,150,900,1);
+}
+function footer(ctx,fg,idx,total,swipe){
+  ctx.fillStyle=fg;ctx.font=`700 30px ${MONO}`;ctx.textBaseline="alphabetic";
+  ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),90,H-78);
+  ctx.textAlign="right";ctx.fillText(swipe&&!noSwipe?"SWIPE  →":`${idx+1} / ${total}`,990,H-78);ctx.textAlign="left";
+}
+function todayStr(){const d=new Date();return d.toLocaleDateString("en-CA",{year:"numeric",month:"short",day:"2-digit"}).toUpperCase()}
+
+/* ---------- slide renderers ---------- */
+const dispFont=w=>s=>`${w} ${s}px ${DISP}`;
+function renderSlide(sl,idx,total,bg){
+  if(bg===undefined)bg=true;
+  if(lookMode()!=="classic")return renderSignal(sl,idx,total,bg);
+  if(sl.type==="end")return renderClassicEnd(idx,total,bg);
+  if(sl.type==="spin"||sl.type==="take"||sl.type==="translation"||sl.type==="record"||sl.type==="status")sl=Object.assign({},sl,{type:(sl.type==="translation"||sl.type==="status")?"reveal":"body"});
+  if(sl.notes&&sl.notes.length)sl=Object.assign({},sl,{text:sl.text+"\n"+sl.notes.map(n=>n.label+" "+n.text).join("\n")});
+  const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
+  const toks=tokenize(sl.text);
+  if(sl.type==="hook"){
+    if(bg)ctx.drawImage(INK_TEX,0,0);
+    header(ctx,PAPER_DIM,PAPER_DIM,idx,total);
+    stamp(ctx,postType()==="memo"?"OPINION":"HIDDEN",postType()==="memo"?265:250,300,-7,90,RED,idx+11);
+    const f=dispFont(900), t2=tokenize(sl.text.toUpperCase());
+    const res=fit(ctx,t2,f,900,700,0.98,190,60);
+    const h=res.lines.length*res.s*0.98;
+    drawLines(ctx,res,f,90,Math.max(420,1160-h),0.98,{text:PAPER,emBg:RED,emText:PAPER,redact:PAPER});
+    footer(ctx,PAPER_DIM,idx,total,true);
+  } else if(sl.type==="reveal"){
+    if(bg)ctx.drawImage(PAPER_TEX,0,0);
+    header(ctx,MUTED,INK,idx,total);
+    stamp(ctx,"REVEALED",330,300,-8,112,RED,idx+23);
+    const f=dispFont(900);
+    const res=fit(ctx,toks,f,900,640,1.02,150,56);
+    const h=res.lines.length*res.s*1.02;
+    drawLines(ctx,res,f,90,440+Math.max(0,(680-h)/2),1.02,{text:INK,emBg:INK,emText:PAPER,redact:INK});
+    footer(ctx,MUTED,idx,total,false);
+  } else if(sl.type==="receipts"){
+    if(bg)ctx.drawImage(PAPER_TEX,0,0);
+    header(ctx,MUTED,INK,idx,total);
+    stamp(ctx,"RECEIPTS",290,285,-5,100,RED,idx+37);
+    const f=dispFont(800);
+    const res=fit(ctx,toks,f,900,300,1.02,96,44);
+    const used=drawLines(ctx,res,f,90,400,1.02,{text:INK,emBg:INK,emText:PAPER,redact:INK});
+    let y=400+used+50;
+    ctx.fillStyle=INK;ctx.fillRect(90,y,900,2);y+=40;
+    const letters="ABCDEFGH";
+    let ms=36; const mf=s=>`400 ${s}px ${MONO}`;
+    // shrink list if needed
+    for(;ms>=24;ms-=2){
+      ctx.font=mf(ms);let yy=y;
+      sl.items.forEach(it=>{yy+=ms*0.9+wrap(ctx,tokenize(it),720,0).length*ms*1.3+26});
+      if(yy<H-300)break;
+    }
+    sl.items.forEach((it,i)=>{
+      ctx.font=`700 ${Math.round(ms*0.78)}px ${MONO}`;ctx.fillStyle=RED;ctx.fillText(`EXHIBIT ${letters[i]||i+1}`,90,y+ms*0.8);
+      const r={s:ms,lines:(ctx.font=mf(ms),wrap(ctx,tokenize(it),720,0)),pad:0};
+      const hh=drawLines(ctx,r,mf,270,y,1.3,{text:INK,emBg:INK,emText:PAPER,redact:INK});
+      y+=Math.max(hh,ms*1.3)+26;
+    });
+    stamp(ctx,"HIDDEN IN PLAIN SIGHT",720,H-232,4,42,RED,idx+51);
+    const so=PAUSE_LINE;
+    if(so){ctx.font=`italic 700 30px ${MONO}`;ctx.fillStyle=INK;ctx.textAlign="left";
+      let fs=30;while(ctx.measureText(so).width>900&&fs>18){fs-=2;ctx.font=`italic 700 ${fs}px ${MONO}`}
+      ctx.fillText(so,90,H-138);ctx.fillStyle=INK;ctx.fillRect(90,H-120,900,2)}
+    footer(ctx,MUTED,idx,total,false);
+  } else {
+    if(bg)ctx.drawImage(PAPER_TEX,0,0);
+    header(ctx,MUTED,INK,idx,total);
+    const f=dispFont(800);
+    const res=fit(ctx,toks,f,900,860,1.04,132,48);
+    const h=res.lines.length*res.s*1.04;
+    drawLines(ctx,res,f,90,200+Math.max(0,(960-h)/2),1.04,{text:INK,emBg:INK,emText:PAPER,redact:INK});
+    footer(ctx,MUTED,idx,total,false);
+  }
+  return c;
+}
+
+const PAUSE_LINE="Pause to read. Full receipts in caption and pinned comment.";
+function endLines(){
+  const next=nextNumber(filenoEl.value.trim()||"000");
+  return {signoff:signoffEl.value.trim()||"It was never hidden. You just weren't told.",next:`${typeWord().toUpperCase()} ${next} NEXT.`,follow:"Follow so it finds you."};
+}
+function renderClassicEnd(idx,total,bg){
+  const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
+  if(bg!==false)ctx.drawImage(INK_TEX,0,0);
+  header(ctx,PAPER_DIM,PAPER_DIM,idx,total);
+  stamp(ctx,"CASE CLOSED",400,300,-7,84,RED,idx+61);
+  const E=endLines(),f=dispFont(900);
+  const res=fit(ctx,tokenize(E.signoff.toUpperCase()),f,900,520,0.98,150,60);
+  const h=drawLines(ctx,res,f,90,460,0.98,{text:PAPER,emBg:RED,emText:PAPER,redact:PAPER});
+  ctx.font=`700 44px ${MONO}`;ctx.fillStyle=PAPER;ctx.textBaseline="alphabetic";ctx.fillText(E.next,90,460+h+90);
+  ctx.font=`400 40px ${MONO}`;ctx.fillStyle=PAPER_DIM;ctx.fillText(E.follow,90,460+h+150);
+  footer(ctx,PAPER_DIM,idx,total,false);
+  return c;
+}
+
+/* ---------- Signal look ---------- */
+const SGF='"Space Grotesk","Helvetica Neue",Arial,sans-serif', JBM='"JetBrains Mono","Courier New",monospace';
+const SIGNAL={
+  dark:{bg:"#0B0D10",fg:"#E9ECEF",muted:"#8A929B",acc:"#C6FF3D",accInk:"#0B0D10",grid:"rgba(255,255,255,0.05)",rule:"#3A4048",meta:"#C6FF3D",bar:"#C6FF3D"},
+  light:{bg:"#F3F4EF",fg:"#0B0D10",muted:"#5E6670",acc:"#C6FF3D",accInk:"#0B0D10",grid:"rgba(11,13,16,0.07)",rule:"#C9CCC4",meta:"#3F7A00",bar:"#0B0D10"}
+};
+function lookMode(){
+  const v=$("look").value;if(v==="classic"||v==="dark"||v==="light")return v;
+  const n=parseInt((filenoEl.value.match(/\d+/)||["1"])[0],10);return n%2===1?"dark":"light";
+}
+function theme(){return SIGNAL[lookMode()]||SIGNAL.dark}
+function signalBg(ctx,w,h,T){
+  ctx.fillStyle=T.bg;ctx.fillRect(0,0,w,h);ctx.strokeStyle=T.grid;ctx.lineWidth=1.5;
+  for(let x=0;x<=w;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  for(let y=0;y<=h;y+=90){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+}
+function drawBgFor(ctx,w,h,sl){
+  const m=lookMode();
+  if(m==="classic"){const tall=h>H;ctx.drawImage((sl.type==="hook"||sl.type==="end")?(tall?INK_TEX_T:INK_TEX):(tall?PAPER_TEX_T:PAPER_TEX),0,(h===H||tall)?0:(H-h)/2,w,h,0,0,w,h);return}
+  signalBg(ctx,w,h,theme());
+}
+function locParts(){const place=$("locPlace").value.trim(),country=$("locCountry").value.trim();return {place,country}}
+function locShort(){const {place,country}=locParts();const city=place.split(",")[0].trim();return [city,country].filter(Boolean).join(", ").toUpperCase()}
+function isoDay(){return new Intl.DateTimeFormat("en-CA",{year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
+function spaced(ctx,px){try{ctx.letterSpacing=px}catch(e){}}
+function sigMeta(ctx,T,idx,total,sl){
+  const fno=(filenoEl.value.trim()||"000");
+  ctx.textBaseline="alphabetic";ctx.font=`400 28px ${JBM}`;spaced(ctx,"1px");
+  const left=`[ ${typeWord().toUpperCase()}_${fno} ] CLEARANCE: PUBLIC`;
+  ctx.textAlign="left";ctx.fillStyle=T.meta;ctx.fillText(left,96,120);
+  const room=984-(96+ctx.measureText(left).width+40);
+  ctx.textAlign="right";
+  if(sl.type==="hook"){ctx.fillStyle=T.meta;ctx.fillText(isoDay(),984,120)}
+  else{const page=sl.type==="receipts"?"RECEIPTS":sl.type==="end"?"END":`${String(idx+1).padStart(2,"0")}/${String(total).padStart(2,"0")}`;
+    /* long place names fall back to the country, then to the page number alone, so nothing overlaps */
+    const opts=[locShort(),(locParts().country||"").toUpperCase()].filter(Boolean).map(l=>`${l} · ${page}`).concat([page]);
+    const txt=opts.find(t=>ctx.measureText(t).width<=room)||page;
+    ctx.fillStyle=T.muted;ctx.fillText(txt,984,120)}
+  ctx.textAlign="left";spaced(ctx,"0px");
+}
+function sigTag(ctx,T,text,x,y){
+  ctx.font=`700 32px ${JBM}`;spaced(ctx,"1px");const w=ctx.measureText(text).width+34;
+  ctx.fillStyle=T.acc;ctx.fillRect(x,y,w,52);ctx.fillStyle=T.accInk;ctx.textBaseline="alphabetic";ctx.fillText(text,x+17,y+37);spaced(ctx,"0px");
+  return 52;
+}
+function sigLoc(ctx,T,x,y){
+  const {place,country}=locParts();if(!place&&!country)return 0;
+  const cy=y+22;ctx.strokeStyle=T.meta;ctx.lineWidth=5;ctx.beginPath();ctx.arc(x+15,cy,13,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=T.meta;ctx.beginPath();ctx.arc(x+15,cy,5.5,0,Math.PI*2);ctx.fill();
+  ctx.textBaseline="alphabetic";spaced(ctx,"2px");let cx=x+46;
+  const P=place?place.toUpperCase():"",C=country?(place?" / ":"")+country.toUpperCase():"";
+  /* shrink to fit the 888px text column; drop the country only as a last resort */
+  let sz=34,showC=!!C;const width=z=>{ctx.font=`700 ${z}px ${JBM}`;let w=ctx.measureText(P).width;if(showC){ctx.font=`400 ${z}px ${JBM}`;w+=ctx.measureText(C).width}return w};
+  while(sz>24&&width(sz)>888-46)sz-=2;
+  if(width(sz)>888-46&&P)showC=false;
+  if(P){ctx.font=`700 ${sz}px ${JBM}`;ctx.fillStyle=T.fg;ctx.fillText(P,cx,y+34);cx+=ctx.measureText(P).width}
+  if(showC){ctx.font=`400 ${sz}px ${JBM}`;ctx.fillStyle=T.muted;ctx.fillText(C,cx,y+34)}
+  spaced(ctx,"0px");return 46;
+}
+function sigFoot(ctx,T,idx,total,swipe){
+  ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
+  ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),96,H-84);
+  ctx.textAlign="right";ctx.fillText(swipe&&!noSwipe?"SWIPE →":`${idx+1}/${total}`,984,H-84);ctx.textAlign="left";spaced(ctx,"0px");
+}
+/* Small mono lines above the footer: SOURCE and CLASSIFIED LOCATION tags, and the hook's satire label.
+   Measured first so the headline type is fitted above them and nothing overlaps. */
+function prepNotes(ctx,notes){
+  if(!notes||!notes.length)return null;
+  const sz=26,lh=1.35,MAXW=888,f=s=>`400 ${s}px ${JBM}`;ctx.font=f(sz);
+  const lines=[];notes.forEach(n=>{const toks=[{t:n.label,s:"L"}].concat(tokenize(n.text));wrap(ctx,toks,MAXW,0).forEach(l=>lines.push(l))});
+  const h=lines.length*sz*lh;return {lines,sz,lh,f,h,top:H-136-h};
+}
+function drawNotes(ctx,T,p){
+  if(!p)return;
+  spaced(ctx,"1px");drawLines(ctx,{s:p.sz,lines:p.lines,pad:0},p.f,96,p.top,p.lh,{text:T.muted,lab:T.meta,emText:T.fg,emBg:null,redact:T.muted});spaced(ctx,"0px");
+}
+function sigCols(T,mode){return {text:T.fg,emBg:mode==="light"?T.acc:null,emText:mode==="light"?T.accInk:T.acc,redact:T.fg,lab:T.meta}}
+function renderSignal(sl,idx,total,bg){
+  const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
+  const mode=lookMode(),T=theme(),col=sigCols(T,mode);
+  if(bg)signalBg(ctx,W,H,T);
+  sigMeta(ctx,T,idx,total,sl);
+  const X=96,MAXW=888,toks=tokenize(sl.text);
+  const notes=(sl.notes||[]).slice();
+  if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
+  const np=sl.type==="receipts"||sl.type==="end"?null:prepNotes(ctx,notes);
+  const lim=b=>Math.min(b,np?np.top-28:b); /* lowest the headline type may reach */
+  drawNotes(ctx,T,np);
+  if(sl.type==="end"){
+    const E=endLines();
+    let y=172;y+=sigTag(ctx,T,"STATUS: CASE CLOSED",X,y)+64;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,tokenize(E.signoff),f,MAXW,560,1.06,104,52);
+    y+=drawLines(ctx,res,f,X,y,1.06,col)+70;
+    ctx.font=`700 44px ${JBM}`;spaced(ctx,"2px");ctx.fillStyle=T.meta;ctx.textBaseline="alphabetic";ctx.fillText(E.next,X,y+40);
+    ctx.font=`400 40px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,y+104);spaced(ctx,"0px");
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="hook"){
+    let y=172;y+=sigTag(ctx,T,postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",X,y)+30;
+    const lh=sigLoc(ctx,T,X,y);if(lh)y+=lh+34;else y+=10;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,lim(H-200)-y,1.05,124,56);
+    drawLines(ctx,res,f,X,y,1.05,col);
+    sigFoot(ctx,T,idx,total,true);
+  } else if(sl.type==="status"){
+    let y=172;y+=sigTag(ctx,T,"CASE STATUS",X,y)+56;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW-48,lim(H-220)-y,1.1,112,48);
+    const h=drawLines(ctx,res,f,X+48,y,1.1,col);
+    ctx.fillStyle=T.acc;ctx.fillRect(X,y+res.s*0.05,8,h-res.s*0.14);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="record"){
+    let y=172;y+=sigTag(ctx,T,"THE RECORD",X,y)+56;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,lim(H-230)-y,1.06,112,48);
+    drawLines(ctx,res,f,X,y,1.06,col);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="reveal"){
+    let y=172;y+=sigTag(ctx,T,"STATUS: IN PLAIN SIGHT",X,y)+56;
+    const f=s=>`500 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW-48,lim(H-220)-y,1.14,96,48);
+    const h=drawLines(ctx,res,f,X+48,y,1.14,col);
+    ctx.fillStyle=T.bar;ctx.fillRect(X,y+res.s*0.05,8,h-res.s*0.14);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="spin"){
+    let y=172;y+=sigTag(ctx,T,"THE SPIN",X,y)+56;
+    const f=s=>`500 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW-48,lim(H-220)-y,1.12,124,48);
+    const h=drawLines(ctx,res,f,X+48,y,1.12,Object.assign({},col,{text:T.muted}));
+    ctx.fillStyle=T.muted;ctx.fillRect(X,y+res.s*0.05,8,h-res.s*0.14);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="translation"){
+    let y=172;y+=sigTag(ctx,T,"TRANSLATION",X,y)+56;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,lim(H-230)-y,1.06,112,48);
+    drawLines(ctx,res,f,X,y,1.06,col);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="take"){
+    let y=172;y+=sigTag(ctx,T,"THE TAKE",X,y)+56;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,lim(H-230)-y,1.08,104,46);
+    drawLines(ctx,res,f,X,y,1.08,col);
+    sigFoot(ctx,T,idx,total,false);
+  } else if(sl.type==="receipts"){
+    let y=172;y+=sigTag(ctx,T,"STATUS: PUBLIC RECORD",X,y)+44;
+    const tf=s=>`700 ${s}px ${SGF}`;const tr=fit(ctx,toks,tf,MAXW,230,1.08,84,44);
+    y+=drawLines(ctx,tr,tf,X,y,1.08,col)+36;
+    const mf=s=>`400 ${s}px ${JBM}`,letters="ABCDEFGH";
+    const itemToks=sl.items.map((it,i)=>[{t:">",s:"L"},{t:`SRC_${letters[i]||i+1}`,s:"L"}].concat(tokenize(it)));
+    let ms=32;for(;ms>=20;ms-=2){ctx.font=mf(ms);let yy=y;itemToks.forEach(tk=>{yy+=wrap(ctx,tk,MAXW,0).length*ms*1.45+44});if(yy<H-240)break}
+    ctx.setLineDash([8,8]);
+    itemToks.forEach(tk=>{ctx.font=mf(ms);const r={s:ms,lines:wrap(ctx,tk,MAXW,0),pad:0};const hh=drawLines(ctx,r,mf,X,y,1.45,col);y+=hh+18;
+      ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X,y);ctx.lineTo(X+MAXW,y);ctx.stroke();y+=26});
+    ctx.setLineDash([]);
+    const so=PAUSE_LINE;
+    if(so){let fs=30;ctx.font=`400 ${fs}px ${JBM}`;while(ctx.measureText(so+"_").width>MAXW&&fs>18){fs-=2;ctx.font=`400 ${fs}px ${JBM}`}
+      ctx.fillStyle=T.muted;ctx.fillText(so,X,H-150);ctx.fillStyle=T.meta;ctx.fillText("_",X+ctx.measureText(so).width,H-150)}
+    sigFoot(ctx,T,idx,total,false);
+  } else {
+    const room=lim(H-220)-200;
+    const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,room,1.06,116,52);
+    const h=res.lines.length*res.s*1.06;
+    drawLines(ctx,res,f,X,200+Math.max(0,(room-h)/2),1.06,col);
+    sigFoot(ctx,T,idx,total,false);
+  }
+  return c;
+}
+function sigAvatar(kind){
+  const S=1080,c=document.createElement("canvas");c.width=c.height=S;const x=c.getContext("2d");
+  const T=kind==="light"?SIGNAL.light:SIGNAL.dark;
+  if(kind==="lime"){x.fillStyle="#C6FF3D";x.fillRect(0,0,S,S);x.strokeStyle="rgba(11,13,16,0.08)";x.lineWidth=2;for(let i=0;i<=S;i+=90){x.beginPath();x.moveTo(i,0);x.lineTo(i,S);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(S,i);x.stroke()}}
+  else signalBg(x,S,S,T);
+  const ink=kind==="lime"?"#0B0D10":T.fg, meta=kind==="lime"?"#0B0D10":T.meta;
+  x.textAlign="center";x.textBaseline="alphabetic";
+  x.font=`700 44px ${JBM}`;spaced(x,"4px");x.fillStyle=meta;x.fillText("[ PLAIN SIGHT ]",S/2,340);spaced(x,"0px");
+  x.font=`700 400px ${SGF}`;const w=x.measureText("PS").width,u=x.measureText("_").width;const left=S/2-(w+u)/2;
+  if(kind==="light"){x.fillStyle=T.acc;x.fillRect(left-24,410,w+48,380)}
+  x.textAlign="left";x.fillStyle=kind==="light"?T.accInk:ink;x.fillText("PS",left,720);
+  x.fillStyle=kind==="dark"?T.acc:ink;x.fillText("_",left+w,720);
+  x.textAlign="center";x.font=`400 34px ${JBM}`;spaced(x,"3px");x.fillStyle=kind==="lime"?"#0B0D10":T.muted;x.fillText("STATUS: HIDDEN",S/2,860);spaced(x,"0px");
+  return c;
+}
+$("look").value=["auto","dark","light","classic"].includes(load("look"))?load("look"):"auto";
+$("look").addEventListener("change",e=>{store("look",e.target.value);renderAll();renderAvatars()});
+["locPlace","locCountry"].forEach(id=>{$(id).value=load(id)||"";$(id).addEventListener("input",()=>{store(id,$(id).value);queue()})});
+function takeLocation(text){
+  const m=String(text).match(/^\s*LOCATION:\s*(.+)$/im);if(!m)return text;
+  const [place,country]=m[1].split("/").map(t=>t.trim());
+  if(country!==undefined){$("locPlace").value=place;$("locCountry").value=country}else{$("locPlace").value="";$("locCountry").value=place}
+  store("locPlace",$("locPlace").value);store("locCountry",$("locCountry").value);
+  return text.replace(m[0],"").replace(/^\s+/,"");
+}
+
+/* ---------- Signal look, native 9:16 (TikTok only) ----------
+   Drawn directly at 1080 x 1920. No 4:5 shrink. Background runs full bleed.
+   Readable content: x 72 to 930 and y 210 to 1440; below y 840 the right edge steps in to x 880 for TikTok's
+   like/comment/share column. Under y 1440 (TikTok's name, caption and sound row) sits a brand band that is
+   fine to be covered: nothing a viewer must read goes there. */
+const TTN={w:1080,h:1920,top:210,bottom:1440,left:72,right:930,railFrom:840,railRight:880};
+const NATIVE916=true;
+const N9={top:300,handleY:1426,exBottom:1376,maxS:170};
+function n9Right(lineTop,lineH){return lineTop+lineH>TTN.railFrom?TTN.railRight:TTN.right}
+/* wrap() with a width that depends on the line: lines reaching below y 840 get the narrower width */
+function n9Wrap(ctx,toks,widthOf,pad){
+  const sp=ctx.measureText(" ").width,lines=[];let cur=[],w=0;
+  const tw=tk=>textW(ctx,tk)+((tk.s==="e"||tk.s==="r")?pad*2:0);
+  for(const tk of toks){
+    if(tk.nl){lines.push(cur);cur=[];w=0;continue}
+    const maxW=widthOf(lines.length),t=tw(tk),add=cur.length&&!tk.glue?sp:0;
+    if(cur.length&&!tk.glue&&w+add+t>maxW){
+      /* never split a highlight: carry the whole run (e.g. "9 of 37") to the next line */
+      let j=cur.length;if(tk.s==="e")while(j>0&&cur[j-1].s==="e")j--;
+      const runW=j<cur.length?cur.slice(j).concat([tk]).reduce((a,x,k)=>a+tw(x)+(k&&!x.glue?sp:0),0):0;
+      if(tk.s==="e"&&j>0&&j<cur.length&&runW<=widthOf(lines.length+1)){const g=cur.splice(j);lines.push(cur);cur=g.concat([tk]);w=runW}
+      else{lines.push(cur);cur=[tk];w=t}}
+    else if(tk.glue&&w+t>maxW){let j=cur.length-1;while(j>0&&cur[j].glue)j--;
+      if(j>0){const g=cur.splice(j);lines.push(cur);cur=g.concat([tk]);w=cur.reduce((a,x)=>a+tw(x),0)}else{cur.push(tk);w+=t}}
+    else{cur.push(tk);w+=add+t}
+  }
+  if(cur.length)lines.push(cur);
+  /* an opening quote or bracket never dangles at a line end: it moves down with the word it opens */
+  for(let i=0;i<lines.length-1;i++){const L=lines[i],last=L[L.length-1];
+    if(L.length>1&&last&&!last.nl&&/^[\u201C\u2018"'(\[]+$/.test(last.t)&&lines[i+1].length){L.pop();lines[i+1][0].glue=true;lines[i+1].unshift(Object.assign({},last,{glue:false}))}}
+  return lines;
+}
+/* Largest size that fits the band, placed with `bias` of the slack above it; widths follow the final position. */
+function n9Fit(ctx,toks,font,x,top,room,lh,maxS,minS,bias){
+  let out=null;
+  for(let s=maxS;s>=minS;s-=3){
+    ctx.font=font(s);const pad=s*0.12,widest=Math.max(0,...toks.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width));
+    let y=top,lines,h;
+    for(let pass=0;pass<3;pass++){
+      lines=n9Wrap(ctx,toks,i=>n9Right(y+i*s*lh,s*1.1)-x,pad);h=lines.length*s*lh;
+      const ny=top+Math.max(0,room-h)*bias;if(Math.abs(ny-y)<1)break;y=ny;
+    }
+    out={s,lines,pad,y,h};
+    if(h<=room&&widest<=n9Right(y+h-s*lh,s)-x)return out;
+  }
+  return out;
+}
+function n9Ticks(ctx,T,idx,total,y){
+  const X=TTN.left,MAXW=TTN.right-TTN.left,gap=8,w=(MAXW-gap*(total-1))/total;
+  for(let i=0;i<total;i++){ctx.fillStyle=i===idx?T.acc:i<idx?T.muted:T.rule;ctx.fillRect(X+i*(w+gap),y,w,i===idx?10:6)}
+}
+function n9Meta(ctx,T,idx,total,sl){
+  const X=TTN.left,R=TTN.right,fno=(filenoEl.value.trim()||"000");
+  ctx.textBaseline="alphabetic";ctx.font=`400 30px ${JBM}`;spaced(ctx,"1px");
+  const left=`[ ${typeWord().toUpperCase()}_${fno} ] CLEARANCE: PUBLIC`;
+  ctx.textAlign="left";ctx.fillStyle=T.muted;ctx.fillText(left,X,246);
+  const room=R-(X+ctx.measureText(left).width+36);ctx.textAlign="right";
+  if(sl.type==="hook"){ctx.fillStyle=T.muted;ctx.fillText(isoDay(),R,246)}
+  else{const page=sl.type==="receipts"?"RECEIPTS":sl.type==="end"?"END":`${String(idx+1).padStart(2,"0")}/${String(total).padStart(2,"0")}`;
+    ctx.fillStyle=T.muted;ctx.fillText(ctx.measureText(page).width<=room?page:"",R,246)}
+  ctx.textAlign="left";spaced(ctx,"0px");
+  n9Ticks(ctx,T,idx,total,272);
+}
+function n9Foot(ctx,T){
+  ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
+  ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),TTN.left,N9.handleY);spaced(ctx,"0px");
+}
+/* Brand band under TikTok's caption row: decorative only, fine to be partly covered. */
+function n9Band(ctx,T){
+  const fno=(filenoEl.value.trim()||"000"),X=TTN.left;
+  ctx.save();ctx.textBaseline="alphabetic";ctx.textAlign="left";
+  ctx.fillStyle=T.bar;ctx.fillRect(X,1466,1080-2*X,5);
+  ctx.globalAlpha=0.16;ctx.fillStyle=T.fg;spaced(ctx,"6px");
+  let s=72;ctx.font=`700 ${s}px ${SGF}`;while(ctx.measureText("HIDDEN IN PLAIN SIGHT").width>1080-2*X&&s>30){s-=2;ctx.font=`700 ${s}px ${SGF}`}
+  ctx.fillText("HIDDEN IN PLAIN SIGHT",X,1560);
+  ctx.globalAlpha=0.07;spaced(ctx,"0px");
+  const big=`${typeWord().toUpperCase()}_${fno}`;let b=300;ctx.font=`700 ${b}px ${JBM}`;
+  while(ctx.measureText(big).width>1080-X&&b>120){b-=10;ctx.font=`700 ${b}px ${JBM}`}
+  ctx.fillText(big,X-12,1900);
+  ctx.restore();
+}
+/* Exhibit tag: the slide's SOURCE / CLASSIFIED LOCATION lines (and the hook's SATIRE label) as an evidence label.
+   It always sits below y 840, so it stays left of the button rail (x 880). */
+function n9Exhibit(ctx,T,notes,idx,doc,measureOnly,y){
+  if(!notes||!notes.length)return 0;
+  const X=TTN.left,MAXW=TTN.railRight-TTN.left,pad=28,inner=MAXW-pad*2-10,ls=26,ts=34,lh=1.32;
+  const rows=notes.map(n=>{ctx.font=`400 ${ts}px ${JBM}`;return {lines:wrap(ctx,[{t:n.label.replace(/[:.]$/,"").toUpperCase(),s:"L"}].concat(tokenize(n.text)),inner,0)}});
+  const head=ls+20;
+  let h=pad+head;rows.forEach((r,i)=>{h+=r.lines.length*ts*lh+(i<rows.length-1?24:0)});h+=pad-8;
+  if(measureOnly)return h;
+  ctx.fillStyle=T.bg;ctx.fillRect(X,y,MAXW,h);
+  ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.strokeRect(X+1,y+1,MAXW-2,h-2);
+  ctx.fillStyle=T.muted;ctx.fillRect(X,y,10,h);
+  const cx=X+10+pad;let cy=y+pad;
+  ctx.font=`700 ${ls}px ${JBM}`;spaced(ctx,"3px");ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";
+  ctx.fillText(`EXHIBIT ${String(idx+1).padStart(2,"0")}`,cx,cy+ls*0.8);
+  if(doc){const ix=X+MAXW-pad-30,iy=cy-4;ctx.strokeStyle=T.muted;ctx.lineWidth=3;ctx.beginPath();
+    ctx.moveTo(ix,iy);ctx.lineTo(ix+20,iy);ctx.lineTo(ix+30,iy+10);ctx.lineTo(ix+30,iy+38);ctx.lineTo(ix,iy+38);ctx.closePath();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ix+6,iy+20);ctx.lineTo(ix+24,iy+20);ctx.moveTo(ix+6,iy+29);ctx.lineTo(ix+24,iy+29);ctx.stroke();}
+  cy+=head;ctx.setLineDash([6,8]);
+  rows.forEach((r,i)=>{
+    spaced(ctx,"0.5px");drawLines(ctx,{s:ts,lines:r.lines,pad:0},s=>`400 ${s}px ${JBM}`,cx,cy,lh,{text:T.fg,lab:T.muted,emText:T.fg,emBg:null,redact:T.fg});
+    cy+=r.lines.length*ts*lh;
+    if(i<rows.length-1){cy+=9;ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(X+MAXW-pad,cy);ctx.stroke();cy+=15}
+  });
+  ctx.setLineDash([]);spaced(ctx,"0px");
+  return h;
+}
+/* Emphasis (pass 3). One technique in both looks: a lime box behind ink text, with an ink keyline.
+   On the dark page the box itself carries the contrast (16.5:1); on the light page lime is near the page's
+   luminance (1.07:1), so the ink keyline (17.6:1) makes the box a border as well. Lime is reserved for this
+   box, the current progress tick, the end card's next-File line and the brand band. */
+function n9Cols(T){return {text:T.fg,emBg:T.acc,emText:T.accInk,emLine:T.accInk,redact:T.fg,lab:T.muted}}
+/* Status tag: no longer a lime box (it read as a highlight). A small lime square plus spaced mono text. */
+function n9Tag(ctx,T,text,x,y){
+  ctx.font=`700 32px ${JBM}`;spaced(ctx,"3px");ctx.textBaseline="alphabetic";
+  ctx.fillStyle=T.acc;ctx.fillRect(x,y+15,22,22);ctx.strokeStyle=T.accInk;ctx.lineWidth=2;ctx.strokeRect(x+1,y+16,20,20);
+  ctx.fillStyle=T.fg;ctx.fillText(text,x+40,y+37);spaced(ctx,"0px");
+  ctx.fillStyle=T.rule;ctx.fillRect(x,y+56,ctx.measureText(text).width+40,2);
+  return 58;
+}
+/* Lint: at most 2 highlights per slide (1 on the hook), each 1 to 3 words. */
+function emphasisIssues(slides){
+  const out=[];slides.forEach((sl,i)=>{if(sl.type==="receipts"||sl.type==="end")return;
+    const runs=(fixQuotes(sl.text).match(/\*[^*]+\*/g)||[]).map(r=>wordCount(r));const max=sl.type==="hook"?1:2;
+    if(runs.length>max)out.push(`slide ${i+1}: ${runs.length} highlights (max ${max})`);
+    runs.forEach(n=>{if(n>3)out.push(`slide ${i+1}: highlight of ${n} words (max 3)`)})});
+  return out;
+}
+function renderSignal916(sl,idx,total){
+  const c=document.createElement("canvas");c.width=TTN.w;c.height=TTN.h;const ctx=c.getContext("2d");
+  const T=theme(),col=n9Cols(T);
+  signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
+  const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
+  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
+  const TAGS={hook:postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",reveal:"STATUS: IN PLAIN SIGHT",status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE",receipts:"STATUS: PUBLIC RECORD",end:"STATUS: CASE CLOSED"};
+  const tag=TAGS[sl.type]||null;
+  let y=TOP+4;
+  if(tag){y+=n9Tag(ctx,T,tag,X,y)+40}
+  if(sl.type==="hook"&&(locParts().place||locParts().country)){sigLoc(ctx,T,X,y);y+=46+40}
+
+  if(sl.type==="receipts"){
+    const tf=s=>`700 ${s}px ${SGF}`;const tr=n9Fit(ctx,tokenize(sl.text),tf,X,y,380,1.08,120,52,0);
+    y+=drawLines(ctx,{s:tr.s,lines:tr.lines,pad:tr.pad},tf,X,y,1.08,col)+56;
+    const mf=s=>`400 ${s}px ${JBM}`,letters="ABCDEFGH",IW=TTN.railRight-X;
+    const itemToks=sl.items.map((it,i)=>[{t:">",s:"L"},{t:`SRC_${letters[i]||i+1}`,s:"L"}].concat(tokenize(it)));
+    const pauseY=BOT-6,limit=pauseY-80;
+    let ms=52,tot=0;for(;ms>=24;ms-=2){ctx.font=mf(ms);tot=0;itemToks.forEach(tk=>{tot+=wrap(ctx,tk,IW,0).length*ms*1.45+60});if(y+tot<=limit)break}
+    const extra=Math.max(0,limit-y-tot)/(itemToks.length+1);y+=extra;
+    ctx.setLineDash([8,8]);
+    itemToks.forEach(tk=>{ctx.font=mf(ms);y+=drawLines(ctx,{s:ms,lines:wrap(ctx,tk,IW,0),pad:0},mf,X,y,1.45,col)+24;
+      ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X,y);ctx.lineTo(X+IW,y);ctx.stroke();y+=36+extra});
+    ctx.setLineDash([]);
+    let fs=32;ctx.font=`400 ${fs}px ${JBM}`;while(ctx.measureText(PAUSE_LINE+"_").width>IW&&fs>18){fs-=2;ctx.font=`400 ${fs}px ${JBM}`}
+    ctx.fillStyle=T.muted;ctx.fillText(PAUSE_LINE,X,pauseY);ctx.fillStyle=T.meta;ctx.fillText("_",X+ctx.measureText(PAUSE_LINE).width,pauseY);
+    n9Foot(ctx,T);return c;
+  }
+  if(sl.type==="end"){
+    const E=endLines(),ef=s=>`700 ${s}px ${SGF}`,tail=48+72+40;
+    const r=n9Fit(ctx,tokenize(E.signoff),ef,X,y,BOT-y-tail-90,1.04,N9.maxS,60,0.35);
+    drawLines(ctx,{s:r.s,lines:r.lines,pad:r.pad},ef,X,r.y,1.04,col);
+    let ny=r.y+r.h+90;
+    ctx.font=`700 52px ${JBM}`;spaced(ctx,"2px");ctx.fillStyle=T.meta;ctx.textBaseline="alphabetic";ctx.fillText(E.next,X,ny+48);
+    ctx.font=`400 44px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,ny+120);spaced(ctx,"0px");
+    n9Foot(ctx,T);return c;
+  }
+  if(sl.type==="status"){
+    /* ledger: one row per finding, all at one size, rows spread down the band */
+    const f=s=>`700 ${s}px ${SGF}`,IND=48,lh=1.1;
+    const rows=fixQuotes(sl.text).split(/(?<=[.!?”"])\s+/).map(s=>s.trim()).filter(Boolean).map(tokenize);
+    const band=BOT-y;let best=null;
+    for(let s=N9.maxS;s>=56;s-=3){ctx.font=f(s);const pad=s*0.12;let yy=y,ok=true;const L=[];
+      const minGap=s*0.35;
+      rows.forEach(tk=>{const lines=n9Wrap(ctx,tk,i=>n9Right(yy+i*s*lh,s*1.1)-X-IND,pad);L.push(lines);yy+=lines.length*s*lh+minGap});
+      const h=yy-y-minGap;best={s,pad,L,h};if(h<=band&&ok)break}
+    const gap=Math.min(110,(band-best.h)/Math.max(1,rows.length-1)+best.s*0.35);
+    let yy=y+Math.max(0,band-(best.h+(gap-best.s*0.35)*(rows.length-1)))*0.3;
+    best.L.forEach((lines,i)=>{const h=drawLines(ctx,{s:best.s,lines,pad:best.pad},f,X+IND,yy,lh,col);
+      ctx.fillStyle=T.fg;ctx.fillRect(X,yy+best.s*0.05,10,h-best.s*0.14);yy+=h;
+      if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X+IND,yy+gap/2-1,TTN.railRight-X-IND,2);yy+=gap}});
+    n9Foot(ctx,T);return c;
+  }
+  /* hook, reveal, body and the memo types: headline fills the band between the tags and the exhibit pinned at the bottom */
+  const barred=sl.type==="reveal"||sl.type==="spin",weight=barred?500:700,f=s=>`${weight} ${s}px ${SGF}`;
+  const indent=barred?48:0,lh=sl.type==="reveal"?1.12:1.1;
+  const exH=n9Exhibit(ctx,T,notes,idx,false,true),exTop=BOT-exH;
+  const band=(exH?exTop-60:BOT)-y;
+  const r=n9Fit(ctx,tokenize(sl.text),f,X+indent,y,band,lh,N9.maxS,52,0.5);
+  const hh=drawLines(ctx,{s:r.s,lines:r.lines,pad:r.pad},f,X+indent,r.y,lh,sl.type==="spin"?Object.assign({},col,{text:T.muted}):col);
+  if(barred){ctx.fillStyle=sl.type==="spin"?T.muted:T.fg;ctx.fillRect(X,r.y+r.s*0.05,10,hh-r.s*0.14)}
+  if(exH)n9Exhibit(ctx,T,notes,idx,sl.type==="reveal",false,exTop);
+  n9Foot(ctx,T);
+  return c;
+}
+
+/* ---------- render pipeline ---------- */
+function renderTikTok(sl,idx,total){
+  /* video frames are watched, not swiped: show the page number instead of "SWIPE" */
+  if(NATIVE916&&ttSize==="full"&&lookMode()!=="classic")return renderSignal916(sl,idx,total);
+  noSwipe=ttSize!=="square";
+  let inner;try{inner=renderSlide(sl,idx,total,false)}finally{noSwipe=false}
+  const c=document.createElement("canvas");c.width=TT.w;c.height=TT.h;const ctx=c.getContext("2d");
+  drawBgFor(ctx,TT.w,TT.h,sl);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
+  ctx.drawImage(inner,TT.x,TT.y,TT.boxW,TT.boxW*H/W);
+  if(ttSize==="full")return c;
+  if(ttSize==="square"){
+    /* 1080 x 1080: the Instagram layout scaled to fit, centred on the same paper or ink. */
+    const q=document.createElement("canvas");q.width=q.height=1080;const x=q.getContext("2d");
+    drawBgFor(x,1080,1080,sl);
+    x.imageSmoothingEnabled=true;x.imageSmoothingQuality="high";
+    const w=Math.round(1080*W/H);x.drawImage(inner,(1080-w)/2,0,w,1080);
+    return q;
+  }
+  /* "fit": the same 9:16 slide, scaled to 608 x 1080 so no side is over 1080 (Metricool's limit). */
+  const f=document.createElement("canvas");f.width=608;f.height=1080;const y=f.getContext("2d");
+  y.imageSmoothingEnabled=true;y.imageSmoothingQuality="high";y.drawImage(c,0,0,608,1080);
+  return f;
+}
+const TT_SIZES={fit:"608 × 1080",square:"1080 × 1080",full:"1080 × 1920"};
+/* stored under a new key so everyone starts on the video frames once */
+let ttSize=TT_SIZES[load("ttSize2")]?load("ttSize2"):"full";
+$("ttSize").value=ttSize;
+$("ttSize").addEventListener("change",e=>{ttSize=e.target.value;store("ttSize2",ttSize);syncGuide();renderAll()});
+let showGuide=load("showGuide")==="1";$("showGuide").checked=showGuide;
+$("showGuide").addEventListener("change",e=>{showGuide=e.target.checked;store("showGuide",showGuide?"1":"0");renderAll()});
+function syncGuide(){$("guideBox").hidden=view!=="tt"||ttSize==="square"}
+/* Preview only, never saved: shades what the TikTok and Reels interfaces cover. */
+function withGuide(c){
+  if(NATIVE916&&c.height===1920&&lookMode()!=="classic"){
+    const g=document.createElement("canvas");g.width=c.width;g.height=c.height;const x=g.getContext("2d");x.drawImage(c,0,0);
+    x.fillStyle="rgba(214,40,40,0.38)";x.fillRect(0,0,1080,TTN.top);x.fillRect(0,TTN.bottom,1080,1920-TTN.bottom);
+    x.fillRect(0,TTN.top,TTN.left,TTN.bottom-TTN.top);x.fillRect(TTN.right,TTN.top,1080-TTN.right,TTN.railFrom-TTN.top);x.fillRect(TTN.railRight,TTN.railFrom,1080-TTN.railRight,TTN.bottom-TTN.railFrom);
+    x.fillStyle="#fff";x.font="700 40px sans-serif";x.textAlign="center";x.textBaseline="middle";
+    x.fillText("TIKTOK: TABS, SEARCH, LIVE",540,TTN.top/2);x.fillText("TIKTOK: NAME, CAPTION, SOUND",540,(TTN.bottom+1920)/2);
+    return g;
+  }
+  const g=document.createElement("canvas");g.width=c.width;g.height=c.height;const x=g.getContext("2d");
+  x.drawImage(c,0,0);const k=c.width/1080;x.save();x.scale(k,k);
+  x.fillStyle="rgba(214,40,40,0.38)";
+  x.fillRect(0,0,1080,SAFE.top);x.fillRect(0,SAFE.bottom,1080,1920-SAFE.bottom);
+  x.fillRect(0,SAFE.top,SAFE.left,SAFE.bottom-SAFE.top);
+  x.fillRect(SAFE.right,SAFE.top,1080-SAFE.right,SAFE.lowFrom-SAFE.top);
+  x.fillRect(SAFE.rightLow,SAFE.lowFrom,1080-SAFE.rightLow,SAFE.bottom-SAFE.lowFrom);
+  x.fillStyle="#fff";x.font="700 40px sans-serif";x.textAlign="center";x.textBaseline="middle";
+  x.fillText("COVERED BY APP: TABS, NAME",540,SAFE.top/2);x.fillText("COVERED BY APP: CAPTION, SOUND",540,(SAFE.bottom+1920)/2);
+  x.restore();return g;
+}
+let view=load("view")==="tt"?"tt":"ig";
+function setView(v){view=v;store("view",v);$("ttSize").hidden=v!=="tt";syncGuide();document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===v)));renderAll()}
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===view)));
+$("ttSize").hidden=view!=="tt";syncGuide();
+function setCap(k){document.querySelectorAll("[data-cap]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.cap===k)));
+  $("capPaneIG").hidden=k!=="ig";$("capPaneTT").hidden=k!=="tt";$("capPaneTH").hidden=k!=="th";store("cap",k);if(k==="th")setTimeout(()=>{if(!$("thList").children.length)renderThreads()},0)}
+document.querySelectorAll("[data-cap]").forEach(b=>b.addEventListener("click",()=>setCap(b.dataset.cap)));
+setCap(load("cap")==="th"?"th":"ig");
+const TYPE_NAME={hook:"Hook",body:"Slide",reveal:"Reveal",receipts:"Receipts",spin:"Spin",translation:"Translation",take:"Take",record:"Record",status:"Case status",end:"End card"};
+/* Video timing (v2): 3 words per second plus 1 second per slide; receipts hold 4 seconds; the end card 3. Note lines are not counted. */
+/* Pacing (prototype): 3 words per second plus 1 second per slide, plus 0.5 s when the slide carries an exhibit
+   (SOURCE / CLASSIFIED LOCATION, or the hook's SATIRE label). Only tokens with a letter or digit count as words,
+   so a "." left behind by *emphasis*. is not a word. Every timed slide holds 4 to 9 seconds. */
+const WORDS={hook:[8,14],body:[12,22],reveal:[12,22],status:[8,16],record:[12,22],spin:[8,22],translation:[8,22],take:[12,26]};
+function wordCount(t){return String(t).replace(/[*|_]/g," ").split(/\s+/).filter(w=>/[\p{L}\p{N}]/u.test(w)).length}
+function slideSecs(sl){
+  if(sl.type==="receipts")return 4;if(sl.type==="end")return 3;
+  const ex=(sl.notes&&sl.notes.length)||sl.type==="hook"?0.5:0;
+  return Math.min(9,Math.max(4,Math.round((wordCount(sl.text)/3+1+ex)*2)/2));
+}
+function wordIssues(slides){
+  const out=[];slides.forEach((sl,i)=>{const r=WORDS[sl.type];if(!r)return;const n=wordCount(sl.text);
+    if(n<r[0])out.push(`slide ${i+1} has ${n} words (min ${r[0]})`);else if(n>r[1])out.push(`slide ${i+1} has ${n} words (max ${r[1]})`)});
+  return out;
+}
+function fmtSecs(n){return (Math.round(n*2)/2).toString().replace(/\.0$/,"")+" s"}
+function timingInfo(slides){
+  let pre=0,seenRec=false;slides.forEach(sl=>{if(sl.type==="receipts")seenRec=true;if(!seenRec&&sl.type!=="end")pre+=slideSecs(sl)});
+  const total=slides.reduce((a,sl)=>a+slideSecs(sl),0);
+  return {pre,total};
+}
+let renderToken=0;
+async function renderAll(){
+  const my=++renderToken;
+  const slides=parseScript(scriptEl.value);
+  if(slides.length)slides.push({type:"end",text:"",items:[],notes:[]});
+  const tm=timingInfo(slides),dev=scriptDevice();
+  $("count").textContent=slides.length?`${slides.length} slides · ${fmtSecs(tm.pre)} before receipts`+(tm.pre>40?" (aim for 40 s or less)":"")+` · ${fmtSecs(tm.total)} total`+(dev?` · Device: ${dev}`:"")+" · "+(view==="tt"?TT_SIZES[ttSize]:"1080 × 1350")+(wordIssues(slides).length?" · "+wordIssues(slides).join("; "):"")+(emphasisIssues(slides).length?" · "+emphasisIssues(slides).join("; "):""):"No slides yet";
+  $("count").classList.toggle("over",tm.pre>40||wordIssues(slides).length>0||emphasisIssues(slides).length>0);
+  const frag=document.createDocumentFragment(); const out=[];
+  const fno=(filenoEl.value.trim()||"000").replace(/[^\w-]/g,"");
+  for(let i=0;i<slides.length;i++){
+    const ig=renderSlide(slides[i],i,slides.length), tt=renderTikTok(slides[i],i,slides.length);
+    const base=`${postType()}-${fno}-${String(i+1).padStart(2,"0")}-${slides[i].type}`;
+    out.push({ig,tt,base,secs:slideSecs(slides[i])});
+    const url=(view==="tt"?(showGuide&&ttSize!=="square"?withGuide(tt):tt):ig).toDataURL("image/png");
+    const fig=document.createElement("figure");fig.className="slide"+(view==="tt"?(ttSize==="square"?" sq":" tt"):"");
+    const img=document.createElement("img");img.src=url;img.alt=`Slide ${i+1}: ${slides[i].text.replace(/[*|]/g,"")}`;
+    const cap=document.createElement("figcaption");
+    const lab=document.createElement("span");lab.textContent=`${i+1} · ${TYPE_NAME[slides[i].type]} · ${fmtSecs(slideSecs(slides[i]))}`;
+    cap.appendChild(lab);
+    if(Platform.save){const b=document.createElement("button");b.className="small";b.textContent="Save";b.addEventListener("click",()=>saveOne(i,b));cap.appendChild(b)}
+    fig.append(img,cap);frag.appendChild(fig);
+  }
+  if(my!==renderToken)return;
+  rendered=out;slidesEl.replaceChildren(frag);scheduleSave();
+}
+let t=null;function queue(){clearTimeout(t);t=setTimeout(renderAll,250)}
+
+function toBlob(c){return new Promise(r=>c.toBlob(r,"image/png"))}
+/* TikTok's posting system takes JPEG or WebP only, not PNG. */
+function toJpeg(c){return new Promise(r=>c.toBlob(r,"image/jpeg",0.92))}
+async function saveOne(i,btn){
+  if(!Platform.save||!rendered[i])return;
+  btn.disabled=true;
+  try{const r=rendered[i];const blob=view==="tt"?await toJpeg(r.tt):await toBlob(r.ig);await Platform.save(r.base+(view==="tt"?"-tiktok.jpg":".png"),blob);btn.textContent="Saved"}
+  catch(e){btn.textContent=e&&e.code==="declined"?"Save":"Try again"}
+  finally{btn.disabled=false}
+}
+$("saveAll").addEventListener("click",async e=>{
+  const b=e.currentTarget; if(!Platform.save||!rendered.length)return;
+  b.disabled=true;const old=b.textContent;b.textContent="Packing slides…";
+  try{
+    const zip=new JSZip();
+    for(const r of rendered){zip.file("instagram/"+r.base+".png",await toBlob(r.ig));zip.file("tiktok/"+r.base+"-tiktok.jpg",await toJpeg(r.tt))}
+    if(capEl.value.trim()){zip.file("tiktok/caption.txt",tiktokCaption(capEl.value)+"\n")}
+    {const pc=pinnedComment();if(pc)zip.file("tiktok/pinned-comment.txt",pc+"\n")}
+    zip.file("tiktok/timings.txt","Slide durations for the video editor (3 words per second plus 1 second per slide; receipts 4 s; end card 3 s)\n\n"+rendered.map(r=>r.base+"-tiktok.jpg  "+fmtSecs(r.secs)).join("\n")+"\n\nTotal: "+fmtSecs(rendered.reduce((a,r)=>a+r.secs,0))+"\n");
+    {const th=threadPosts();if(th.length)zip.file("threads.txt",th.map((t,i)=>"----- Post "+(i+1)+" -----\n"+t).join("\n\n")+"\n")}
+    const blob=await zip.generateAsync({type:"blob"});
+    const fno=(filenoEl.value.trim()||"000").replace(/[^\w-]/g,"");
+    await Platform.save(`${postType()==="memo"?"memo":"case-file"}-${fno}.zip`,blob);
+    await markLinkedUsed();
+    b.textContent="Saved";setTimeout(()=>b.textContent=old,2000);
+    offerNext();
+  }catch(err){b.textContent=old}
+  finally{b.disabled=false}
+});
+
+/* ---------- inputs ---------- */
+scriptEl.addEventListener("input",()=>{store("script",scriptEl.value);syncLocation();queue();checkDash()});
+function syncLocation(){
+  const m=scriptEl.value.match(/^[\s*_]*LOCATION[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);if(!m)return;
+  const parts=m[1].replace(/[*_]+$/,"").split("/").map(t=>t.trim());
+  const place=parts.length>1?parts[0]:"",country=parts.length>1?parts[1]:parts[0];
+  if($("locPlace").value!==place){$("locPlace").value=place;store("locPlace",place)}
+  if($("locCountry").value!==country){$("locCountry").value=country;store("locCountry",country)}
+}
+$("dashFix").addEventListener("click",()=>{scriptEl.value=noDash(scriptEl.value);store("script",scriptEl.value);const c=$("caption");c.value=noDash(c.value);store("caption",c.value);renderAll();capStats()});
+handleEl.addEventListener("input",()=>{store("handle",handleEl.value);queue()});
+filenoEl.addEventListener("input",()=>{store("fileno",filenoEl.value);queue()});
+signoffEl.addEventListener("input",()=>{store("signoff",signoffEl.value);queue()});
+$("story").addEventListener("input",e=>store("story",e.target.value));
+const FILES={cargill:{fileno:"001",loc:["High River, Alberta","Canada"],id:"cargill-high-river-report-2026-09-28",title:"Report: Alberta's response to the Cargill High River COVID outbreak",receipts:[
+  {label:"Parkland Institute report",cite:"Tucker, Sean, and Jason Foster. _Essential and Expendable: How Alberta's COVID-19 Response Failed Cargill Workers_. Parkland Institute, September 28, 2026.",url:"https://www.parklandinstitute.ca/cargill",kind:"primary"},
+  {label:"Calgary Herald",cite:"Strasser, Scott. \"New Report Cites 'Catastrophic Failure' of Government Response to Cargill COVID-19 Outbreak in 2020.\" _Calgary Herald_, September 28, 2026.",url:"https://calgaryherald.com/news/new-report-catastrophic-failure-government-response-cargill-covid-19-outbreak-2020",kind:"news"}]}};
+$("example").addEventListener("change",e=>{const v=e.target.value;if(!v)return;
+  if(v.startsWith("saved:")){e.target.value="";openSaved(v.slice(6));return}
+  if(!confirmSwitch()){e.target.value="";return}
+  const F=FILES[v];if(F){filenoEl.value=F.fileno;store("fileno",F.fileno);if(F.loc){$("locPlace").value=F.loc[0];$("locCountry").value=F.loc[1];store("locPlace",F.loc[0]);store("locCountry",F.loc[1])}setLinked(F.id,F.title,F.receipts);$("nextFile").hidden=true;$("thList").replaceChildren()}scriptEl.value=EXAMPLES[v];store("script",scriptEl.value);resetChecks();renderAll();capEl.value=buildCaption();store("caption",capEl.value);capStats();e.target.value=""});
+const checks=["c1","c2","c3","c4","c5","c6"].map($);
+function checkDash(){const n=dashes(scriptEl.value)+dashes($("caption").value);$("dashBox").hidden=!n;
+  $("dashMsg").textContent=n?(n===1?"1 em dash":n+" em dashes")+" in the script or caption. House rule: none.":"";updateApproved()}
+function updateApproved(){$("approved").hidden=!checks.every(c=>c.checked)||!$("dashBox").hidden}
+function resetChecks(){checks.forEach(c=>c.checked=false);updateApproved()}
+checks.forEach(c=>c.addEventListener("change",updateApproved));
+
+$("copyPrompt").addEventListener("click",async e=>{
+  const text=draftRules()+($("story").value.trim()||"[paste the story's facts and sources here]");
+  const b=e.currentTarget;
+  try{await navigator.clipboard.writeText(text);b.textContent="Prompt copied";setTimeout(()=>b.textContent="Copy prompt for any AI",2000)}
+  catch(err){const s=$("story");s.value=text;s.focus();s.select();$("draftStatus").textContent="Copy the selected text above to use it in another AI chat."}
+});
+
+/* ---------- capabilities ---------- */
+let ctrl=null;
+$("draftBtn").addEventListener("click",async()=>{
+  const story=$("story").value.trim(); const st=$("draftStatus"), b=$("draftBtn");
+  if(!story){st.textContent="Paste the story's facts first.";st.className="status err";return}
+  if(ctrl){ctrl.abort();return}
+  ctrl=new AbortController();b.textContent="Stop";st.className="status";st.textContent="Claude is drafting…";
+  try{
+    const res=await Platform.ai.stream(draftRules()+story,{signal:ctrl.signal,onText:({text})=>{scriptEl.value=noDash(text.trim());queue()}});
+    scriptEl.value=takeLocation(noDash(res.text.trim()));checkDash();store("script",scriptEl.value);resetChecks();renderAll();
+    st.textContent="Slides drafted. Writing the caption…";
+    await writeCaption(true);
+    st.textContent="Draft ready. Check every fact against your source before approving.";
+  }catch(err){
+    st.className="status err";
+    if(err&&err.code==="cancelled"){st.className="status";st.textContent="Stopped."}
+    else if(err&&err.code==="rate_limited")st.textContent="Too many drafts at once. Wait a minute and try again.";
+    else if(err&&(err.code==="not_granted"))st.textContent="Drafting wasn't allowed. Use “Copy prompt” with any AI instead.";
+    else st.textContent="The draft didn't finish. Try again, or use “Copy prompt” with any AI.";
+    if(err&&err.text){scriptEl.value=err.text.trim();queue()}
+  }finally{ctrl=null;b.textContent="Draft with Claude"}
+});
+
+
+/* ---------- profile pictures ---------- */
+function stampBlock(ctx,lines,cx,cy,angle,size,color,seed){
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle*Math.PI/180);
+  const lh=size*0.92;ctx.font=`900 ${size}px ${DISP}`;
+  const w=Math.max(...lines.map(l=>ctx.measureText(l).width))+size*0.7, h=lines.length*lh+size*0.55;
+  const off=document.createElement("canvas");off.width=Math.ceil(w+30);off.height=Math.ceil(h+30);
+  const o=off.getContext("2d");o.translate(off.width/2,off.height/2);o.strokeStyle=color;o.fillStyle=color;
+  o.lineWidth=size*0.07;o.strokeRect(-w/2,-h/2,w,h);o.lineWidth=size*0.025;o.strokeRect(-w/2+size*0.12,-h/2+size*0.12,w-size*0.24,h-size*0.24);
+  o.font=`900 ${size}px ${DISP}`;o.textAlign="center";o.textBaseline="middle";
+  lines.forEach((l,i)=>o.fillText(l,0,(i-(lines.length-1)/2)*lh+size*0.04));
+  o.globalCompositeOperation="destination-out";const r=rng(seed);
+  for(let i=0;i<(w*h)/55;i++){o.globalAlpha=0.35+r()*0.65;const s=r()*3.4+0.5;o.fillRect(r()*off.width-off.width/2,r()*off.height-off.height/2,s,s)}
+  ctx.globalAlpha=0.92;ctx.drawImage(off,-off.width/2,-off.height/2);ctx.restore();
+}
+function ringStamp(ctx,cx,cy,R,color,seed,top,bottom,center){
+  const off=document.createElement("canvas");off.width=off.height=Math.ceil(R*2+40);
+  const o=off.getContext("2d");const c=off.width/2;o.strokeStyle=o.fillStyle=color;
+  o.lineWidth=R*0.045;o.beginPath();o.arc(c,c,R,0,Math.PI*2);o.stroke();
+  o.lineWidth=R*0.018;o.beginPath();o.arc(c,c,R*0.9,0,Math.PI*2);o.stroke();
+  o.beginPath();o.arc(c,c,R*0.62,0,Math.PI*2);o.stroke();
+  const fs=R*0.13;o.font=`900 ${fs}px ${DISP}`;o.textAlign="center";o.textBaseline="middle";
+  const arcText=(txt,rad,startMid,dir)=>{const chars=[...txt];const tot=chars.reduce((a,ch)=>a+o.measureText(ch).width,0)+ (chars.length-1)*fs*0.12;
+    let ang=startMid-dir*(tot/rad)/2;
+    chars.forEach(ch=>{const cw=o.measureText(ch).width;ang+=dir*(cw/2)/rad;o.save();o.translate(c+rad*Math.cos(ang),c+rad*Math.sin(ang));o.rotate(ang+dir*Math.PI/2);o.fillText(ch,0,0);o.restore();ang+=dir*(cw/2+fs*0.12)/rad});};
+  arcText(top,R*0.76,-Math.PI/2,1);arcText(bottom,R*0.76,Math.PI/2,-1);
+  [0,Math.PI].forEach(a=>{o.beginPath();o.arc(c+R*0.76*Math.cos(a),c+R*0.76*Math.sin(a),fs*0.18,0,Math.PI*2);o.fill()});
+  const ms=R*0.62;o.font=`900 ${ms}px ${DISP}`;o.fillText(center,0+c,c+ms*0.05);
+  o.globalCompositeOperation="destination-out";const r=rng(seed);
+  for(let i=0;i<(R*R*4)/55;i++){o.globalAlpha=0.35+r()*0.65;const s=r()*3.4+0.5;o.fillRect(r()*off.width,r()*off.height,s,s)}
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(-8*Math.PI/180);ctx.globalAlpha=0.93;ctx.drawImage(off,-c,-c);ctx.restore();
+}
+function avatarCanvas(kind){
+  const S=1080,c=document.createElement("canvas");c.width=c.height=S;const x=c.getContext("2d");
+  if(kind==="paper"){x.drawImage(PAPER_TEX,0,(H-S)/2,S,S,0,0,S,S);stampBlock(x,["PLAIN","SIGHT"],S/2,S/2,-7,230,RED,101)}
+  else if(kind==="ink"){x.drawImage(INK_TEX,0,(H-S)/2,S,S,0,0,S,S);ringStamp(x,S/2,S/2,380,RED,202,"HIDDEN IN PLAIN SIGHT","FILE",
+    "PS")}
+  else {x.drawImage(PAPER_TEX,0,(H-S)/2,S,S,0,0,S,S);ringStamp(x,S/2,S/2,380,RED,303,"HIDDEN IN PLAIN SIGHT","FILE","PS")}
+  return c;
+}
+const AVATARS=[{k:"ink",label:"Black · ring stamp"},{k:"paper",label:"Manila · block stamp"},{k:"paperring",label:"Manila · ring stamp"}];
+let avatarCanvases=[];
+const SIG_AVATARS=[{k:"dark",label:"Signal · dark"},{k:"light",label:"Signal · light"},{k:"lime",label:"Signal · lime"}];
+function renderAvatars(){
+  const box=$("avatars");const frag=document.createDocumentFragment();avatarCanvases=[];
+  const sig=lookMode()!=="classic";
+  (sig?SIG_AVATARS:AVATARS).forEach((a,i)=>{
+    const cv=sig?sigAvatar(a.k):avatarCanvas(a.k);avatarCanvases.push(cv);
+    const fig=document.createElement("figure");fig.className="avatar";
+    const img=document.createElement("img");img.src=cv.toDataURL("image/png");img.alt=`Profile picture option: ${a.label}`;
+    const cap=document.createElement("figcaption");const lab=document.createElement("span");lab.textContent=a.label;cap.appendChild(lab);
+    if(Platform.save){const b=document.createElement("button");b.className="small";b.textContent="Save";
+      b.addEventListener("click",async()=>{b.disabled=true;try{await Platform.save(`plainsightfile-avatar-${a.k}.png`,await toBlob(cv));b.textContent="Saved"}catch(e){b.textContent="Save"}finally{b.disabled=false}});
+      cap.appendChild(b)}
+    fig.append(img,cap);frag.appendChild(fig);
+  });
+  box.replaceChildren(frag);
+}
+
+/* ---------- caption ---------- */
+const capEl=$("caption"), tagsEl=$("tags");
+const oldTags=load("tags"); if(oldTags!==null) tagsEl.value=oldTags.trim()==="#hiddeninplainsight #plainsightfile"?"#plainsightfile":oldTags;
+capEl.value=load("caption")||"";
+function plain(t){return t.replace(/(^|[^\w/])_([^_]+)_(?!\w)/g,"$1$2").replace(/\|\|([^|]+)\|\|/g,"[redacted]").replace(/\*([^*]+)\*/g,"$1").replace(/\s*\n\s*/g," ").trim()}
+
+/* ---------- Threads ---------- */
+const TH_MAX=500, TH_ROOM=490; // leave room for the "n/N" counter
+function thLen(t){return [...t].length}
+function thUrl(u){try{const x=new URL(u);return(x.protocol==="https:"||x.protocol==="http:")?x.href:""}catch(e){return ""}}
+function thTag(){
+  const brand=brandTags().map(t=>t.toLowerCase());
+  const inCap=(capEl.value.match(/#[\wÀ-ɏ]+/g)||[]).find(t=>!brand.includes(t.toLowerCase()));
+  return inCap||brandTags()[0]||"";
+}
+function pack(chunks,sep){const out=[];let cur="";chunks.forEach(c=>{const n=cur?cur+sep+c:c;if(thLen(n)>TH_ROOM&&cur){out.push(cur);cur=c}else cur=n});if(cur)out.push(cur);return out}
+function threadPosts(){
+  const sl=parseScript(scriptEl.value);if(!sl.length)return [];
+  const hook=sl.find(x=>x.type==="hook")||sl[0];
+  const rec=sl.find(x=>x.type==="receipts");
+  const body=sl.filter(x=>x!==hook&&x!==rec).map(x=>plain(x.text)).filter(Boolean);
+  let linkedRec=[];try{linkedRec=JSON.parse(load("linkedReceipts")||"[]")}catch(e){}
+  /* the script's own RECEIPTS are the source of truth; a linked story only lends a URL to a receipt that matches it */
+  const words=t=>new Set(plain(t).toLowerCase().replace(/https?:\S+/g,"").match(/[a-z0-9\u00c0-\u024f]{4,}/g)||[]);
+  const urlFor=item=>{const a=words(item);let best=null,score=0;
+    linkedRec.forEach(r=>{const b=words(r.cite||r.label||"");if(!a.size||!b.size)return;let n=0;a.forEach(w=>{if(b.has(w))n++});const sc=n/Math.min(a.size,b.size);if(sc>score){score=sc;best=r}});
+    return score>=0.6&&best?thUrl(best.url):""};
+  const recLines=rec&&rec.items.length
+    ?rec.items.map(i=>{const u=/https?:\/\//.test(i)?"":urlFor(i);return "\u2022 "+plain(i)+(u?" "+u:"")})
+    :linkedRec.map(r=>"\u2022 "+plain(r.cite||r.label||"Source")+(thUrl(r.url)?" "+thUrl(r.url):""));
+  const tag=thTag();
+  const posts=[plain(hook.text)+" \u{1F9F5}"+(tag?"\n\n"+tag:"")];
+  const so=signoffEl.value.trim();
+  const story=body.concat(rec&&plain(rec.text)?[plain(rec.text)]:[],[(so?so+"\n":"")+numLine()]);
+  pack(story,"\n\n").forEach(p=>posts.push(p));
+  /* Receipts close the thread, in Chicago style with links. */
+  if(recLines.length)pack(["Receipts:"].concat(recLines),"\n").forEach(p=>posts.push(p));
+  const N=posts.length;
+  return posts.map((p,i)=>noDash(p)+"\n\n"+(i+1)+"/"+N);
+}
+function renderThreads(){
+  const list=$("thList");list.replaceChildren();
+  const posts=threadPosts();
+  if(!posts.length){const li=document.createElement("li");li.textContent="Write or draft a script first.";list.append(li);return posts}
+  posts.forEach((t,i)=>{
+    const li=document.createElement("li");const pre=document.createElement("pre");pre.textContent=t;
+    const row=document.createElement("div");row.className="row";
+    const n=thLen(t);const c=document.createElement("span");c.className="status"+(n>TH_MAX?" err":"");
+    c.textContent=`Post ${i+1} · ${n} / ${TH_MAX}`+(i===0?" · attach the slides":"");
+    const b=document.createElement("button");b.className="small";b.textContent="Copy";
+    b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(t);b.textContent="Copied";setTimeout(()=>b.textContent="Copy",2000)}catch(e){const f=$("fallback");f.hidden=false;f.value=t;f.focus();f.select()}});
+    row.append(c,b);li.append(pre,row);list.append(li);
+  });
+  return posts;
+}
+function brandTags(){return tagsEl.value.trim().split(/\s+/).filter(Boolean).map(t=>t.startsWith("#")?t:"#"+t)}
+/* Hashtags the account never uses (v2): they draw the wrong audience or read as sincere conspiracy content. */
+const BANNED_TAGS=["#fyp","#foryou","#foryoupage","#viral","#conspiracy","#conspiracytheory","#wakeup","#truth"];
+function cleanTags(t){return String(t).replace(/(^|\s)(#[\wÀ-ɏ]+)/g,(m,sp,tag)=>BANNED_TAGS.includes(tag.toLowerCase())?"":m).replace(/[ \t]{2,}/g," ").trim()}
+function pinnedComment(){
+  const sl=parseScript(scriptEl.value);const rec=sl.find(x=>x.type==="receipts");
+  const tail=" Spot an error? Reply with the page and we'll pin a correction.";
+  const generic="Full receipts are in the caption, every claim sourced."+tail;
+  if(!rec||!rec.items.length)return generic;
+  /* the shortest honest name for each source: its italic title or publication, else its first segment */
+  const names=rec.items.map(it=>{const m=it.match(/_([^_]+)_/);const n=m?m[1]:plain(it).split(/\.\s/)[0];return n.trim()}).filter(Boolean);
+  const short="Receipts: "+names.join(" / ")+"."+tail;
+  return noDash(short.length<=150?short:generic);
+}
+function capStats(){
+  checkDash();scheduleSave();
+  const v=capEl.value, n=(v.match(/#[\wÀ-ɏ]+/g)||[]).length, bad=(v.match(/#[\wÀ-ɏ]+/g)||[]).filter(t=>BANNED_TAGS.includes(t.toLowerCase()));
+  const el=$("capCount");
+  el.textContent=`${v.length.toLocaleString()} characters (aim 500 to 1,200, cap 2,000) · ${n} hashtag${n===1?"":"s"}`+(n>5?" · use 5 or fewer":"")+(bad.length?" · remove "+bad.join(" "):"")+(/\n/.test(v.trim())?" · has line breaks: TikTok will strip them":"");
+  el.className="status"+((v.length>CAP_LIMIT||n>5||bad.length)?" err":"");
+  const pc=capEl.value.trim()||scriptEl.value.trim()?pinnedComment():"";
+  $("pinText").value=pc;$("pinCount").textContent=pc?`${pc.length} / 150`:"";$("pinCount").className="status"+(pc.length>150?" err":"");
+}
+function storyFacts(){
+  const lines=$("story").value.replace(/\r/g,"").split("\n");const out=[];let on=false;
+  for(const l of lines){const t=l.trim();
+    if(/^FACTS:?$/i.test(t)){on=true;continue}
+    if(on&&/^[A-Z][A-Z ]+:/.test(t))break;
+    if(on&&/^[-•]\s+/.test(t))out.push(t.replace(/^[-•]\s+/,""));}
+  return out.slice(0,10);
+}
+/* ---------- TikTok caption: hard cap 2,000 characters (TikTok allows 2,200; v2 keeps room) ---------- */
+const CAP_LIMIT=2000;
+const SHORTEN_RULES=`Shorten this TikTok caption to at most {N} characters in total. It is one paragraph. Keep the first sentence, the "Receipts:" list, the comment question, the sign-off, the File No. or Memo No. and the hashtags exactly as they are. Cut or tighten the context sentences only, keeping the kicker and any "unknown", "denied" or other-side sentence; keep facts and attributions accurate and never add anything. One paragraph, no line breaks. Never use em dashes. Output ONLY the caption.\n\nCaption:\n`;
+function fitCaption(t,max){
+  if(t.length<=max)return t;
+  const blocks=t.split(/\n\s*\n/);
+  const ri=blocks.findIndex(b=>/^Receipts:/i.test(b.trim()));
+  const bodyEnd=ri>0?ri:blocks.length-3;
+  /* 1. drop body paragraphs, least essential first. Paragraphs carrying a response, denial or
+        "not proven" caveat are protected until last, so trimming never removes the fairness. */
+  const PROTECT=/(\b(proven|unproven|not been|unknown|unanswered|denie[sd]|deny|respon|statement|suspected|alleg|presumed|says it|said it)\b|^\s*(THE OFFICIAL EXPLANATION|STILL CLASSIFIED):)/i;
+  const recIdx=()=>{const i=blocks.findIndex(b=>/^Receipts:/i.test(b.trim()));return i>0?i:blocks.length-3};
+  while(blocks.join("\n\n").length>max){
+    const end=recIdx(),body=[];for(let k=1;k<end;k++)body.push(k);
+    if(body.length<=1)break;
+    /* the short kicker line just before the receipts is kept too: it is the payoff */
+    const kick=end-1,cand=body.slice(1).reverse().filter(k=>!(k===kick&&blocks[k].length<=160&&body.length>2));
+    if(!cand.length)break;
+    const pick=cand.find(k=>!PROTECT.test(blocks[k]))??cand[0];
+    blocks.splice(pick,1);
+  }
+  /* 2. drop receipts beyond the first two */
+  let out=blocks.join("\n\n");
+  if(out.length>max){const i=blocks.findIndex(b=>/^Receipts:/i.test(b.trim()));
+    if(i>=0){const lines=blocks[i].split("\n");while(blocks.join("\n\n").length>max&&lines.length>3){lines.pop();blocks[i]=lines.join("\n")}}
+    out=blocks.join("\n\n");}
+  /* 3. last resort: trim the longest remaining body paragraph at a sentence boundary */
+  while(out.length>max){const i=blocks.findIndex(b=>/^Receipts:/i.test(b.trim()));const body=blocks.slice(1,i>0?i:blocks.length-1);
+    if(!body.length)break;let li=1;body.forEach((b,k)=>{if(b.length>blocks[li].length)li=k+1});
+    const sents=blocks[li].split(/(?<=[.!?"”])\s+/);if(sents.length<=1)break;sents.pop();blocks[li]=sents.join(" ");out=blocks.join("\n\n");}
+  return out;
+}
+async function ensureFits(st){
+  if(capEl.value.length<=CAP_LIMIT)return false;
+  if(Platform.ai){
+    st.className="status";st.textContent=`Too long (${capEl.value.length.toLocaleString()} characters). Shortening…`;
+    try{const r=await Platform.ai.stream(SHORTEN_RULES.replace("{N}","1,900")+capEl.value,{});const t=cleanTags(tiktokCaption(noDash(String(r.text||"").trim())));
+      if(t&&t.length<capEl.value.length)capEl.value=t}catch(e){}
+  }
+  if(capEl.value.length>CAP_LIMIT)capEl.value=tiktokCaption(fitCaption(capEl.value,CAP_LIMIT-60));
+  store("caption",capEl.value);capStats();return true;
+}
+/* Without Claude: build the caption from the script and Facts box, then join it into TikTok's one paragraph. */
+function buildCaption(){const t=buildCaptionLines();return t?cleanTags(tiktokCaption(fitCaption(t,CAP_LIMIT-60))):""}
+function buildCaptionLines(){
+  const sl=parseScript(scriptEl.value); if(!sl.length) return "";
+  const hook=sl.find(s=>s.type==="hook")||sl[0];
+  const reveal=sl.find(s=>s.type==="reveal");
+  const rec=sl.find(s=>s.type==="receipts");
+  const body=sl.filter(s=>s.type==="body").map(s=>plain(s.text));
+  const out=[];
+  out.push((postType()==="memo"?"Opinion: ":"")+plain(hook.text)+" 📁");
+  out.push("");
+  /* Longer read: build the body from the Facts box when a story was sent over; otherwise from the slides. */
+  const facts=storyFacts();
+  if(facts.length){
+    const clean=facts.map(f=>noDash(f.replace(/\s+/g," ").trim())).map(f=>/[.!?"')]$/.test(f)?f:f+".");
+    for(let i=0;i<clean.length;i+=2)out.push(clean.slice(i,i+2).join(" "),"");
+    out.pop();
+  } else {
+    if(body[0]) out.push(body[0]);
+    if(reveal) out.push(plain(reveal.text));
+    if(body.length>1) out.push(body[body.length-1]);
+  }
+  out.push("");out.push(`Which public document should ${typeWord()} ${nextNumber(filenoEl.value.trim()||"000")} read?`);
+  if(rec&&rec.items.length){out.push("");out.push("Receipts:");rec.items.forEach(i=>out.push("• "+plain(i)));}
+  out.push("");
+  if(signoffEl.value.trim()) out.push(signoffEl.value.trim());
+  out.push(numLine());
+  out.push("");
+  out.push(brandTags().slice(0,5).join(" "));
+  return out.join("\n");
+}
+const CAPTION_RULES=`Write the TikTok caption for this slideshow video. The account presents TRUE, verifiable information as satire of "they don't want you to know" conspiracy posts: the dramatic secret is always something that was public all along. The caption reads like sharp investigative journalism written by someone with a very dry sense of humour. Ordinary viewers should want to keep reading; conspiracy-minded viewers should come away with accurate information.
+
+Rules:
+- Use ONLY facts in the slide script and source material. Never invent numbers, names, dates, quotes or sources.
+- Every claim, stated or implied, must pass the literal truth test: it matches a source sentence at the same strength. Side-by-side facts refer to the same thing. No cause, intent or guilt unless a source states it. Numbers carry unit, period and base. Quotes are word for word, with who said them and when.
+- If something is an allegation, say who alleges it and include the other side's response.
+- Aim the irony at powerful institutions, companies and officials, never at ordinary people, the people affected, or the viewer.
+- Never state the false or exaggerated version of a claim, not even ironically or as a question.
+- Write ONE paragraph with no line breaks (TikTok strips them).
+
+IN THIS ORDER:
+1. First sentence: 100 characters or fewer, names the institution and the country, ends with 📁. Sharp through contrast, not outrage: a jarring contrast, a surprising number or an exact quote. Loaded verbs need proof: "buried" (the fact sits deep in a document), "quietly" (no announcement was found), "admitted" (the actor said it themselves). Never "cover-up", "lied" or "hid" unless an official finding says so. No question marks, no "you won't believe", no fake urgency. It must be accurate, and read as satire, even if it is the only thing someone sees.
+   Good patterns: "The Pentagon asked who should decide its next weapons. It picked people who sell them. 📁" / "A prison chief called the villas a 'sports facility.' The inmates were paying rent. 📁"
+2. Context: 2 or 3 sentences on what happened and why it matters, including the other side's response, fairly stated. Repeat the hook's key words (institution, place, topic) on purpose: TikTok search reads captions.
+3. What is still unknown, if anything, in one sentence.
+4. Kicker: one short line landing the irony on a fact already stated. It may call back to the hook's catchphrase, now answered (e.g. "The money was in the annual report.").
+5. One comment question about a document, an institution or the next File. Never about a group of people, never "who's to blame" (e.g. "Which public document should File 008 read?").
+6. "Receipts:" then the sources as Chicago-style bibliography entries (18th edition) without URLs and without underscores, separated by " / ". Use only authors, titles and dates stated in the material.
+7. This exact sign-off: {SIGNOFF}
+8. Then: {NUMLINE}
+9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject (e.g. #euaudit) and one is the country or region (e.g. #europeanunion). No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
+
+- Voice: active verbs, short sentences, attribution on every claim, no adjectives doing the arguing. Up to two winks at conspiracy-post language in the whole caption. No exclamation marks.
+- Never use em dashes (the long dash). Use a period, comma or colon instead.
+- Write for an international English-speaking audience: name the country, explain local institutions in a few words, label currencies (C$, US$, £, €).
+- Length: 500 to 1,200 characters in total, hashtags included. HARD LIMIT: 2,000.
+- Output ONLY the caption text.
+
+Slide script:
+`;
+const MEMO_CAPTION_PREFIX=`THIS POST IS A MEMO: the account's labelled commentary, not a news file. Adjust the rules below as follows. The first sentence must begin with "Opinion: ". Give the facts first (attributed, from the material) and then the account's view, clearly marked as its view. Be fair to the other side where the material allows. Punch up, never at ordinary people.
+
+`;
+function captionPrompt(){
+  const brand=brandTags().slice(0,5);
+  return (postType()==="memo"?MEMO_CAPTION_PREFIX:"")+CAPTION_RULES.replace("{SIGNOFF}",signoffEl.value.trim()||"It was never hidden.")
+    .replace("{NUMLINE}",numLine())
+    .replace("{BRAND}",brand.join(" ")||"(none)")
+    .replace("{EXTRA}",String(Math.max(0,5-brand.length)))
+    +scriptEl.value.replace(/^[\s*_]*DEVICE[*_]*\s*[:\uFF1A].*$/im,"")+"\n\nToday's date: "+isoDay()+"\n\nSource material:\n"+($("story").value.trim()||"(none provided; rely on the script only)");
+}
+let capCtrl=null;
+async function writeCaption(fromDraft){
+  const st=$("capStatus"), b=$("capAI");
+  if(!Platform.ai){capEl.value=buildCaption();store("caption",capEl.value);capStats();return}
+  if(capCtrl){capCtrl.abort();return}
+  capCtrl=new AbortController();b.textContent="Stop";st.className="status";st.textContent="Claude is writing the caption…";
+  try{
+    const res=await Platform.ai.stream(captionPrompt(),{signal:capCtrl.signal,onText:({text})=>{capEl.value=noDash(text.trim());capStats()}});
+    capEl.value=cleanTags(tiktokCaption(noDash(res.text.trim())));store("caption",capEl.value);capStats();
+    const trimmed=await ensureFits(st);
+    st.textContent=trimmed?"Caption ready, shortened to fit the 2,000-character cap. Check it against the slides.":"Caption ready. Check it against the slides.";
+  }catch(err){
+    st.className="status err";
+    if(err&&err.code==="cancelled"){st.className="status";st.textContent="Stopped."}
+    else st.textContent="The caption didn't finish. Use “Build from script” instead, or try again.";
+    if(err&&err.text){capEl.value=err.text.trim();capStats()}
+  }finally{capCtrl=null;b.textContent="Write caption with Claude"}
+}
+$("capAI").addEventListener("click",()=>writeCaption(false));
+$("capBuild").addEventListener("click",()=>{capEl.value=fitCaption(buildCaption(),CAP_LIMIT-60);store("caption",capEl.value);capStats();$("capStatus").className="status";$("capStatus").textContent="Built from the script. Edit freely."});
+/* TikTok (via Metricool) drops line breaks. Rebuild the caption as flowing sentences, receipts joined with semicolons. */
+function tiktokCaption(t){
+  const out=[];let rec=[],tags="";
+  const flush=()=>{if(rec.length){out.push(rec.join(" / ")+".");rec=[]}};
+  String(t).split("\n").map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    if(/^#/.test(l)){tags=l;return}
+    if(/^[•\-]\s+/.test(l)){rec.push(l.replace(/^[•\-]\s+/,"").replace(/[.;]$/,""));return}
+    flush();out.push(/[.!?:\u{1F4C1}"')]$/u.test(l)||/#[\wÀ-ɏ]+$/.test(l)?l:l+".");
+  });
+  flush();if(tags)out.push(tags);
+  return noDash(out.join(" "));
+}
+$("thBuild").addEventListener("click",renderThreads);
+$("pinCopy").addEventListener("click",async e=>{
+  const b=e.currentTarget,text=$("pinText").value;if(!text)return;
+  try{await navigator.clipboard.writeText(text);b.textContent="Copied";setTimeout(()=>b.textContent="Copy pinned comment",2000)}
+  catch(err){const f=$("fallback");f.hidden=false;f.value=text;f.focus();f.select();$("capStatus").textContent="Copy the selected pinned comment at the bottom of the page."}
+});
+$("capCopy").addEventListener("click",async e=>{
+  const b=e.currentTarget;
+  try{await navigator.clipboard.writeText(fixQuotes(tiktokCaption(capEl.value)));b.textContent="Copied";setTimeout(()=>b.textContent="Copy caption",2000)}
+  catch(err){capEl.focus();capEl.select();$("capStatus").textContent="Copy the selected caption text."}
+});
+capEl.addEventListener("input",()=>{store("caption",capEl.value);capStats()});
+tagsEl.addEventListener("input",()=>store("tags",tagsEl.value));
+
+/* ---------- next file ---------- */
+function nextNumber(v){const m=String(v).match(/^(\D*)(\d+)(\D*)$/);if(!m)return "001";const n=String(parseInt(m[2],10)+1).padStart(m[2].length,"0");return m[1]+n+m[3]}
+function offerNext(){const b=$("nextFile");b.textContent=`Start ${typeWord()} No. ${nextNumber(filenoEl.value.trim()||"000")}`;b.hidden=false}
+$("nextFile").addEventListener("click",()=>{
+  filenoEl.value=nextNumber(filenoEl.value.trim()||"000");store("fileno",filenoEl.value);
+  scriptEl.value="";store("script","");
+  $("story").value="";store("story","");
+  capEl.value="";store("caption","");capStats();
+  resetChecks();$("draftStatus").textContent="";$("capStatus").textContent="";
+  setLinked(null);$("thList").replaceChildren();
+  ["locPlace","locCountry"].forEach(id=>{$(id).value="";store(id,"")});
+  $("nextFile").hidden=true;renderAll();
+  $("story").focus();
+});
+
+async function boot(){
+  try{await Promise.all([
+    document.fonts.load(`900 100px "Big Shoulders Display"`),
+    document.fonts.load(`800 100px "Big Shoulders Display"`),
+    document.fonts.load(`400 30px "Courier Prime"`),
+    document.fonts.load(`700 30px "Courier Prime"`),
+    document.fonts.load(`italic 400 30px "Courier Prime"`),
+    document.fonts.load(`700 100px "Space Grotesk"`),
+    document.fonts.load(`500 100px "Space Grotesk"`),
+    document.fonts.load(`400 30px "JetBrains Mono"`),
+    document.fonts.load(`700 30px "JetBrains Mono"`)])}catch(e){}
+  PAPER_TEX=makeTexture(PAPER,"#3B2F1C",7);
+  INK_TEX=makeTexture(INK,"#EADFC4",19);
+  PAPER_TEX_T=makeTexture(PAPER,"#3B2F1C",7,TT.h);
+  INK_TEX_T=makeTexture(INK,"#EADFC4",19,TT.h);
+  updateApproved();
+  await renderAll();
+  renderAvatars();
+  if(!capEl.value.trim()){capEl.value=buildCaption()}
+  capStats();
+  $("saveAll").hidden=!Platform.save;$("saveNote").hidden=!!Platform.save;
+  $("draftBtn").hidden=!Platform.ai;$("capAI").hidden=!Platform.ai;
+}
+/* ---------- Autosave: each file's work lives in the database (browser storage can be wiped) ---------- */
+function fileId(no,type){return (type==="memo"?"memo-":"file-")+(String(no||"000").replace(/[^\w-]/g,"").slice(0,40)||"000")}
+function fileState(){return {type:postType(),fileno:filenoEl.value.trim()||"000",story:$("story").value,script:scriptEl.value,caption:capEl.value,
+  locPlace:$("locPlace").value,locCountry:$("locCountry").value,look:$("look").value,linked:linked||"",
+  linkedTitle:load("linkedTitle")||"",linkedReceipts:load("linkedReceipts")||"[]",checks:checks.map(c=>c.checked)}}
+let saveTimer=null,saveChain=Promise.resolve(),lastSaved="",restoring=true,currentMeta=""; /* true until the last file is restored, so a blank page can never overwrite saved work */
+function setSaveState(t,err){const e=$("saveState");e.textContent=t;e.className="status savestate"+(err?" err":"")}
+function scheduleSave(){if(!Platform.db||restoring)return;clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,1200)}
+function flushSave(){
+  if(!Platform.db)return Promise.resolve();clearTimeout(saveTimer);
+  const st=fileState(),key=JSON.stringify(st);if(key===lastSaved)return saveChain;
+  if(!st.script.trim()&&!st.story.trim()&&!st.caption.trim())return saveChain; /* nothing worth saving yet */
+  if(!/^\d{3,}$/.test(st.fileno)){setSaveState(typeWord()+" No. needs 3 digits to save",true);return saveChain}
+  const id=fileId(st.fileno,st.type);setSaveState("Saving…");
+  saveChain=saveChain.then(async()=>{
+    await Platform.db.set("files",id,Object.assign({},st,{updatedAt:new Date().toISOString()}));
+    if(currentMeta!==id){await Platform.db.set("meta","studio",{current:id});currentMeta=id}
+    lastSaved=key;
+    setSaveState("Saved "+new Intl.DateTimeFormat("en-CA",{hour:"numeric",minute:"2-digit"}).format(new Date()));
+  }).catch(()=>setSaveState("Not saved. Check your connection; your work is still here.",true));
+  return saveChain;
+}
+function applyFile(d){
+  restoring=true;
+  $("postType").value=d.type==="memo"?"memo":"file";store("postType",$("postType").value);updateTypeUI();
+  filenoEl.value=d.fileno||"001";store("fileno",filenoEl.value);
+  $("story").value=d.story||"";store("story",$("story").value);
+  scriptEl.value=d.script||"";store("script",scriptEl.value);
+  capEl.value=d.caption||"";store("caption",capEl.value);
+  $("locPlace").value=d.locPlace||"";$("locCountry").value=d.locCountry||"";store("locPlace",$("locPlace").value);store("locCountry",$("locCountry").value);
+  if(["auto","dark","light","classic"].includes(d.look)){$("look").value=d.look;store("look",d.look)}
+  let rec=[];try{rec=JSON.parse(d.linkedReceipts||"[]")}catch(e){}
+  setLinked(d.linked||null,d.linkedTitle||"",rec);
+  const ck=Array.isArray(d.checks)?d.checks:[];checks.forEach((c,i)=>c.checked=!!ck[i]);updateApproved();
+  $("thList").replaceChildren();$("nextFile").hidden=true;
+  lastSaved=JSON.stringify(fileState());restoring=false;
+  renderAll();renderAvatars();capStats();
+}
+async function openSaved(id){
+  await flushSave();
+  try{const d=await Platform.db.get("files",id);if(!d){setSaveState("That file couldn't be found.",true);return}
+    applyFile(d);currentMeta="";await Platform.db.set("meta","studio",{current:id});currentMeta=id;setSaveState("Opened "+(d.type==="memo"?"Memo":"File")+" No. "+(d.fileno||""))}
+  catch(e){setSaveState("Couldn't open that file. Try again.",true)}
+}
+function confirmSwitch(){return true}
+async function restoreLast(){
+  try{
+    if(!Platform.db||!Platform.db.get)return;
+    const m=await Platform.db.get("meta","studio");const id=m&&m.current;if(!id)return;
+    const d=await Platform.db.get("files",id);if(!d)return;
+    currentMeta=id;applyFile(d);setSaveState("Restored "+(d.type==="memo"?"Memo":"File")+" No. "+(d.fileno||""));
+  }catch(e){setSaveState("Couldn't load your last file. Pick it from Load a file.",true)}
+  finally{if(restoring){restoring=false;lastSaved="";}}
+}
+let savedDocs=[];
+function listSaved(docs){
+  savedDocs=docs||[];
+  const g=$("savedFiles");g.replaceChildren();
+  docs.slice().sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||""))).forEach(d=>{
+    const o=document.createElement("option");o.value="saved:"+d.id;
+    o.textContent=(d.type==="memo"?"Memo ":"File ")+(d.fileno||"?")+(d.linkedTitle?": "+String(d.linkedTitle).slice(0,48):"");g.append(o)});
+  g.hidden=!docs.length;
+}
+if(Platform.db){Platform.db.watch("files",listSaved)}
+function updateTypeUI(){$("numLabel").textContent=typeWord()+" No.";}
+$("postType").value=load("postType")==="memo"?"memo":"file";updateTypeUI();
+$("postType").addEventListener("change",async()=>{
+  /* switching type starts that series' own numbering; the current work stays saved under its old id */
+  /* the Facts box and location carry over so the same story can be redrafted in the other format */
+  const sel=$("postType"),want=sel.value;sel.value=load("postType")==="memo"?"memo":"file"; /* save the old work under its own type first */
+  if(sel.value===want)return;restoring=true;await flushSave();sel.value=want;store("postType",postType());updateTypeUI();
+  const t=postType();let hi=0;savedDocs.forEach(d=>{if((d.type==="memo"?"memo":"file")===t){const n=parseInt(d.fileno,10);if(n>hi)hi=n}});
+  filenoEl.value=String(hi+1).padStart(3,"0");store("fileno",filenoEl.value);
+  scriptEl.value="";store("script","");capEl.value="";store("caption","");
+  resetChecks();setLinked(null);
+  $("thList").replaceChildren();$("nextFile").hidden=true;$("draftStatus").textContent="";$("capStatus").textContent="";
+  lastSaved=JSON.stringify(fileState());restoring=false;currentMeta="";
+  renderAll();renderAvatars();capStats();
+  setSaveState("New "+typeWord()+" No. "+filenoEl.value+". Your Facts box carried over (clear it for a new story); press Draft with Claude to write it as a "+typeWord()+".");
+});
+$("paneStudio").addEventListener("input",scheduleSave);
+$("paneStudio").addEventListener("change",e=>{if(e.target.id!=="example")scheduleSave()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushSave()});
+window.addEventListener("pagehide",()=>{flushSave()});
+
+boot().then(restoreLast);
+return {
+  loadStory(id,title,text,receipts,location){
+    $("story").value=text;store("story",text);setLinked(id,title,receipts);$("thList").replaceChildren();
+    if(location&&(location.place||location.country)){$("locPlace").value=location.place||"";$("locCountry").value=location.country||"";store("locPlace",$("locPlace").value);store("locCountry",$("locCountry").value);queue()}
+    $("draftStatus").className="status";
+    $("draftStatus").textContent=Platform.ai?"Facts loaded. Press Draft with Claude.":"Facts loaded. Use Copy prompt with any AI, then paste the script below.";
+  }
+};
+}
+
+function Desk(studio){
+const TYPE={primary:"Primary record",wire:"Wire",mainstream:"Mainstream",independent:"Independent",factcheck:"Fact-check"};
+const REGION={bc:"B.C.",canada:"Canada",us:"U.S.",uk:"U.K.",europe:"Europe",world:"World"};
+const VERIF={verified:"Verified",partly:"Partly verified",unverified:"Unverified"};
+const COVER={leading:"Leading the news",wide:"Widely covered",radar:"Under the radar"};
+function coverCls(v){return v==="leading"?"ok":v==="wide"?"":"warn"}
+function coverChip(s){return COVER[s.coverage]?chip(COVER[s.coverage],coverCls(s.coverage)):null}
+function biteChip(s){const n=+s.bite;return n>=1&&n<=3?chip("Bite "+"\u25CF".repeat(n)+"\u25CB".repeat(3-n),n===3?"ok":""):null}
+const STATUS={"new":"New",shortlisted:"Shortlisted",used:"Used",skipped:"Skipped"};
+const SRCSTATUS={reading:"Readable here",blocked:"Blocked here",broken:"Wrong URL",untested:"No feed found"};
+const KIND={primary:"Primary",news:"News",wire:"Wire",headline:"Headline only"};
+const state={stories:[],sources:[],selected:null,filter:"all",region:"all"};
+let busy=false;
+
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function safeUrl(u){try{const x=new URL(u);return(x.protocol==="http:"||x.protocol==="https:")?x.href:null}catch(e){return null}}
+function fmtTime(iso){if(!iso)return null;const d=new Date(iso);if(isNaN(d))return null;
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Vancouver",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(d)+" PT"}
+function chip(text,cls){return el("span","chip"+(cls?" "+cls:""),text)}
+function verifCls(v){return v==="verified"?"ok":v==="partly"?"warn":"bad"}
+function arr(x){return Array.isArray(x)?x:[]}
+
+/* ---------- clipboard ---------- */
+async function copyText(text,btn,label){
+  try{await navigator.clipboard.writeText(text);flash(btn,"Copied",label)}
+  catch(e){const ta=$("fallback");ta.hidden=false;ta.value=text;ta.focus();ta.select();flash(btn,"Select and copy below",label)}
+}
+function flash(btn,msg,label){if(!btn)return;btn.textContent=msg;setTimeout(()=>{btn.textContent=label},2200)}
+
+/* ---------- stories ---------- */
+function visibleStories(){
+  return state.stories.filter(s=>(state.filter==="all"||s.status===state.filter)&&(state.region==="all"||s.region===state.region))
+    .sort((a,b)=>((a.status==="skipped")-(b.status==="skipped"))
+      ||String(b.addedAt||"").slice(0,13).localeCompare(String(a.addedAt||"").slice(0,13)) /* newest run first */
+      ||((+a.rank||99)-(+b.rank||99)) /* then the pull's own ranking: coverage and bite */
+      ||String(b.addedAt||"").localeCompare(String(a.addedAt||"")));
+}
+function whenText(s){return fmtTime(s.publishedAt)||s.publishedNote||"Time not recorded"}
+
+function renderList(){
+  const list=$("list");list.replaceChildren();
+  const vis=visibleStories();
+  $("storyCount").textContent=state.stories.length?"("+state.stories.length+")":"";
+  if(!vis.length){
+    const li=el("li");const box=el("div","empty");
+    box.append(el("strong",null,state.stories.length?"Nothing matches":"No stories filed yet"),
+      el("span",null,state.stories.length?"Try another status or region.":"The daily pull files candidates here, each with its source, facts and receipts. Until it runs, ask Claude to file one, or import a backup on the Sources tab."));
+    li.append(box);list.append(li);return;
+  }
+  vis.forEach(s=>{
+    const li=el("li");const b=el("button","item");b.type="button";
+    b.setAttribute("aria-current",s.id===state.selected?"true":"false");
+    b.append(el("span","t",s.title||"Untitled"));
+    b.append(el("span","meta",[s.sourceName,REGION[s.region],whenText(s)].filter(Boolean).join(" · ")));
+    const c=el("span","chips");
+    const cv=coverChip(s);if(cv)c.append(cv);const bt=biteChip(s);if(bt)c.append(bt);if(s.format==="memo"||s.format==="file")c.append(chip(s.format==="memo"?"Memo":"File"));
+    c.append(chip(VERIF[s.verification]||"Unverified",verifCls(s.verification)));
+    if(s.status&&s.status!=="new")c.append(chip(STATUS[s.status]||s.status));
+    b.append(c);
+    b.addEventListener("click",()=>{state.selected=s.id;renderList();renderDetail();
+      if(window.matchMedia("(max-width:900px)").matches)$("detail").scrollIntoView({block:"start"})});
+    li.append(b);list.append(li);
+  });
+}
+
+function studioText(s){
+  const L=[];L.push("STORY: "+(s.title||""));
+  L.push("SOURCE: "+(s.sourceName||"")+" ("+(TYPE[s.sourceType]||"")+"), "+whenText(s));
+  L.push("","FACTS:");arr(s.facts).forEach(f=>L.push("- "+f));
+  if(s.reveal){L.push("","KEY FACT: "+s.reveal)}
+  if(s.gap){L.push("","THE GAP (what they say vs what the record shows): "+s.gap)}
+  if(s.institution_response){L.push("","INSTITUTION'S RESPONSE: "+s.institution_response)}
+  if(s.strongest_caveat){L.push("","STRONGEST CAVEAT (must appear on a slide): "+s.strongest_caveat)}
+  if(s.narrative_echo){L.push("","NARRATIVE-ECHO TOPIC: aim the conspiratorial register only at officials' words or records, never at the science or data; state the consensus plainly by slide 2.")}
+  if(s.search_phrase){L.push("","SEARCH PHRASE (use in the hook, caption and one hashtag): "+s.search_phrase)}
+  if(s.format==="memo"||s.format==="file"){L.push("","SUGGESTED FORMAT: "+(s.format==="memo"?"Memo (set Type to Memo before drafting)":"File"))}
+  L.push("","SOURCES:");arr(s.receipts).forEach(r=>L.push("- "+(r.cite||r.label)+" ["+(KIND[r.kind]||r.kind||"")+"] "+(r.url||"")));
+  if(arr(s.cautions).length){L.push("","CHECK BEFORE POSTING:");arr(s.cautions).forEach(c=>L.push("- "+c))}
+  return L.join("\n");
+}
+
+async function setStatus(s,status){
+  if(!Platform.db||busy)return;busy=true;const st=$("actStatus");
+  try{await Platform.db.update("stories",s.id,{status:s.status===status?"new":status});if(st){st.className="status";st.textContent=""}}
+  catch(e){if(st){st.className="status err";st.textContent="Couldn't save. You may have view-only access."}}
+  finally{busy=false}
+}
+
+async function draftHooks(s,btn){
+  if(!Platform.ai||!Platform.db||busy)return;busy=true;btn.disabled=true;const st=$("actStatus");st.className="status";st.textContent="Claude is drafting hooks…";
+  const prompt=`You write hooks for "Hidden in Plain Sight" (@plainsightfile), a TikTok account that presents TRUE, verifiable information styled like a "they don't want you to know" post. The punchline is always that the "secret" was public. Ordinary viewers should get the joke; conspiracy-minded viewers should come away with accurate information.
+
+Rules:
+- Use ONLY the facts below. Never invent numbers, names, dates or claims.
+- Each hook is 8 to 14 words, readable in 2 seconds, and names the institution and the country.
+- Each hook contains BOTH halves of the joke: a short UPPERCASE conspiratorial setup and its boring public payoff in sentence case (a named report, website, press release, filing, or a page number from the facts). If a hook still works as a sincere conspiracy post with the payoff deleted, rewrite it.
+- Each hook sets up a say-vs-record gap or a specific number from the facts.
+- Literal truth test: every claim, including implied ones, matches a fact at the same strength. No cause, intent or guilt unless the facts state it. Quotes word for word. Never state the false version of a claim, not even ironically or as a question.
+- At most one stock catchphrase per hook, chosen from TOP SECRET, CLASSIFIED, DO YOUR OWN RESEARCH, CONNECT THE DOTS, or WHO BENEFITS (with the answer in the same hook). Never WAKE UP or FOLLOW THE MONEY. Use a different catchphrase in each hook, and at least one hook uses none, getting its effect from contrast, a ledger ("Official description: ... Arrangement: ..."), minutes ("Agenda item: ... Resolution: ...") or understatement instead.
+- On health, vaccines, climate, elections, public debt or "elites" stories, point the setup only at an official's words or an institution's records, never at the science or the data.
+- Aim at powerful institutions, companies and officials, never at ordinary people or the viewer.
+- The reveal line is one or two sentences: the key true fact, plus the other side's response if the facts include one. Attribute anything that is an allegation or someone's characterization.
+- Never use em dashes (the long dash). Use a period, comma or colon instead.
+- Write for an international English-speaking audience (Canada, the U.S., the U.K., Europe and beyond): name the country, explain local institutions in a few words (e.g. "Alberta's health agency"), and label currencies (C$, US$, £, €).
+
+Return JSON only: {"hooks":["...","...","..."],"reveal":"..."}
+
+Story: ${s.title}
+Facts:
+${arr(s.facts).map(f=>"- "+f).join("\n")}${s.gap?"\nThe gap: "+s.gap:""}${s.institution_response?"\nInstitution's response: "+s.institution_response:""}${s.strongest_caveat?"\nStrongest caveat: "+s.strongest_caveat:""}${s.narrative_echo?"\nNarrative-echo topic: point the setup only at officials' words or records.":""}
+Cautions:
+${arr(s.cautions).map(f=>"- "+f).join("\n")}`;
+  try{
+    const out=await Platform.ai.json(prompt);
+    const hooks=arr(out&&out.hooks).map(h=>noDash(String(h))).filter(Boolean).slice(0,3);
+    if(!hooks.length)throw new Error("empty");
+    const merged=hooks.concat(arr(s.hooks).filter(h=>!hooks.includes(h))).slice(0,8);
+    const patch={hooks:merged};if(!s.reveal&&out.reveal)patch.reveal=noDash(String(out.reveal));
+    await Platform.db.update("stories",s.id,patch);
+    st.textContent="Hooks added. Check each against the facts.";
+  }catch(e){
+    st.className="status err";
+    st.textContent=e&&e.code==="not_granted"?"Drafting wasn't allowed in this view.":e&&e.code==="rate_limited"?"Too many drafts at once. Wait a minute.":"The draft didn't finish. Try again.";
+  }finally{busy=false;btn.disabled=false}
+}
+
+function section(title,cls){const d=el("div","sec");d.append(el("h3",cls||"",title));return d}
+
+function renderDetail(){
+  const box=$("detail");box.replaceChildren();
+  const s=state.stories.find(x=>x.id===state.selected);
+  if(!s){
+    const d=el("div","empty");
+    d.append(el("strong",null,"Pick a story"),el("span",null,"Its facts, hooks, receipts and cautions show here."));
+    box.append(d);return;
+  }
+  const head=el("div");
+  head.append(el("h2",null,s.title||"Untitled"));
+  const m=el("p","meta",[s.sourceName,TYPE[s.sourceType],REGION[s.region],s.pillar&&s.pillar.replace(/-/g," "),whenText(s)].filter(Boolean).join(" · "));
+  m.style.margin="8px 0 0";head.append(m);
+  const c=el("div","chips");c.style.marginTop="10px";
+  {const cv=coverChip(s);if(cv)c.append(cv);const bt=biteChip(s);if(bt)c.append(bt);if(s.format==="memo"||s.format==="file")c.append(chip(s.format==="memo"?"Best as a Memo":"Best as a File"));if(s.narrative_echo)c.append(chip("Narrative echo","warn"));}
+  c.append(chip(VERIF[s.verification]||"Unverified",verifCls(s.verification)));
+  if(s.status&&s.status!=="new")c.append(chip(STATUS[s.status]||s.status));
+  head.append(c);box.append(head);
+  if(s.gap){const g=section("The gap");g.append(el("div","reveal",s.gap));box.append(g)}
+  if(s.institution_response){const g=section("Institution's response");g.append(el("p",null,s.institution_response));box.append(g)}
+  if(s.strongest_caveat){const g=section("Strongest caveat (goes on a slide)","caution");g.append(el("p",null,s.strongest_caveat));box.append(g)}
+  if(s.coverageNote||s.freshness||s.search_phrase){const w=section("Coverage and search");
+    if(s.coverageNote)w.append(el("p","meta",s.coverageNote));
+    if(s.freshness)w.append(el("p","meta","Last in the news: "+s.freshness));
+    if(s.search_phrase)w.append(el("p","meta","Search phrase: "+s.search_phrase));
+    box.append(w)}
+
+  if(s.reveal){const r=section("Key fact");r.append(el("div","reveal",s.reveal));box.append(r)}
+
+  const facts=section("Facts");
+  if(arr(s.facts).length){const ul=el("ul","plain");arr(s.facts).forEach(f=>ul.append(el("li",null,f)));facts.append(ul)}
+  else facts.append(el("p","meta","No facts recorded."));
+  box.append(facts);
+
+  const hooks=section("Hooks");
+  if(arr(s.hooks).length){
+    arr(s.hooks).forEach(h=>{
+      const row=el("div","hook");row.append(el("div","hooktext",h));
+      const cb=el("button","small","Copy");cb.type="button";cb.addEventListener("click",()=>copyText(h,cb,"Copy"));row.append(cb);hooks.append(row);
+    });
+  } else hooks.append(el("p","meta","No hooks yet."));
+  if(Platform.ai&&Platform.db){const b=el("button","small","Draft hooks with Claude");b.type="button";b.style.marginTop="10px";b.addEventListener("click",()=>draftHooks(s,b));hooks.append(b)}
+  box.append(hooks);
+
+  const rc=section("Receipts");
+  if(arr(s.receipts).length){
+    arr(s.receipts).forEach(r=>{
+      const d=el("div","rc");const row=el("div","row");
+      const u=safeUrl(r.url);
+      if(u){const a=el("a",null,r.label||u);a.href=u;a.target="_blank";a.rel="noopener noreferrer";row.append(a)}else row.append(el("span",null,r.label||"Source"));
+      row.append(chip(KIND[r.kind]||r.kind||"Source",r.kind==="primary"?"ok":r.kind==="headline"?"warn":""));
+      d.append(row);if(r.note)d.append(el("span","meta",r.note));rc.append(d);
+    });
+  } else rc.append(el("p","meta","No receipts recorded."));
+  box.append(rc);
+
+  if(arr(s.cautions).length){const ca=section("Check before posting","caution");const ul=el("ul","plain");arr(s.cautions).forEach(x=>ul.append(el("li",null,x)));ca.append(ul);box.append(ca)}
+
+  const act=el("div","actions");
+  [["shortlisted","Shortlist"],["used","Mark used"],["skipped","Skip"]].forEach(([k,label])=>{
+    const b=el("button","small",label);b.type="button";b.setAttribute("aria-pressed",s.status===k?"true":"false");b.disabled=!Platform.db;
+    b.addEventListener("click",()=>setStatus(s,k));act.append(b);
+  });
+  const go=el("button","primary small","Send to Studio");go.type="button";go.addEventListener("click",()=>{studio.loadStory(s.id,s.title,studioText(s),arr(s.receipts),s.location);showTab("studio");window.scrollTo(0,0)});act.append(go);
+  const cp=el("button","small","Copy facts");cp.type="button";cp.addEventListener("click",()=>copyText(studioText(s),cp,"Copy facts"));act.append(cp);
+  box.append(act);
+  const st=el("div","status");st.id="actStatus";box.append(st);
+}
+
+/* ---------- sources ---------- */
+const ORDER={reading:0,blocked:1,broken:2,untested:3};
+function renderSources(){
+  const body=$("srcBody");body.replaceChildren();
+  $("sourceCount").textContent=state.sources.length?"("+state.sources.length+")":"";
+  const list=state.sources.slice().sort((a,b)=>(ORDER[a.status]-ORDER[b.status])||String(a.name).localeCompare(String(b.name)));
+  if(!list.length){
+    const tr=el("tr");const td=el("td");td.colSpan=5;td.append(el("span","meta","No sources registered yet."));tr.append(td);body.append(tr);return;
+  }
+  list.forEach(s=>{
+    const tr=el("tr");
+    const c1=el("td");c1.append(el("span","n",s.name||""));
+    if(s.audience)c1.append(el("span","sub",s.audience));
+    if(s.note)c1.append(el("span","sub",s.note));
+    const c2=el("td");c2.append(chip(TYPE[s.type]||s.type||""));
+    const c3=el("td",null,REGION[s.region]||s.region||"");
+    const c4=el("td");c4.append(chip(SRCSTATUS[s.status]||s.status,s.status==="reading"?"ok":s.status==="blocked"?"warn":"bad"));
+    if(s.tz)c4.append(el("span","sub","Time: "+s.tz));
+    const c5=el("td");
+    if(s.feedUrl){c5.append(el("code",null,s.feedUrl));const b=el("button","small","Copy URL");b.type="button";b.addEventListener("click",()=>copyText(s.feedUrl,b,"Copy URL"));c5.append(b)}
+    else c5.append(el("span","meta","None found"));
+    tr.append(c1,c2,c3,c4,c5);body.append(tr);
+  });
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function opml(){
+  const rows=state.sources.filter(s=>s.feedUrl&&s.status!=="broken");
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0"><head><title>Plain Sight sources</title></head><body>\n'+
+    rows.map(s=>'  <outline type="rss" text="'+esc(s.name)+'" title="'+esc(s.name)+'" xmlUrl="'+esc(s.feedUrl)+'"/>').join("\n")+"\n</body></opml>\n";
+}
+$("copyOpml").addEventListener("click",e=>copyText(opml(),e.currentTarget,"Copy OPML for an RSS reader"));
+$("copyUrls").addEventListener("click",e=>copyText(state.sources.filter(s=>s.status==="reading"&&s.feedUrl).map(s=>s.feedUrl).join("\n"),e.currentTarget,"Copy readable feed URLs"));
+
+/* ---------- tabs, filters ---------- */
+document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{
+  state.filter=b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  renderList();
+}));
+$("regionSel").addEventListener("change",e=>{state.region=e.target.value;renderList()});
+
+/* ---------- data ---------- */
+function ensureSelection(){
+  const vis=visibleStories();
+  if(!state.selected||!state.stories.some(s=>s.id===state.selected))state.selected=vis.length?vis[0].id:null;
+}
+function repaint(){ensureSelection();renderList();renderDetail();renderSources()}
+renderList();renderDetail();renderSources();
+if(Platform.db){
+  Platform.db.watch("stories",docs=>{state.stories=docs;repaint()});
+  Platform.db.watch("sources",docs=>{state.sources=docs;renderSources()});
+}
+/* ---------- backup ---------- */
+function strip(list){const o={};list.forEach(d=>{const c=Object.assign({},d);delete c.id;o[d.id]=c});return o}
+$("exportBtn").hidden=!Platform.save;
+$("exportBtn").addEventListener("click",async e=>{
+  const b=e.currentTarget;const data=JSON.stringify({app:"plain-sight",exportedAt:new Date().toISOString(),stories:strip(state.stories),sources:strip(state.sources)},null,2);
+  try{await Platform.save("plain-sight-backup-"+new Date().toISOString().slice(0,10)+".json",data);flash(b,"Saved","Export backup (.json)")}catch(err){}
+});
+$("importFile").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0];const st=$("srcStatus");if(!f||!Platform.db)return;
+  try{
+    const j=JSON.parse(await f.text());let n=0;
+    for(const coll of ["stories","sources"]){const o=j&&j[coll];if(!o||typeof o!=="object")continue;
+      for(const id of Object.keys(o)){if(!/^[A-Za-z0-9_.~:@+-]{1,200}$/.test(id)||typeof o[id]!=="object")continue;await Platform.db.set(coll,id,o[id]);n++}}
+    st.className="status";st.textContent="Imported "+n+" records.";
+  }catch(err){st.className="status err";st.textContent="That file couldn't be read as a Plain Sight backup."}
+  e.target.value="";
+});
+}
+
+initPlatform().catch(()=>{}).then(()=>{
+  const studio=Studio();
+  Desk(studio);
+  const t=Platform.pref.get("tab");if(t==="studio"||t==="sources"||t==="settings")showTab(t);
+  initPull();
+});
+})();
+</script>

@@ -1,0 +1,22 @@
+DEVICE: The tally
+LOCATION: Brussels / European Union
+HOOK: TOP SECRET: the European Commission's press release. "A *clean bill* of health."
+SOURCE: European Commission, Oct 2026
+---
+REVEAL: The clean bill: the accounts. The auditors' opinion on the spending: *adverse*. For the *seventh year* running.
+CLASSIFIED LOCATION: the European Court of Auditors' annual report
+---
+EU auditors: *3.8%* of 2025 spending (recovery fund aside) broke rules. Limit: *2%*. Not a fraud measure.
+SOURCE: European Court of Auditors, Oct 8
+---
+Recovery fund: *9 of 37* grant payments did not meet the conditions, auditors say. The Commission *paid them*.
+SOURCE: European Court of Auditors, Oct 8
+---
+The Commission's answer: it says it checks milestones before paying. Its words: "*low level* of risk."
+SOURCE: European Commission, Oct 8
+---
+CASE STATUS: Accounts *clean*. Spending *adverse*, seventh year running. Not fraud.
+---
+RECEIPTS: Classified location: the auditors' annual report.
+- European Commission. "The EU Budget Continues Delivering for Europe in 2025." Press release, October 8, 2026.
+- Mealha, Quirino. "EU Debt Could Hit €1 Trillion by 2027 as Spending Errors Rise, Auditors Warn." _Euronews_, October 8, 2026.
