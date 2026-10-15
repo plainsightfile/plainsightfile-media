@@ -16,6 +16,10 @@
              -> {ok, issues[], warnings[], stats{}}
     hash  --packet packet.json
              -> {hash}   sha256 of the fields that define what posts (same canonical form HQ's Approve uses)
+    factdiff  --before old-script.txt --after new-script.txt
+             -> {ok, reasons[], changedSlides[], unchangedSlides[], hookChanged}
+                ok means the edit changed wording only: no change to numbers, quoted words, SOURCE lines, qualifiers, names or receipts.
+                See factdiff.mjs. Needs no browser.
 
   story.json is a record from HQ's "stories" collection.
   packet.json is a record from HQ's "queue" collection: {type, fileno, script, caption, pinned, locPlace, locCountry, look, ...}
@@ -34,7 +38,14 @@ const readJson = p => { let j = JSON.parse(fs.readFileSync(p, "utf8")); if (j &&
 const out = o => { process.stdout.write(JSON.stringify(o, null, 2) + "\n"); };
 
 import {packetHash} from "./packet_hash.mjs";
+import {factDiff} from "./factdiff.mjs";
 if (cmd === "hash") { out({hash: packetHash(readJson(opt.packet))}); process.exit(0); }
+if (cmd === "factdiff") { out(factDiff(fs.readFileSync(opt.before, "utf8"), fs.readFileSync(opt.after, "utf8"))); process.exit(0); }
+
+/* HQ's Memo prompt asks for a CASE STATUS of "five words or fewer", but HQ's own word check (and so lint) requires 8 to 16, and a TAKE 12 to 26.
+   Every Memo would fail lint and cost a rewrite. The automation tells the writer the numbers lint enforces. */
+const MEMO_OVERRIDE = "\n\nRUN OVERRIDE (automated runs only; where this conflicts with the rules above, this wins): the CASE STATUS slide carries 8 to 16 words, not five or fewer, " +
+  "still flat and bureaucratic (e.g. \"Open. Embarrassingly well documented. Filed under: public record, page 4.\"). The TAKE slide carries 12 to 26 words. SPIN and TRANSLATION slides carry 8 to 22 words; RECORD slides 12 to 22.";
 
 function loadPlaywright() {
   for (const p of [process.env.PLAYWRIGHT_PATH, "playwright", "/opt/npm-tools/node_modules/playwright"].filter(Boolean)) {
@@ -77,6 +88,7 @@ if (cmd === "prompts") {
     if (script) { document.getElementById("script").value = script; res.captionPrompt = H.captionPrompt(); }
     return res;
   }, [story, script]));
+  if (opt.type === "memo") r.slidePrompt += MEMO_OVERRIDE;
   out(r);
 } else if (cmd === "clean-script") {
   const raw = fs.readFileSync(opt.in, "utf8");
@@ -121,6 +133,20 @@ if (cmd === "prompts") {
     if (H.dashes(plainAll)) issues.push("contains an em dash");
     if (/\bwake\s*up\b/i.test(plainAll)) issues.push('uses "WAKE UP" (banned catchphrase)');
     if (/\bfollow\s+the\s+money\b/i.test(plainAll)) issues.push('uses "FOLLOW THE MONEY" (banned catchphrase)');
+    /* The other banned phrases belong to live conspiracy movements. Words inside quotation marks are someone else's and may stay. */
+    const unquoted = plainAll.replace(/[“"][^”"]*[”"]/g, " ");
+    [["sheeple", /\bsheeple\b/i], ["cover-up", /\bcover[\s-]?up\b/i], ["rigged", /\brigged\b/i], ["tinfoil", /\btin[\s-]?foil\b/i]]
+      .forEach(([w, re]) => { if (re.test(unquoted)) issues.push(`uses "${w}" (banned phrase) outside a quotation`); });
+    /* Costume words: 2 to 4 across the post, each once. "CLASSIFIED LOCATION:" is a required label, not a costume use. */
+    {
+      const COSTUME = ["TOP SECRET", "CLASSIFIED", "LEAKED", "EYES ONLY", "REDACTED", "THEY DON'T WANT YOU TO KNOW", "WHAT THEY'RE NOT TELLING YOU", "THE DOCUMENTS",
+        "OUR SOURCES", "DO YOUR OWN RESEARCH", "CONNECT THE DOTS", "WHO BENEFITS", "I'M JUST ASKING QUESTIONS"];
+      const sc = String(p.script || "").replace(/^\s*(DEVICE|LOCATION|STAMP)\s*:.*$/gim, "").replace(/[‘’]/g, "'").toUpperCase();
+      const used = COSTUME.map(c => [c, (sc.match(new RegExp(c.replace(/ /g, "\\s+") + (c === "CLASSIFIED" ? "(?!\\s+LOCATION)" : ""), "g")) || []).length]).filter(x => x[1] > 0);
+      used.filter(x => x[1] > 1).forEach(x => issues.push(`costume phrase "${x[0]}" used ${x[1]} times (each at most once)`));
+      if (used.length > 4) issues.push(`${used.length} costume phrases (2 to 4): ${used.map(x => x[0]).join(", ")}`);
+      else if (used.length < 2) warnings.push(`${used.length} costume phrase${used.length === 1 ? "" : "s"} (the guideline is 2 to 4)`);
+    }
     const hook = body[0] ? body[0].text : "";
     const stock = ["TOP SECRET", "CLASSIFIED", "DO YOUR OWN RESEARCH", "CONNECT THE DOTS", "WHO BENEFITS"].filter(c => hook.toUpperCase().includes(c));
     if (stock.length > 1) issues.push("the hook uses more than one stock catchphrase: " + stock.join(", "));
@@ -153,6 +179,6 @@ if (cmd === "prompts") {
   r.ok = r.issues.length === 0;
   out(r);
 } else {
-  console.error("usage: node hq_tool.mjs <prompts|clean-script|clean-caption|shorten-prompt|lint|hash> [options]");
+  console.error("usage: node hq_tool.mjs <prompts|clean-script|clean-caption|shorten-prompt|lint|hash|factdiff> [options]");
   process.exit(2);
 }

@@ -5,9 +5,16 @@
   node prep.mjs numbers   --files files.json --queue queue.json
         -> {file:"006", memo:"003"}   next numbers (highest used in HQ's files and queue, plus one)
   node prep.mjs checker-prompt --packet packet.json --story story.json --frames <dir> [--sources <dir of fetched source texts>]
-        -> the filled CHECKER.md text (stdout, plain text)
+                               [--prior-script old.txt [--prior-caption old.txt] [--prior-pinned old.txt]]   (re-check of changes only)
+                               [--mode recheck]                                                              (words unchanged, sources may have moved)
+        -> the filled CHECKER.md text (stdout, plain text). With no mode it is a full check. With --prior-* it tells the checker which
+           slides, caption or pinned comment changed since the last full check and lists only those frames. With --mode recheck it
+           re-verifies everything against current sources but lists no frames and skips the joke check.
+  (timings and agent-call counts for a run: see steplog.mjs)
   node prep.mjs queue-doc --packet packet.json --story story.json --checker checker.json --lint lint.json
                           --slot noon|evening --date YYYY-MM-DD --summary summary.json --rounds N [--note "..."]
+                          [--merge-prior old-queue-doc.json | earlier-checker.json]   (after a check of changes only: keep the earlier quotes, joke score and notices)
+                          [--reworded]                         (adds a Notes line: wording edited after the fact check, diff clean)
         -> the queue document (JSON) with status, extra-check reasons and hash
   node prep.mjs taken     --metricool posts.json --queue queue.json --exclude <docId>
         -> ["ISO", ...] times already used by other posts (for slot.mjs --taken)
@@ -20,6 +27,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {packetHash} from "../builder/packet_hash.mjs";
+import {factDiff} from "../builder/factdiff.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const [cmd, ...rest] = process.argv.slice(2);
@@ -42,7 +50,36 @@ if (cmd === "numbers") {
   out({file: next("file"), memo: next("memo")});
 } else if (cmd === "checker-prompt") {
   const p = readOne(opt.packet), s = readOne(opt.story);
-  const frames = fs.readdirSync(opt.frames).filter(f => /\.png$/i.test(f)).sort().map(f => path.resolve(opt.frames, f));
+  let frames = opt.frames && fs.existsSync(opt.frames) ? fs.readdirSync(opt.frames).filter(f => /\.png$/i.test(f)).sort().map(f => path.resolve(opt.frames, f)) : [];
+  /* Scope: a full check, a check of what changed since the last one, or a re-check of sources for unchanged words. */
+  const same = (a, b) => String(a || "").replace(/\s+/g, " ").trim() === String(b || "").replace(/\s+/g, " ").trim();
+  let mode = opt.mode === "recheck" ? "recheck" : opt["prior-script"] ? "changed" : "full";
+  let changedParts = [];
+  if (mode === "changed") {
+    const d = factDiff(fs.readFileSync(opt["prior-script"], "utf8"), p.script || "");
+    if (d.slidesBefore !== d.slidesAfter) mode = "full";   /* the structure moved: check everything */
+    else {
+      d.changedSlides.forEach(n => changedParts.push("slide " + n));
+      if (opt["prior-caption"] && !same(fs.readFileSync(opt["prior-caption"], "utf8"), p.caption)) changedParts.push("the caption");
+      if (!opt["prior-caption"] && p.caption) changedParts.push("the caption");
+      if (opt["prior-pinned"] && !same(fs.readFileSync(opt["prior-pinned"], "utf8"), p.pinned)) changedParts.push("the pinned comment");
+      if (!changedParts.length) mode = "recheck";            /* nothing changed: only the sources can have moved */
+      else frames = frames.filter(f => d.changedSlides.some(n => path.basename(f).startsWith(String(n).padStart(2, "0") + "-")));
+    }
+  }
+  if (mode === "recheck") frames = [];
+  const SCOPES = {
+    full: "",
+    changed: `SCOPE: RE-CHECK OF CHANGES. This post was fully fact-checked before. Only these parts changed since then: ${changedParts.join(", ")}. ("Slide N" means the Nth block between the --- lines in SLIDES below; block 1 is the HOOK.)
+- Do STEPS 1 to 7 for the changed parts only. "claims" and "quotes" list changed parts only.
+- Do not re-verify unchanged parts, except to FAIL a changed part that now contradicts an unchanged one, or that separates a claim from its limiting qualifier on another slide (the same-referent and screenshot tests still apply across slides).
+- STEP 5: view only the frames listed under FRAMES (the changed slides). If none are listed, skip it and output "frames": [].
+- STEP 8: skip it and output "comedy": null.
+- riskiest_claim: the riskiest claim among the changed parts.
+`,
+    recheck: `SCOPE: RE-CHECK OF SOURCES. The words of this post have not changed since it was fully checked. The sources may have. Re-verify every claim against the sources as they are now (STEPS 1 to 4 and 5b to 7) and report any update or correction notice in source_changes. The frames are unchanged and were checked before: skip STEP 5 and output "frames": []. STEP 8: skip it and output "comedy": null.
+`
+  };
   const src = [];
   arr(s.receipts).forEach(r => src.push(`- ${r.cite || r.label || ""} [${r.kind || ""}] ${r.url || ""}${r.note ? " (" + r.note + ")" : ""}`));
   if (arr(s.facts).length) { src.push("", "Story desk facts (leads, not evidence):"); arr(s.facts).forEach(f => src.push("- " + f)); }
@@ -52,12 +89,26 @@ if (cmd === "numbers") {
   if (s.strongest_caveat) src.push("", "Strongest caveat as filed: " + s.strongest_caveat);
   if (s.narrative_echo) src.push("", "This is a narrative-echo topic.");
   const t = fs.readFileSync(path.join(HERE, "CHECKER.md"), "utf8")
-    .replace("{TODAY}", todayVan()).replace("{NUMBER}", label(p)).replace("{FRAMES}", frames.join(", "))
+    .replace("{SCOPE}", () => SCOPES[mode])
+    .replace("{TODAY}", todayVan()).replace("{NUMBER}", label(p)).replace("{FRAMES}", () => frames.length ? frames.join(", ") : "(none: skip STEP 5)")
     .replace("{SAVED}", opt.sources && fs.existsSync(opt.sources) ? (fs.readdirSync(opt.sources).filter(f => /\.(txt|md)$/i.test(f)).sort().map(f => path.resolve(opt.sources, f)).join(", ") || "(none)") : "(none)")
-    .replace("{SCRIPT}", p.script || "").replace("{CAPTION}", p.caption || "").replace("{PINNED}", p.pinned || "").replace("{SOURCES}", src.join("\n"));
+    /* function replacements: a "$&" or "$'" inside a script (US$ amounts) must not be read as a replacement pattern */
+    .replace("{SCRIPT}", () => p.script || "").replace("{CAPTION}", () => p.caption || "").replace("{PINNED}", () => p.pinned || "").replace("{SOURCES}", () => src.join("\n"));
   out(t);
 } else if (cmd === "queue-doc") {
   const p = readOne(opt.packet), s = readOne(opt.story), ck = readOne(opt.checker), lint = readOne(opt.lint), sum = readAny(opt.summary);
+  /* --merge-prior <old queue doc>: after a check of changes only, the checker reported on the changed parts. Keep what the earlier full
+     check established for the rest: direct quotes still in the post, the joke score, the allegation flag and any source notices. */
+  if (opt["merge-prior"]) {
+    const pr = readOne(opt["merge-prior"]), pc = pr.checker || (pr.verdict ? pr : {});   /* an old queue doc, or a raw checker.json */
+    const nq = t => String(t || "").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[*|]/g, "").replace(/^"|"$/g, "").replace(/\s+/g, " ").trim();
+    const text = nq((p.script || "") + "\n" + (p.caption || "")), have = new Set(arr(ck.quotes).map(q => nq(q.quote)));
+    ck.quotes = [...arr(ck.quotes), ...arr(pc.quotes).filter(q => q && q.quote && !have.has(nq(q.quote)) && text.includes(nq(q.quote)))];
+    if (!ck.comedy && pc.comedy) ck.comedy = pc.comedy;
+    if (!ck.riskiest_claim && pc.riskiest_claim) ck.riskiest_claim = pc.riskiest_claim;
+    ck.allegation_present = !!(ck.allegation_present || pc.allegation_present);
+    const seen = new Set(arr(ck.source_changes).map(x => x.url)); ck.source_changes = [...arr(ck.source_changes), ...arr(pc.source_changes).filter(x => !seen.has(x.url))];
+  }
   const flags = arr(ck.flags), issues = arr(lint.issues);
   const reasons = [];
   if (s.narrative_echo) reasons.push("narrative-echo topic");
@@ -79,7 +130,8 @@ if (cmd === "numbers") {
     checker: {verdict: ck.verdict || "FLAG", flags, riskiest_claim: ck.riskiest_claim || null, quotes: arr(ck.quotes), allegation_present: !!ck.allegation_present,
       source_changes: arr(ck.source_changes), injection_suspected: arr(ck.injection_suspected), rounds: Number(opt.rounds || 1), checkedAt: now,
       comedy: comedy ? {score: Number(comedy.score) || null, best_line: comedy.best_line || "", flattest_slide: comedy.flattest_slide || "", suggestion: comedy.suggestion || ""} : null},
-    lint: {issues, warnings: arr(lint.warnings)},
+    lint: {issues, warnings: [...arr(lint.warnings),
+      ...(opt.reworded ? ["Reworded after the fact check. An automatic diff found no change to numbers, quoted words, names, SOURCE lines, qualifiers or receipts, but the checker has not re-read the new wording."] : [])]},
     tick: {required: reasons.length > 0, reasons},
     status: ok ? "ready" : "needs_you",
     statusNote: ok ? (opt.note || "") : (issues.length ? "Checks still failing: " + issues.join("; ")

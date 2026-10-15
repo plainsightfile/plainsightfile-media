@@ -22,9 +22,14 @@
     --kbps <n>          constant video bitrate (default 6000, inside Metricool's recommended 5,000 to 25,000 kbps).
                         --kbps 0 switches to CRF quality mode: about 2.6 MB instead of 32 MB, same look.
     --crf <n>           x264 quality when --kbps 0 (default 16)
+    --frames-only       render the slide frames, caption and pinned comment only: no audio, no encode, no video.mp4
+                        (about 10 s instead of about 50 s). For drafting and checking; the publisher builds the real video.
+    --date <YYYY-MM-DD> pretend today is this day inside HQ, so the hook's date stamp is fixed (the posting day) instead of
+                        the day the build happens to run. Defaults to the real date in America/Vancouver.
 
   Outputs (in --out):
     video.mp4  cover.jpg  caption.txt  pinned-comment.txt  timings.json  frames/NN-type.png  report.json
+    (with --frames-only: no video.mp4 or cover.jpg, and report.json has frames_only: true)
 
   Needs: Playwright (Node) with Chromium, ffmpeg/ffprobe, and the @fontsource packages in ./node_modules
   (npm ci in this folder). Everything HQ fetches from the internet (Google Fonts, cdnjs JSZip) is served
@@ -51,11 +56,13 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith("--")) {
     const k = a.slice(2);
     if (k === "keep-frames") continue;
+    if (k === "frames-only") { opt[k] = true; continue; }
     opt[k] = argv[++i];
   } else input = a;
 }
 if (!input) { console.error("usage: node build_video.mjs <script.txt|file.json> [--music track.mp3] [--out dir]"); process.exit(2); }
 opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
+if (opt.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(opt.date))) { console.error("--date must look like 2026-10-14"); process.exit(2); }
 
 /* ---------------- read the File ---------------- */
 const raw = fs.readFileSync(input, "utf8");
@@ -124,6 +131,9 @@ await ctx.route("**/*", route => {
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", e => errors.push(e.message));
+/* Fix HQ's clock (Date.now and new Date(); timers keep running) so the hook's date stamp is the day we say, not the day we build.
+   20:00 UTC is midday in Vancouver in both PST and PDT, so the Vancouver calendar day is always the one asked for. */
+if (opt.date) await page.clock.setFixedTime(new Date(opt.date + "T20:00:00Z"));
 const prefs = {script: file.script, fileno: file.fileno, look: file.look, view: "tt", tab: "studio", ttSize2: "full", showGuide: "0",
   caption: file.caption, story: file.story, postType: file.type, tags: "#plainsightfile"};
 if (file.locPlace !== null) prefs.locPlace = file.locPlace;
@@ -187,6 +197,27 @@ const slides = info.labels.map((lab, i) => {
 let at = 0;
 slides.forEach(s => { s.start = +at.toFixed(3); at += s.secs; s.end = +at.toFixed(3); });
 const total = +at.toFixed(3);
+
+/* ---------------- caption + pinned comment (HQ's own output) ---------------- */
+const caption = info.copied[0] ?? "", pinned = info.copied[1] ?? info.pin;
+fs.writeFileSync(path.join(out, "caption.txt"), caption + "\n");
+fs.writeFileSync(path.join(out, "pinned-comment.txt"), pinned + "\n");
+const timingsJson = () => JSON.stringify({total_secs: total, slides: slides.map(({n, type, secs, start, end, frame}) => ({n, type, secs, start, end, frame}))}, null, 2) + "\n";
+
+/* ---------------- frames only: stop here (no audio, no encode) ---------------- */
+if (opt["frames-only"]) {
+  const report = {
+    input: path.resolve(input), hq: path.resolve(opt.hq), fileno: file.fileno, look: file.look, location: info.loc,
+    frames_only: true, render_date: opt.date || null, hq_count_line: info.count, slides, total_secs: total,
+    caption_chars: caption.length, pinned_chars: pinned.length, blocked_requests: blocked,
+    timings_s: {...lap, total_s: +((Date.now() - t0) / 1000).toFixed(2)}
+  };
+  fs.writeFileSync(path.join(out, "timings.json"), timingsJson());
+  fs.writeFileSync(path.join(out, "report.json"), JSON.stringify(report, null, 2) + "\n");
+  console.log(JSON.stringify(report, null, 2));
+  console.log("\nWrote frames only to", out);
+  process.exit(0);
+}
 
 /* ---------------- ffmpeg helpers ---------------- */
 function run(cmd, args) {
@@ -258,11 +289,6 @@ ts = mark("encode_s", ts);
 /* ---------------- cover (hook frame) ---------------- */
 run(FF, ["-y", "-hide_banner", "-i", path.join(out, slides[0].frame), "-q:v", "2", "-pix_fmt", "yuvj420p", path.join(out, "cover.jpg")]);
 
-/* ---------------- caption + pinned comment (HQ's own output) ---------------- */
-const caption = info.copied[0] ?? "", pinned = info.copied[1] ?? info.pin;
-fs.writeFileSync(path.join(out, "caption.txt"), caption + "\n");
-fs.writeFileSync(path.join(out, "pinned-comment.txt"), pinned + "\n");
-
 /* ---------------- verify ---------------- */
 const probe = JSON.parse(run(FP, ["-v", "error", "-print_format", "json", "-show_format", "-show_streams", mp4]).stdout);
 const loud = run(FF, ["-hide_banner", "-nostats", "-i", mp4, "-af", "ebur128=peak=true", "-f", "null", "-"]).stderr;
@@ -270,7 +296,7 @@ const grab = (re) => { const m = loud.match(re); return m ? Number(m[1]) : null;
 const v = probe.streams.find(s => s.codec_type === "video"), a = probe.streams.find(s => s.codec_type === "audio");
 const report = {
   input: path.resolve(input), hq: path.resolve(opt.hq), fileno: file.fileno, look: file.look, location: info.loc,
-  hq_count_line: info.count, slides, total_secs: total, transition: X ? `crossfade ${X * 1000} ms` : "hard cut", audio,
+  render_date: opt.date || null, hq_count_line: info.count, slides, total_secs: total, transition: X ? `crossfade ${X * 1000} ms` : "hard cut", audio,
   video: {codec: v.codec_name, profile: v.profile, level: v.level, pix_fmt: v.pix_fmt, width: v.width, height: v.height, fps: v.r_frame_rate,
     color: [v.color_space, v.color_primaries, v.color_transfer, v.color_range].join("/"), bitrate_kbps: Math.round(v.bit_rate / 1000), frames: +v.nb_frames},
   audio_stream: {codec: a.codec_name, profile: a.profile, sample_rate: +a.sample_rate, channels: a.channels, bitrate_kbps: Math.round(a.bit_rate / 1000),
@@ -279,7 +305,7 @@ const report = {
     faststart: (() => { const b = fs.readFileSync(mp4); const moov = b.indexOf("moov"), mdat = b.indexOf("mdat"); return moov > -1 && moov < mdat; })()},
   caption_chars: caption.length, pinned_chars: pinned.length, blocked_requests: blocked, timings_s: {...lap, total_s: +((Date.now() - t0) / 1000).toFixed(2)}
 };
-fs.writeFileSync(path.join(out, "timings.json"), JSON.stringify({total_secs: total, slides: slides.map(({n, type, secs, start, end, frame}) => ({n, type, secs, start, end, frame}))}, null, 2) + "\n");
+fs.writeFileSync(path.join(out, "timings.json"), timingsJson());
 fs.writeFileSync(path.join(out, "report.json"), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify(report, null, 2));
 console.log("\nWrote", out);
