@@ -1098,7 +1098,7 @@ function renderSignal(sl,idx,total,bg){
   sigMeta(ctx,T,idx,total,sl);
   const X=96,MAXW=888,toks=tokenize(sl.text);
   const notes=(sl.notes||[]).slice();
-  if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
+  if(sl.type==="hook")notes.push({label:postType()==="memo"?"OPINION.":"SATIRE.",text:"ALL SOURCED."});
   const np=sl.type==="receipts"||sl.type==="end"?null:prepNotes(ctx,notes);
   const lim=b=>Math.min(b,np?np.top-28:b); /* lowest the headline type may reach */
   drawNotes(ctx,T,np);
@@ -1344,7 +1344,7 @@ function renderSignal916(sl,idx,total){
   const T=theme(),col=n9Cols(T);
   signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
   const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
-  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:"SATIRE.",text:"ALL SOURCED."});
+  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:postType()==="memo"?"OPINION.":"SATIRE.",text:"ALL SOURCED."});
   const TAGS={hook:postType()==="memo"?"OPINION":null,status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
   const tag=TAGS[sl.type]||null;
   let y=TOP+4;
