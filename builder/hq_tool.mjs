@@ -117,7 +117,7 @@ if (cmd === "prompts") {
 
     H.wordIssues(slides).forEach(t => issues.push(t));
     H.emphasisIssues(slides).forEach(t => issues.push(t));
-    if (tm.pre > 40) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 40 s or less)`);
+    if (tm.pre > 32) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 32 s or less)`);
     if (H.dashes(plainAll)) issues.push("contains an em dash");
     if (/\bwake\s*up\b/i.test(plainAll)) issues.push('uses "WAKE UP" (banned catchphrase)');
     if (/\bfollow\s+the\s+money\b/i.test(plainAll)) issues.push('uses "FOLLOW THE MONEY" (banned catchphrase)');

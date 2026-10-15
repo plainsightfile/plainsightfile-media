@@ -684,7 +684,7 @@ SATIRE (this is why anyone follows the account; every accuracy rule above still 
 - Before you finish, read each slide as a stranger scrolling past. Would they smile? If not, make the costume bigger or the puncture flatter.
 - Any "classified location", "hidden in" or page reference must be literally true and from the material. If the source gives no page, name the document instead.
 
-STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL and body slides carry 12 to 22 words, one idea each; CASE STATUS carries 8 to 16; SOURCE and CLASSIFIED LOCATION lines print as exhibit tags and do not count. If a slide falls short, add the qualifier, the actor or the date from the material, never filler. The video before RECEIPTS should run 30 to 40 seconds at 3 words per second plus 1 second per slide):
+STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL and body slides carry 12 to 22 words, one idea each; CASE STATUS carries 8 to 16; SOURCE and CLASSIFIED LOCATION lines print as exhibit tags and do not count. If a slide falls short, add the qualifier, the actor or the date from the material, never filler. The video before RECEIPTS should run 22 to 32 seconds at 4 words per second plus half a second per slide):
 - Slide 1, HOOK: 8 to 14 words, readable in 2 seconds, names the institution and the country. It contains BOTH halves of the joke: an UPPERCASE costume setup that genuinely sounds like a conspiracy post, and its boring public payoff in sentence case (e.g. "LEAKED: the EU budget audit. Leaked by: the EU, in a press release." or "THEY SAID ONLY ONE YEAR BEAT TODAY. The official spreadsheet says *two*."). If the hook would still work as a sincere conspiracy post with the payoff deleted, rewrite it. It sets up a say-vs-record gap or a specific number. Last line of the hook slide: "SOURCE: Publisher or document, Mon Year".
 - Slide 2 states the stakes, or the question the REVEAL answers.
 - The REVEAL slide lands by slide 3 at the latest. Its last line: "CLASSIFIED LOCATION: " plus the real document or page.
@@ -1480,16 +1480,17 @@ function setCap(k){document.querySelectorAll("[data-cap]").forEach(b=>b.setAttri
 document.querySelectorAll("[data-cap]").forEach(b=>b.addEventListener("click",()=>setCap(b.dataset.cap)));
 setCap(load("cap")==="th"?"th":"ig");
 const TYPE_NAME={hook:"Hook",body:"Slide",reveal:"Reveal",receipts:"Receipts",spin:"Spin",translation:"Translation",take:"Take",record:"Record",status:"Case status",end:"End card"};
-/* Video timing (v2): 3 words per second plus 1 second per slide; receipts hold 4 seconds; the end card 3. Note lines are not counted. */
+/* Video timing (v2): 4 words per second plus 0.5 s per slide (since October 14); receipts hold 4 seconds; the end card 3. Note lines are not counted. */
 /* Pacing (prototype): 3 words per second plus 1 second per slide, plus 0.5 s when the slide carries an exhibit
    (SOURCE / CLASSIFIED LOCATION, or the hook's SATIRE label). Only tokens with a letter or digit count as words,
-   so a "." left behind by *emphasis*. is not a word. Every timed slide holds 4 to 9 seconds. */
+   so a "." left behind by *emphasis*. is not a word. Every timed slide holds 3 to 8 seconds (hook at least 4). */
 const WORDS={hook:[8,14],body:[12,22],reveal:[12,22],status:[8,16],record:[12,22],spin:[8,22],translation:[8,22],take:[12,26]};
 function wordCount(t){return String(t).replace(/[*|_]/g," ").split(/\s+/).filter(w=>/[\p{L}\p{N}]/u.test(w)).length}
 function slideSecs(sl){
   if(sl.type==="receipts")return 4;if(sl.type==="end")return 3;
+  /* October 14: 4 words/s plus 0.5 s per slide, 3 s minimum (hook at least 4 s); TikTok loops, so a replay finishes a slide. */
   const ex=(sl.notes&&sl.notes.length)||sl.type==="hook"?0.5:0;
-  return Math.min(9,Math.max(4,Math.round((wordCount(sl.text)/3+1+ex)*2)/2));
+  return Math.min(8,Math.max(sl.type==="hook"?4:3,Math.round((wordCount(sl.text)/4+0.5+ex)*2)/2));
 }
 function wordIssues(slides){
   const out=[];slides.forEach((sl,i)=>{const r=WORDS[sl.type];if(!r)return;const n=wordCount(sl.text);
@@ -1508,8 +1509,8 @@ async function renderAll(){
   const slides=parseScript(scriptEl.value);
   if(slides.length)slides.push({type:"end",text:"",items:[],notes:[]});
   const tm=timingInfo(slides),dev=scriptDevice();
-  $("count").textContent=slides.length?`${slides.length} slides · ${fmtSecs(tm.pre)} before receipts`+(tm.pre>40?" (aim for 40 s or less)":"")+` · ${fmtSecs(tm.total)} total`+(dev?` · Device: ${dev}`:"")+" · "+(view==="tt"?TT_SIZES[ttSize]:"1080 × 1350")+(wordIssues(slides).length?" · "+wordIssues(slides).join("; "):"")+(emphasisIssues(slides).length?" · "+emphasisIssues(slides).join("; "):""):"No slides yet";
-  $("count").classList.toggle("over",tm.pre>40||wordIssues(slides).length>0||emphasisIssues(slides).length>0);
+  $("count").textContent=slides.length?`${slides.length} slides · ${fmtSecs(tm.pre)} before receipts`+(tm.pre>32?" (aim for 32 s or less)":"")+` · ${fmtSecs(tm.total)} total`+(dev?` · Device: ${dev}`:"")+" · "+(view==="tt"?TT_SIZES[ttSize]:"1080 × 1350")+(wordIssues(slides).length?" · "+wordIssues(slides).join("; "):"")+(emphasisIssues(slides).length?" · "+emphasisIssues(slides).join("; "):""):"No slides yet";
+  $("count").classList.toggle("over",tm.pre>32||wordIssues(slides).length>0||emphasisIssues(slides).length>0);
   const frag=document.createDocumentFragment(); const out=[];
   const fno=(filenoEl.value.trim()||"000").replace(/[^\w-]/g,"");
   for(let i=0;i<slides.length;i++){
@@ -1548,7 +1549,7 @@ $("saveAll").addEventListener("click",async e=>{
     for(const r of rendered){zip.file("instagram/"+r.base+".png",await toBlob(r.ig));zip.file("tiktok/"+r.base+"-tiktok.jpg",await toJpeg(r.tt))}
     if(capEl.value.trim()){zip.file("tiktok/caption.txt",tiktokCaption(capEl.value)+"\n")}
     {const pc=pinnedComment();if(pc)zip.file("tiktok/pinned-comment.txt",pc+"\n")}
-    zip.file("tiktok/timings.txt","Slide durations for the video editor (3 words per second plus 1 second per slide; receipts 4 s; end card 3 s)\n\n"+rendered.map(r=>r.base+"-tiktok.jpg  "+fmtSecs(r.secs)).join("\n")+"\n\nTotal: "+fmtSecs(rendered.reduce((a,r)=>a+r.secs,0))+"\n");
+    zip.file("tiktok/timings.txt","Slide durations for the video editor (4 words per second plus 0.5 s per slide, 3 s minimum, hook 4 s; receipts 4 s; end card 3 s)\n\n"+rendered.map(r=>r.base+"-tiktok.jpg  "+fmtSecs(r.secs)).join("\n")+"\n\nTotal: "+fmtSecs(rendered.reduce((a,r)=>a+r.secs,0))+"\n");
     {const th=threadPosts();if(th.length)zip.file("threads.txt",th.map((t,i)=>"----- Post "+(i+1)+" -----\n"+t).join("\n\n")+"\n")}
     const blob=await zip.generateAsync({type:"blob"});
     const fno=(filenoEl.value.trim()||"000").replace(/[^\w-]/g,"");
