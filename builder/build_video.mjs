@@ -36,6 +36,8 @@
     --el-model <id>     ElevenLabs model for API generation (default eleven_v4)
     --el-urls <file>    JSON list of audio URLs, one per slide plus the end card, made by the ElevenLabs connector;
                         without it the takes are generated with the ElevenLabs API (repo secret ELEVENLABS_API_KEY)
+    --el-tempo <n>      speed up (or slow down) the ElevenLabs takes without changing pitch (default 1; 1.1 = 10% faster)
+    --el-reuse <dir>    reuse the takes already in <dir>/voice-NN.wav from an earlier build of the same script (no credits)
     --fallback-voice <n> Kokoro voice used when ElevenLabs fails (default bf_emma; "none" fails the build instead)
     --speed <n>         voice speed (Kokoro only; default 1)
     --voice-models <d>  folder with kokoro-v1.0.onnx and voices-v1.0.bin (default ./voice-models)
@@ -64,7 +66,7 @@ const mark = (k, since) => { lap[k] = +((Date.now() - since) / 1000).toFixed(2);
 /* ---------------- arguments ---------------- */
 const argv = process.argv.slice(2);
 const opt = {hq: path.join(HERE, "hq.html"), lufs: -16, tp: -1.5, xfade: 0, crf: 16, look: "auto", fileno: "000",
-  speed: 1, "voice-models": path.join(HERE, "voice-models"), "bed-lufs": -30, "el-model": "eleven_v4", "fallback-voice": "bf_emma"};
+  speed: 1, "voice-models": path.join(HERE, "voice-models"), "bed-lufs": -30, "el-model": "eleven_v4", "el-tempo": 1, "fallback-voice": "bf_emma"};
 let input = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -76,7 +78,8 @@ for (let i = 0; i < argv.length; i++) {
   } else input = a;
 }
 if (!input) { console.error("usage: node build_video.mjs <script.txt|file.json> [--music track.mp3] [--out dir]"); process.exit(2); }
-opt.speed = Number(opt.speed); opt["bed-lufs"] = Number(opt["bed-lufs"]);
+opt.speed = Number(opt.speed); opt["el-tempo"] = Number(opt["el-tempo"]);
+if (!(opt["el-tempo"] >= 0.8 && opt["el-tempo"] <= 1.3)) { console.error("--el-tempo must be between 0.8 and 1.3"); process.exit(2); } opt["bed-lufs"] = Number(opt["bed-lufs"]);
 const KOKORO_RE = /^[ab][fm]_[a-z]+$/, EL_RE = /^el:[A-Za-z0-9]{10,40}$/;
 if (opt.voice !== undefined && !KOKORO_RE.test(String(opt.voice)) && !EL_RE.test(String(opt.voice))) { console.error("--voice must be a Kokoro voice name such as bf_emma, or el:<ElevenLabs voice id>"); process.exit(2); }
 if (opt["fallback-voice"] !== "none" && !KOKORO_RE.test(String(opt["fallback-voice"]))) { console.error("--fallback-voice must be a Kokoro voice name or none"); process.exit(2); }
@@ -318,8 +321,22 @@ if (opt.voice) {
     const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
       "--lines", path.join(vdir, "lines.json"), "--out", vdir];
     if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
-    const r = spawnSync(process.execPath, args, {encoding: "utf8", maxBuffer: 64 * 1024 * 1024});
-    if (r.status === 0) voice = {...JSON.parse(r.stdout.trim().split("\n").pop()), lang: "en-gb"};
+    const reuse = opt["el-reuse"] && path.resolve(opt["el-reuse"]);
+    const r = reuse ? {status: 0, stdout: JSON.stringify({engine: "ElevenLabs", voice: opt.voice.slice(3), model: "reused takes", source: "reuse",
+        clips: slides.map((s, i) => { const f = path.join(reuse, `voice-${String(i + 1).padStart(2, "0")}.wav`);
+          if (!(s.say || "").trim()) return null; if (!fs.existsSync(f)) throw new Error("--el-reuse: missing " + f);
+          const c = path.join(vdir, `src-${String(i + 1).padStart(2, "0")}.wav`); fs.copyFileSync(f, c); return {file: c, secs: 0}; })})}
+      : spawnSync(process.execPath, args, {encoding: "utf8", maxBuffer: 64 * 1024 * 1024});
+    if (r.status === 0) {
+      voice = {...JSON.parse(r.stdout.trim().split("\n").pop()), lang: "en-gb", tempo: opt["el-tempo"]};
+      /* tempo (pitch kept) and a fresh duration for every clip */
+      voice.clips = voice.clips.map((c, i) => { if (!c) return null;
+        const dst = path.join(vdir, `voice-${String(i + 1).padStart(2, "0")}.t.wav`);
+        run(FF, ["-y", "-hide_banner", "-loglevel", "error", "-i", c.file, "-af", `atempo=${opt["el-tempo"]}`, dst]);
+        const fin = path.join(vdir, `voice-${String(i + 1).padStart(2, "0")}.wav`); fs.renameSync(dst, fin);
+        if (c.file !== fin) fs.rmSync(c.file, {force: true});
+        return {file: fin, secs: +Number(run(FP, ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", fin]).stdout.trim()).toFixed(3)}; });
+    }
     else {
       const why = (r.stderr || "").trim().split("\n").pop() || "unknown error";
       if (opt["fallback-voice"] === "none") throw new Error("ElevenLabs narration failed: " + why);
@@ -368,7 +385,7 @@ if (voice) {
     "-map", "[mix]", "-t", String(total), "-ac", "2", "-c:a", "aac", "-b:a", "160k", audioPath]);
   fs.rmSync(vNorm, {force: true}); fs.rmSync(bed, {force: true});
   audio = {source: bedInfo.source, bed_lufs: opt["bed-lufs"], bed_input_lufs: bedInfo.input_lufs, target_lufs: opt.lufs, target_tp: opt.tp,
-    voice: {engine: voice.engine, voice: voice.voice, model: voice.model, source: voice.source, lang: voice.lang, speed: voice.speed, synthetic: true,
+    voice: {engine: voice.engine, voice: voice.voice, model: voice.model, source: voice.source, lang: voice.lang, speed: voice.speed, tempo: voice.tempo, synthetic: true,
       fallback_from: voice.fallback_from, fallback_reason: voice.fallback_reason,
       voice_input_lufs: vMeas.input_lufs, lines: slides.map(s => s.say || "")}};
 } else if (opt.music) {

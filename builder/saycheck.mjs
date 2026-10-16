@@ -11,7 +11,7 @@
     - every slide except RECEIPTS has exactly one SAY: line (RECEIPTS may have one)
     - every number (digits or number words) and every quoted passage in a SAY: line appears on that same slide
     - no cause, intent or guilt word (factdiff's list) that the slide does not already use
-    - no banned catchphrase, no em dash, at most 22 words (a warning above 18)
+    - no banned catchphrase, no em dash, at most 20 words (a warning above 15)
     - capitalised names in a SAY: line appear somewhere in the script
   It is a safety net, not a fact check: the independent checker still reads every SAY: line against the sources.
 */
@@ -42,8 +42,8 @@ export function sayCheck(before, after) {
     const say = says.join(" ");
     lines.push({slide: n, say, words: say.split(/\s+/).filter(Boolean).length});
     const words = lines[lines.length - 1].words;
-    if (words > 22) issues.push(`slide ${n}: SAY: line is ${words} words (at most 22)`);
-    else if (words > 18) warnings.push(`slide ${n}: SAY: line is ${words} words (aim for 18 or fewer)`);
+    if (words > 20) issues.push(`slide ${n}: SAY: line is ${words} words (at most 20)`);
+    else if (words > 15) warnings.push(`slide ${n}: SAY: line is ${words} words (aim for 15 or fewer)`);
     if (/—/.test(say)) issues.push(`slide ${n}: em dash in the SAY: line`);
     const slideNums = numbers(slide);
     numbers(say).forEach(x => { if (!slideNums.includes(x)) issues.push(`slide ${n}: SAY: line has "${x}", which is not on the slide`); });

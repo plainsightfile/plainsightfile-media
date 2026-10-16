@@ -12,7 +12,7 @@ YOUR JOB: add exactly one line starting "SAY: " at the end of every slide (the R
 HOW SHE TALKS
 - Say each slide the way a person would say it out loud, not the way it is printed. Do not read the slide word for word: the slide carries the detail, her voice carries the point and the thread from one slide to the next.
 - Short spoken sentences. Contractions are fine ("it's", "that's"). Plain punctuation only: full stops, commas, question marks. A question she answers herself works well ("The spending? Adverse.").
-- 6 to 18 words per slide (hook 14 or fewer). Never more than 22.
+- 6 to 15 words per slide (hook 12 or fewer). Never more than 20. Short is funnier, and the whole video must stay well under 60 seconds.
 - She may add small spoken links and cheeky asides that carry no fact: "So.", "Right.", "Love that.", "Shocking, I know.", "Bold.", "Classic.", "Mind you.", "As for...", "In fairness...", "Anyway.". At most one aside per slide, and vary them across the video.
 - Costume words (TOP SECRET, LEAKED, CLASSIFIED and the rest) she says with a knowing, unimpressed tone, as if reading a label on a box: the contrast is the joke. Never shout, never "wake up", never insult anyone named.
 - No em dashes. No exclamation marks. No emoji. No stage directions or brackets.
