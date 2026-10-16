@@ -129,6 +129,7 @@ if (cmd === "prompts") {
 
     H.wordIssues(slides).forEach(t => issues.push(t));
     H.emphasisIssues(slides).forEach(t => issues.push(t));
+    if (H.headlineIssues) H.headlineIssues(slides).forEach(t => issues.push(t));
     if (tm.pre > 32) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 32 s or less)`);
     if (H.dashes(plainAll)) issues.push("contains an em dash");
     if (/\bwake\s*up\b/i.test(plainAll)) issues.push('uses "WAKE UP" (banned catchphrase)');
