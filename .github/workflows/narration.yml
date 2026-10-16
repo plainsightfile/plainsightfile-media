@@ -73,6 +73,31 @@ jobs:
                   except urllib.error.HTTPError as e:
                       raise SystemExit("ElevenLabs answered %s: %s" % (e.code, e.read()[:300].decode("utf-8", "replace")))
                   manifest["clips"].append(os.path.basename(dst))
+          elif p["mode"] == "whole":
+              # one continuous take of every line (so the read flows from slide to slide), with character timestamps
+              # so the client can cut it back into one clip per slide
+              import base64
+              key = os.environ.get("XI_KEY") or ""
+              assert key, "ELEVENLABS_API_KEY secret is not set"
+              it = p["items"]; lines = it["lines"]
+              assert re.fullmatch(r"[A-Za-z0-9]{10,40}", it["voice_id"]), "bad voice id"
+              text = "\n".join((l or "").strip() for l in lines if (l or "").strip())
+              body = {"text": text, "model_id": it.get("model_id", "eleven_v4")}
+              if it.get("voice_settings"): body["voice_settings"] = it["voice_settings"]
+              req = urllib.request.Request(
+                  "https://api.elevenlabs.io/v1/text-to-speech/%s/with-timestamps?output_format=mp3_44100_128" % it["voice_id"],
+                  data=json.dumps(body).encode(), method="POST",
+                  headers={"xi-api-key": key, "Content-Type": "application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=300) as r:
+                      res = json.loads(r.read())
+              except urllib.error.HTTPError as e:
+                  raise SystemExit("ElevenLabs answered %s: %s" % (e.code, e.read()[:300].decode("utf-8", "replace")))
+              open("out/whole.mp3", "wb").write(base64.b64decode(res["audio_base64"]))
+              json.dump({"text": text, "alignment": res.get("alignment"), "normalized_alignment": res.get("normalized_alignment")},
+                        open("out/alignment.json", "w"))
+              manifest["whole"] = "whole.mp3"; manifest["alignment"] = "alignment.json"
+              manifest["clips"] = [None] * len(lines)
           else:
               raise SystemExit("unknown mode")
           json.dump(manifest, open("out/manifest.json", "w"))
