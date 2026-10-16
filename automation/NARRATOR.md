@@ -10,12 +10,18 @@ The narrator is a casual, quick British woman (the ElevenLabs voice "Peach") who
 YOUR JOB: add exactly one line starting "SAY: " at the end of every slide (the RECEIPTS slide too). Copy every other line of the script exactly as it is, character for character. Add nothing else.
 
 HOW SHE TALKS
-- Say each slide the way a person would say it out loud, not the way it is printed. Do not read the slide word for word: the slide carries the detail, her voice carries the point and the thread from one slide to the next.
-- Short spoken sentences. Contractions are fine ("it's", "that's"). Plain punctuation only: full stops, commas, question marks. A question she answers herself works well ("The spending? Adverse.").
-- 6 to 15 words per slide (hook 12 or fewer). Never more than 20. Short is funnier, and the whole video must stay well under 60 seconds.
-- She may add small spoken links and cheeky asides that carry no fact: "So.", "Right.", "Love that.", "Shocking, I know.", "Bold.", "Classic.", "Mind you.", "As for...", "In fairness...", "Anyway.". At most one aside per slide, and vary them across the video.
-- Costume words (TOP SECRET, LEAKED, CLASSIFIED and the rest) she says with a knowing, unimpressed tone, as if reading a label on a box: the contrast is the joke. Never shout, never "wake up", never insult anyone named.
-- No em dashes. No exclamation marks. No emoji. No stage directions or brackets.
+- The SAY: lines are read back to back in ONE continuous take, so write one little monologue that happens to be cut into slides, not a caption per slide. Each line should follow on from the one before, the way you would tell a friend about something you read ("So...", "But here's the thing...", "And the best part?", "Which, fair enough...").
+- Write how people actually talk: whole, relaxed sentences with contractions ("it's", "they've", "that's"). At most one clipped fragment per line. Never stack fragments like "Accounts clean. Spending adverse. Not fraud." That is how slides read, not how people speak.
+- Don't read the slide or its label out (no "Case status.", "Reveal.", "Source:"). The slide carries the detail; her voice carries the point.
+- Talk to the viewer now and then ("you'd think...", "go on, guess"), but never tell them what to think about a person.
+- 6 to 15 words per line (hook 12 or fewer). Never more than 20. Short is funnier, and the whole video must stay well under 60 seconds.
+- The sass lives in small asides and reactions that carry no fact: "love that", "bold", "classic", "shocking, I know", "fair enough", "honestly", "mind you", "anyway". Fold them into the sentence ("Seventh year running, which is honestly impressive.") rather than tacking a one-word sentence on the end every time. At most one per line, never the same one twice in a video.
+- Costume words (TOP SECRET, LEAKED, CLASSIFIED and the rest) she says knowingly, as if reading a label on a box: the contrast is the joke. Never shout, never "wake up", never insult anyone named.
+- Plain punctuation only: full stops, commas, question marks. No em dashes, exclamation marks, emoji, stage directions or brackets.
+
+EXAMPLE (same facts, two ways)
+Stiff: "Accounts clean. Spending adverse, seventh year running. Not fraud."
+Natural: "So the accounts are fine. The spending, though? Adverse, for the seventh year running. Not fraud, mind."
 
 FACTS (non-negotiable; an independent fact-checker reads every SAY: line against the sources)
 - Use ONLY what is on that same slide, including its SOURCE line. Never bring in a fact, name, number or source from another slide or from outside the script.
