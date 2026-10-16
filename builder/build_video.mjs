@@ -19,12 +19,12 @@
     --lufs <n>          integrated loudness target for --music (default -16)
     --tp <n>            true-peak ceiling in dBTP (default -1.5)
     --xfade <ms>        crossfade between slides instead of hard cuts (default 0 = hard cut)
-    --motion <0|1>      camera motion and texture (default 1): each slide lands with a quick punch-in and then drifts
-                        slowly closer, under a moving film grain, a soft flicker, a vignette and a faint scan
-                        band. The zoom stays under 9%, which keeps every word inside the TikTok safe zone.
+    --motion <0|1>      the slide transition (default 1): each slide lands with a quick 6% punch-in that settles in
+                        0.3 s, then holds perfectly still so the text is easy to read. (Alex, October 16, 2026: keep the
+                        transition, no motion on the text pages.)
     --kbps <n>          constant video bitrate (default 6000, inside Metricool's recommended 5,000 to 25,000 kbps).
                         --kbps 0 switches to CRF quality mode: about 2.6 MB instead of 32 MB, same look.
-    --crf <n>           x264 quality when --kbps 0 (default 20 with --motion, 16 without)
+    --crf <n>           x264 quality when --kbps 0 (default 16)
     --frames-only       render the slide frames, caption and pinned comment only: no audio, no encode, no video.mp4
                         (about 10 s instead of about 50 s). For drafting and checking; the publisher builds the real video.
     --date <YYYY-MM-DD> pretend today is this day inside HQ, so the hook's date stamp is fixed (the posting day) instead of
@@ -87,7 +87,7 @@ if (!(opt["el-tempo"] >= 0.8 && opt["el-tempo"] <= 1.3)) { console.error("--el-t
 const KOKORO_RE = /^[ab][fm]_[a-z]+$/, EL_RE = /^el:[A-Za-z0-9]{10,40}$/;
 if (opt.voice !== undefined && !KOKORO_RE.test(String(opt.voice)) && !EL_RE.test(String(opt.voice))) { console.error("--voice must be a Kokoro voice name such as bf_emma, or el:<ElevenLabs voice id>"); process.exit(2); }
 if (opt["fallback-voice"] !== "none" && !KOKORO_RE.test(String(opt["fallback-voice"]))) { console.error("--fallback-voice must be a Kokoro voice name or none"); process.exit(2); }
-opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf ?? (opt.motion === "0" ? 16 : 20)); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
+opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf ?? 16); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
 if (opt.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(opt.date))) { console.error("--date must look like 2026-10-14"); process.exit(2); }
 
 /* ---------------- read the File ---------------- */
@@ -415,12 +415,11 @@ slides.forEach((s, i) => vArgs.push("-loop", "1", "-framerate", "30", "-t", Stri
 vArgs.push("-i", audioPath);
 /* RGB PNG to BT.709 limited-range 4:2:0 with explicit tags, so the accent colours are not shifted by a BT.601 guess downstream */
 const MOTION = opt.motion !== "0";
-/* Motion: each slide is rescaled every frame and centre-cropped back to 1080x1920.
-   zoom = 1 + punch (6% easing out over the first 0.3 s) + drift (2.5% across the slide). Centred, so the edges lose
-   at most about 4% on each side, inside the 120 px side margin and the top and bottom UI zones. */
-const zoom = secs => `1+0.06*pow(max(0,1-t/0.3),2)+0.025*t/${secs.toFixed(3)}`;
+/* Motion: only while a slide lands. zoom = 1 + 6% easing out over the first 0.3 s, then exactly 1 (still).
+   Centred, so the edges lose at most 3% on each side for those few frames. */
+const zoom = () => `1+0.06*pow(max(0,1-t/0.3),2)`;
 const prep = i => MOTION
-  ? `[${i}:v]fps=30,scale=w='trunc(1080*(${zoom(slides[i].secs + (X ? X : 0))})/2)*2':h=-2:eval=frame:flags=bicubic,crop=1080:1920,` +
+  ? `[${i}:v]fps=30,scale=w='trunc(1080*(${zoom()})/2)*2':h=-2:eval=frame:flags=bicubic,crop=1080:1920,` +
     `scale=1080:1920:out_color_matrix=bt709:out_range=tv,format=yuv420p,setsar=1[v${i}]`
   : `[${i}:v]fps=30,scale=1080:1920:flags=lanczos:out_color_matrix=bt709:out_range=tv,format=yuv420p,setsar=1[v${i}]`;
 let graph = slides.map((s, i) => prep(i)).join(";") + ";";
@@ -432,12 +431,10 @@ else {
     graph += `[${prev}][v${i}]xfade=transition=fade:duration=${X}:offset=${acc.toFixed(3)}[${o}];`; prev = o; }
   graph = graph.replace(/;$/, "");
 }
-/* texture over the whole video: moving grain, a soft irregular flicker, a vignette, a faint scan band drifting down */
-if (MOTION) graph += `;[vraw]noise=c0s=4:c0f=t+u,eq=brightness='0.012*sin(2*PI*t*1.7)*sin(2*PI*t*0.53)':eval=frame,` +
-  `vignette=angle=PI/5,drawbox=x=0:y='mod(t*160,2200)-140':w=iw:h=140:color=white@0.035:t=fill,format=yuv420p[vout]`;
+if (MOTION) graph += `;[vraw]null[vout]`;
 const mp4 = path.join(out, "video.mp4");
 vArgs.push("-filter_complex", graph, "-map", "[vout]", "-map", `${slides.length}:a`,
-  "-c:v", "libx264", "-profile:v", "high", "-preset", MOTION ? "medium" : "slow", "-tune", MOTION ? "film" : "stillimage", ...(opt.kbps ? ["-b:v", `${opt.kbps}k`, "-minrate", `${opt.kbps}k`, "-maxrate", `${opt.kbps}k`, "-bufsize", `${opt.kbps * 2}k`, "-x264-params", "nal-hrd=cbr:force-cfr=1"]
+  "-c:v", "libx264", "-profile:v", "high", "-preset", "slow", "-tune", "stillimage", ...(opt.kbps ? ["-b:v", `${opt.kbps}k`, "-minrate", `${opt.kbps}k`, "-maxrate", `${opt.kbps}k`, "-bufsize", `${opt.kbps * 2}k`, "-x264-params", "nal-hrd=cbr:force-cfr=1"]
              : ["-crf", String(opt.crf)]),
   "-level:v", "4.1", "-g", "60", "-pix_fmt", "yuv420p", "-r", "30", "-fps_mode", "cfr",
   "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",

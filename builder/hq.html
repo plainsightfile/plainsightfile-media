@@ -694,7 +694,7 @@ STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL an
 - The last slide starts with "RECEIPTS: " followed by a short line, then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
 - Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words. Highlight only what the eye must land on: the number, the contradiction, or the one quoted word that carries the joke. Never a whole clause or a source name. A limiting qualifier ("not fraud", "estimate") stays on the same slide in full-size type whether or not it is highlighted. A slide may have no highlight. ||words|| draws a redaction bar and is not a highlight.
 
-LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 3 to 9 words, a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY this, nothing else):
 - Line 1: "DEVICE: " plus the name of the device you used.
@@ -724,7 +724,7 @@ Rules:
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
 - Write for an international English-speaking audience: name the country, explain local institutions briefly, label currencies (C$, US$, £, €).
 
-LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 3 to 9 words, a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY the script, nothing else):
 - Line 1: "DEVICE: Spin and record" (or the name of the toolkit device you used instead).
@@ -780,14 +780,19 @@ function parseScript(src){
     const m=b.match(/^[\s*_#>\-\u2022]*(?:\d+[.)]\s*)?(?:slide\s*\d+\s*[:.\-]?\s*)?[*_]*\s*(HOOK|REVEAL|RECEIPTS|SLIDE|SPIN|TRANSLATION|TAKE|RECORD|CASE\s+STATUS)(?:\s+SLIDE)?\s*[*_]*\s*(?:[:\uFF1A]|\n|$)[\s*_]*/i);
     if(m){type=m[1].toLowerCase().replace(/\s+/g,""); if(type==="slide")type="body"; if(type==="casestatus")type="status"; text=b.slice(m[0].length);}
     else if(i===0) type="hook";
-    const items=[]; const lines=[]; const notes=[]; const say=[];
+    const items=[]; const lines=[]; const notes=[]; const say=[]; const parts=[];
     /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type.
        "SAY:" lines are the narrator's spoken script for that slide: never printed, read by the video builder. */
     text.split("\n").forEach(l=>{ const sm=l.match(SAY_RE); if(sm){say.push(l.slice(sm[0].length).trim());return}
       if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
       else if(type!=="receipts" && NOTE_RE.test(l)){const mm=l.trim().replace(/^[*_]+|[*_]+$/g,"").match(/^(SOURCE|CLASSIFIED LOCATION)\s*[:\uFF1A]\s*(.*)$/i);if(mm)notes.push({label:mm[1].toUpperCase()+":",text:mm[2].replace(/[*_]+$/,"").trim()})}
-      else if(l.trim()) lines.push(l.trim()); });
-    return {type, text:lines.join("\n"), items, notes, say:say.join(" ")};
+      else if(l.trim()){
+        /* in-slide structure: "## " a small header (kicker), "# " the headline, any other line body text.
+           Markers are taken out of the text, so every other use of the slide text sees plain words. */
+        const hm=l.trim().match(/^(#{1,2})\s+(.*)$/);
+        if(hm&&type!=="receipts"){lines.push(hm[2].trim());parts.push({k:hm[1].length===2?"kick":"head",t:hm[2].trim()})}
+        else{lines.push(l.trim());parts.push({k:"body",t:l.trim()})}} });
+    return {type, text:lines.join("\n"), items, notes, say:say.join(" "), parts:parts.some(x=>x.k==="head")?parts:null};
   });
 }
 function tokenize(text){
@@ -1406,6 +1411,35 @@ function renderSignal916(sl,idx,total){
       ctx.fillStyle=T.fg;ctx.fillRect(X,yy+best.s*0.05,10,h-best.s*0.14);yy+=h;
       if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X+IND,yy+gap/2-1,TTN.railRight-X-IND,2);yy+=gap}});
     n9Foot(ctx,T);return c;
+  }
+  /* Structured slide (Alex, October 16, 2026: headers, subheaders and text instead of colons):
+     kicker as a small tag, the headline big, the body in lighter, smaller type under it. */
+  if(sl.parts&&sl.type!=="status"){
+    const kick=sl.parts.filter(p=>p.k==="kick").map(p=>p.t).join(" · ");
+    const head=sl.parts.filter(p=>p.k==="head").map(p=>p.t).join("\n");
+    const body=sl.parts.filter(p=>p.k==="body").map(p=>p.t).join("\n");
+    if(kick){y+=n9Tag(ctx,T,kick.replace(/[*_]/g,"").toUpperCase(),X,y)+44}
+    const barred=sl.type==="reveal",indent=barred?48:0,hx=X+indent;
+    const exH=n9Exhibit(ctx,T,notes,idx,false,true),exTop=BOT-exH,band=(exH?exTop-60:BOT)-y;
+    const hf=s=>`700 ${s}px ${SGF}`,bf=s=>`500 ${s}px ${SGF}`,HL=1.04,BL=1.22;
+    const ht=tokenize(head),bt=body?tokenize(body):null;
+    let pick=null;
+    for(let s=N9.maxS;s>=56;s-=3){
+      ctx.font=hf(s);const hp=s*0.12,hl=n9Wrap(ctx,ht,i=>n9Right(y+i*s*HL,s*1.1)-hx,hp),hH=(hl.length+paraLines(hl))*s*HL;
+      const hw=Math.max(0,...ht.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width));
+      let bs=0,bl=null,bH=0,gap=0;
+      if(bt){bs=Math.max(42,Math.min(66,Math.round(s*0.46)));gap=Math.round(s*0.42);ctx.font=bf(bs);
+        bl=n9Wrap(ctx,bt,i=>n9Right(y+hH+gap+i*bs*BL,bs*1.1)-X,bs*0.12);bH=(bl.length+paraLines(bl))*bs*BL}
+      pick={s,hp,hl,hH,bs,bl,bH,gap};
+      if(hH+gap+bH<=band&&hw<=TTN.right-hx)break;
+    }
+    const top=y+Math.max(0,band-(pick.hH+pick.gap+pick.bH))*0.35;
+    const hh=drawLines(ctx,{s:pick.s,lines:pick.hl,pad:pick.hp},hf,hx,top,HL,col);
+    if(barred){ctx.fillStyle=T.fg;ctx.fillRect(X,top+pick.s*0.05,10,hh-pick.s*0.14)}
+    if(pick.bl)drawLines(ctx,{s:pick.bs,lines:pick.bl,pad:pick.bs*0.12},bf,X,top+pick.hH+pick.gap,BL,Object.assign({},col,{text:T.fg}));
+    if(exH)n9Exhibit(ctx,T,notes,idx,sl.type==="reveal",false,exTop);
+    n9Foot(ctx,T);
+    return c;
   }
   /* hook, reveal, body and the memo types: headline fills the band between the tags and the exhibit pinned at the bottom */
   const barred=sl.type==="reveal"||sl.type==="spin",weight=barred?500:700,f=s=>`${weight} ${s}px ${SGF}`;
