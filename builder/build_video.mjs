@@ -36,6 +36,7 @@
     --el-model <id>     ElevenLabs model for API generation (default eleven_v4)
     --el-urls <file>    JSON list of audio URLs, one per slide plus the end card, made by the ElevenLabs connector;
                         without it the takes are generated with the ElevenLabs API (repo secret ELEVENLABS_API_KEY)
+    --el-whole 0        generate each slide's line separately instead of one continuous take (the default)
     --el-tempo <n>      speed up (or slow down) the ElevenLabs takes without changing pitch (default 1; 1.1 = 10% faster)
     --el-reuse <dir>    reuse the takes already in <dir>/voice-NN.wav from an earlier build of the same script (no credits)
     --fallback-voice <n> Kokoro voice used when ElevenLabs fails (default bf_emma; "none" fails the build instead)
@@ -321,6 +322,7 @@ if (opt.voice) {
     const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
       "--lines", path.join(vdir, "lines.json"), "--out", vdir];
     if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
+    else if (opt["el-whole"] !== "0") args.push("--whole");
     const reuse = opt["el-reuse"] && path.resolve(opt["el-reuse"]);
     const r = reuse ? {status: 0, stdout: JSON.stringify({engine: "ElevenLabs", voice: opt.voice.slice(3), model: "reused takes", source: "reuse",
         clips: slides.map((s, i) => { const f = path.join(reuse, `voice-${String(i + 1).padStart(2, "0")}.wav`);
