@@ -1,0 +1,101 @@
+# narration.yml: the audio courier for the ElevenLabs narration voice.
+#
+# The cloud build machine can reach GitHub but not ElevenLabs or Google Cloud Storage, so this workflow
+# does the network part and hands the audio back through git. It never prints the lines or the audio, and
+# everything it pushes is AES-256 encrypted with a one-time key that only travels in the dispatch payload
+# (never in the repo or the logs), so nothing is readable in this public repo before Alex approves a post.
+#
+# Triggered by builder/narrate_el.mjs with a repository_dispatch, event_type "narrate", client_payload:
+#   id     unique run id (letters, digits, dashes)
+#   key    one-time passphrase (the encrypted result is pushed to branch narr/<id>)
+#   mode   "urls" : download already generated takes (the ElevenLabs connector made them)
+#          "tts"  : generate with the ElevenLabs API, needs the repo secret ELEVENLABS_API_KEY
+#   items  urls mode: list of https URLs (null for a silent slide)
+#          tts mode : {"voice_id": "...", "model_id": "...", "lines": ["...", "" ...]}
+name: narration
+on:
+  repository_dispatch:
+    types: [narrate]
+permissions:
+  contents: write
+concurrency:
+  group: narration-${{ github.event.client_payload.id }}
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Mask the key
+        env: {K: "${{ github.event.client_payload.key }}"}
+        run: echo "::add-mask::$K"
+      - name: Fetch audio
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          XI_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          mkdir -p out
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          p = json.loads(os.environ["PAYLOAD"])
+          assert re.fullmatch(r"[A-Za-z0-9-]{6,64}", p["id"]), "bad id"
+          manifest = {"id": p["id"], "mode": p["mode"], "clips": []}
+          def get(req, dst):
+              with urllib.request.urlopen(req, timeout=120) as r, open(dst, "wb") as f:
+                  f.write(r.read())
+          if p["mode"] == "urls":
+              for i, u in enumerate(p["items"]):
+                  if not u:
+                      manifest["clips"].append(None); continue
+                  assert u.startswith("https://storage.googleapis.com/") or u.startswith("https://api.elevenlabs.io/"), "unexpected host"
+                  dst = "out/voice-%02d.mp3" % (i + 1); get(u, dst); manifest["clips"].append(os.path.basename(dst))
+          elif p["mode"] == "tts":
+              key = os.environ.get("XI_KEY") or ""
+              assert key, "ELEVENLABS_API_KEY secret is not set"
+              it = p["items"]; lines = it["lines"]
+              assert re.fullmatch(r"[A-Za-z0-9]{10,40}", it["voice_id"]), "bad voice id"
+              for i, text in enumerate(lines):
+                  text = (text or "").strip()
+                  if not text:
+                      manifest["clips"].append(None); continue
+                  body = {"text": text, "model_id": it.get("model_id", "eleven_multilingual_v2")}
+                  if it.get("voice_settings"): body["voice_settings"] = it["voice_settings"]
+                  prev = " ".join(l for l in lines[:i] if l)[-300:]; nxt = " ".join(l for l in lines[i + 1:] if l)[:300]
+                  if prev: body["previous_text"] = prev
+                  if nxt: body["next_text"] = nxt
+                  req = urllib.request.Request(
+                      "https://api.elevenlabs.io/v1/text-to-speech/%s?output_format=mp3_44100_128" % it["voice_id"],
+                      data=json.dumps(body).encode(), method="POST",
+                      headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
+                  dst = "out/voice-%02d.mp3" % (i + 1)
+                  try:
+                      get(req, dst)
+                  except urllib.error.HTTPError as e:
+                      raise SystemExit("ElevenLabs answered %s: %s" % (e.code, e.read()[:300].decode("utf-8", "replace")))
+                  manifest["clips"].append(os.path.basename(dst))
+          else:
+              raise SystemExit("unknown mode")
+          json.dump(manifest, open("out/manifest.json", "w"))
+          print("fetched %d clips" % sum(1 for c in manifest["clips"] if c))
+          PY
+      - name: Encrypt and push
+        env:
+          K: ${{ github.event.client_payload.key }}
+          ID: ${{ github.event.client_payload.id }}
+        run: |
+          tar -C out -czf - . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -out narration.bin
+          rm -rf out
+          git init -q push && cd push
+          git config user.name "plainsightfile-narration"; git config user.email "narration@users.noreply.github.com"
+          git checkout -q --orphan "narr/$ID"
+          mv ../narration.bin . && git add narration.bin && git commit -qm "encrypted narration $ID"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "narr/$ID"
+      - name: Report failure
+        if: failure()
+        env:
+          ID: ${{ github.event.client_payload.id }}
+        run: |
+          git init -q fail && cd fail
+          git config user.name "plainsightfile-narration"; git config user.email "narration@users.noreply.github.com"
+          git checkout -q --orphan "narr/$ID"
+          echo "failed: see run ${{ github.run_id }}" > FAILED && git add FAILED && git commit -qm "narration $ID failed"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "narr/$ID" || true
