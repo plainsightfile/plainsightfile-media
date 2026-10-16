@@ -1,7 +1,7 @@
 {
   "engine": "elevenlabs",
-  "voice_id": "Oqy85UMasXzUjUxF0ta5",
-  "voice_name": "Summer - British, Confident & Posh Voice (provisional until Alex picks from the October 16 audition)",
+  "voice_id": "3cuC1hNj9E2jcHlIvndN",
+  "voice_name": "Peach - Casual & Friendly British Voice (chosen by Alex on October 16, 2026: casual and lively, room for sass)",
   "model": "eleven_v4",
   "fallback_voice": "bf_emma",
   "note": "Takes are generated with the ElevenLabs API inside the narration GitHub Action (repo secret ELEVENLABS_API_KEY). Until that secret exists every build falls back to Kokoro bf_emma automatically."
