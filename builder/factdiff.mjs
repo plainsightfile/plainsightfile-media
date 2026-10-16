@@ -14,15 +14,15 @@
 export const BANNED = ["wake up", "follow the money", "sheeple", "cover-up", "cover up", "rigged", "tinfoil"];
 
 /* Words that limit or attribute a claim: a slide may add them, never lose them. */
-const QUALIFIERS = ["estimate", "estimates", "estimated", "alleged", "allegedly", "allegation", "allegations", "reportedly", "preliminary",
+export const QUALIFIERS = ["estimate", "estimates", "estimated", "alleged", "allegedly", "allegation", "allegations", "reportedly", "preliminary",
   "provisional", "approximately", "roughly", "at least", "up to", "may", "might", "could", "denied", "denies", "disputed", "disputes",
   "say", "says", "said", "claim", "claims", "claimed", "according to", "not", "no", "never", "without", "none", "n't"];
 /* Words that assert cause, intent or a finding: a slide may lose them, never gain them. */
-const STRENGTHENERS = ["because", "caused", "causes", "causing", "led to", "leading to", "to hide", "hid", "hiding", "concealed", "covered up",
+export const STRENGTHENERS = ["because", "caused", "causes", "causing", "led to", "leading to", "to hide", "hid", "hiding", "concealed", "covered up",
   "lied", "knew", "knowingly", "deliberately", "intentionally", "on purpose", "admitted", "confessed", "proved", "proves", "proof",
   "guilty", "convicted", "illegal", "corrupt", "corruption", "fraud", "ruled", "found", "concluded"];
 
-const NUM_WORDS = "zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|half|double|triple|twice|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth";
+export const NUM_WORDS = "zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|half|double|triple|twice|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth";
 
 const straight = s => String(s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
 /* text used for comparing: straight quotes, no emphasis stars or redaction bars, single spaces */

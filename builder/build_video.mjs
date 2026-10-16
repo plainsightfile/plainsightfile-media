@@ -28,7 +28,8 @@
                         the day the build happens to run. Defaults to the real date in America/Vancouver.
     --voice <name>      narrate every slide with this Kokoro voice (e.g. bf_emma). Slide timing then follows the voice
                         instead of HQ's reading-speed rule, and the music becomes a quiet bed that dips under the voice.
-                        Needs ./setup_voice.sh first. The spoken lines come from the slides themselves (see spokenLine).
+                        Needs ./setup_voice.sh first. Each slide speaks its SAY: line (never printed on the slide), or
+                        its own words when it has none (see spokenLine).
     --speed <n>         voice speed (default 1)
     --voice-models <d>  folder with kokoro-v1.0.onnx and voices-v1.0.bin (default ./voice-models)
     --bed-lufs <n>      music loudness under the voice (default -30; the voice itself is normalised to --lufs)
@@ -184,7 +185,7 @@ const info = await page.evaluate(async () => {
   await new Promise(r => setTimeout(r, 300));
   /* the slides as HQ parsed them (type + text), plus the end card HQ adds, so narration lines match the frames one to one */
   const parsed = window.PSHQ && window.PSHQ.parseScript ? window.PSHQ.parseScript(document.getElementById("script").value)
-    .map(s => ({type: s.type, text: s.text || ""})) : null;
+    .map(s => ({type: s.type, text: s.text || "", say: s.say || ""})) : null;
   if (parsed && parsed.length) parsed.push({type: "end", text: ""});
   return {fontsOk, dims, labels, parsed, signoff: (document.getElementById("signoff") || {}).value || "",
     srcs: imgs.map(i => i.src), count: document.getElementById("count").textContent,
@@ -208,8 +209,9 @@ const slides = info.labels.map((lab, i) => {
   fs.writeFileSync(path.join(framesDir, name), Buffer.from(info.srcs[i].split(",")[1], "base64"));
   return {n: i + 1, type: m[2], secs: Number(m[3]), frame: "frames/" + name};
 });
-/* What the narrator says on each slide: the slide's own words, with the markup taken out and money, percentages and
-   shouty costume words written the way they are spoken. SOURCE and CLASSIFIED LOCATION lines are not read (they are
+/* What the narrator says on each slide: the slide's SAY: line (her own short spoken script, written by the narrator
+   step and checked like any other claim), or, when a slide has none, the slide's own words. Either way the markup is
+   taken out and money, percentages and shouty costume words are written the way they are spoken. SOURCE and CLASSIFIED LOCATION lines are not read (they are
    on screen and in the receipts); the end card reads the sign-off. */
 /* Acronyms read letter by letter or as their own word stay in capitals. Any other capitalised word of 3+ letters
    (costume words like TOP SECRET, LEAKED) is lowered so the voice says it as a word instead of spelling it out.
@@ -221,7 +223,8 @@ const CURRENCY = {"US$": "US dollars", "CA$": "Canadian dollars", "C$": "Canadia
 function spokenLine(sl, signoff) {
   if (!sl) return "";
   if (sl.type === "end") return signoff || "It was never hidden.";
-  let t = String(sl.text || "");
+  /* the narrator's own SAY: line when the script has one; otherwise the slide's printed words */
+  let t = String(sl.say && sl.say.trim() ? sl.say : sl.text || "");
   if (sl.type === "receipts" && !t.trim()) t = "Receipts below.";
   t = t.replace(/\|\|[^|]+\|\|/g, "redacted")
     .replace(/\*([^*]+)\*/g, "$1")

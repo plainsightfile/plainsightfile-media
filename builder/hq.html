@@ -768,6 +768,7 @@ showLinked();
 
 /* ---------- parsing ---------- */
 const NOTE_RE=/^[\s*_]*(SOURCE|CLASSIFIED LOCATION)[*_]*\s*[:\uFF1A]/i;
+const SAY_RE=/^[\s*_]*SAY[*_]*\s*[:\uFF1A][*_]*\s*/i;
 const STAMPS=["LEAKED","TOP SECRET","CLASSIFIED","EYES ONLY","CONFIDENTIAL"];
 function scriptStamp(){const m=scriptEl.value.match(/^[\s*_]*STAMP[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);const w=m?m[1].replace(/[*_.]+$/,"").trim().toUpperCase():"";return STAMPS.includes(w)?w:"CLASSIFIED"}
 function scriptDevice(){const m=scriptEl.value.match(/^[\s*_]*DEVICE[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);return m?m[1].replace(/[*_]+$/,"").trim():""}
@@ -779,12 +780,14 @@ function parseScript(src){
     const m=b.match(/^[\s*_#>\-\u2022]*(?:\d+[.)]\s*)?(?:slide\s*\d+\s*[:.\-]?\s*)?[*_]*\s*(HOOK|REVEAL|RECEIPTS|SLIDE|SPIN|TRANSLATION|TAKE|RECORD|CASE\s+STATUS)(?:\s+SLIDE)?\s*[*_]*\s*(?:[:\uFF1A]|\n|$)[\s*_]*/i);
     if(m){type=m[1].toLowerCase().replace(/\s+/g,""); if(type==="slide")type="body"; if(type==="casestatus")type="status"; text=b.slice(m[0].length);}
     else if(i===0) type="hook";
-    const items=[]; const lines=[]; const notes=[];
-    /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type */
-    text.split("\n").forEach(l=>{ if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
+    const items=[]; const lines=[]; const notes=[]; const say=[];
+    /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type.
+       "SAY:" lines are the narrator's spoken script for that slide: never printed, read by the video builder. */
+    text.split("\n").forEach(l=>{ const sm=l.match(SAY_RE); if(sm){say.push(l.slice(sm[0].length).trim());return}
+      if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
       else if(type!=="receipts" && NOTE_RE.test(l)){const mm=l.trim().replace(/^[*_]+|[*_]+$/g,"").match(/^(SOURCE|CLASSIFIED LOCATION)\s*[:\uFF1A]\s*(.*)$/i);if(mm)notes.push({label:mm[1].toUpperCase()+":",text:mm[2].replace(/[*_]+$/,"").trim()})}
       else if(l.trim()) lines.push(l.trim()); });
-    return {type, text:lines.join("\n"), items, notes};
+    return {type, text:lines.join("\n"), items, notes, say:say.join(" ")};
   });
 }
 function tokenize(text){
