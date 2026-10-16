@@ -19,6 +19,9 @@
     --lufs <n>          integrated loudness target for --music (default -16)
     --tp <n>            true-peak ceiling in dBTP (default -1.5)
     --xfade <ms>        crossfade between slides instead of hard cuts (default 0 = hard cut)
+    --motion <0|1>      the slide transition (default 1): each slide lands with a quick 6% punch-in that settles in
+                        0.3 s, then holds perfectly still so the text is easy to read. (Alex, October 16, 2026: keep the
+                        transition, no motion on the text pages.)
     --kbps <n>          constant video bitrate (default 6000, inside Metricool's recommended 5,000 to 25,000 kbps).
                         --kbps 0 switches to CRF quality mode: about 2.6 MB instead of 32 MB, same look.
     --crf <n>           x264 quality when --kbps 0 (default 16)
@@ -26,6 +29,23 @@
                         (about 10 s instead of about 50 s). For drafting and checking; the publisher builds the real video.
     --date <YYYY-MM-DD> pretend today is this day inside HQ, so the hook's date stamp is fixed (the posting day) instead of
                         the day the build happens to run. Defaults to the real date in America/Vancouver.
+    --voice <name>      narrate every slide with this Kokoro voice (e.g. bf_emma). Slide timing then follows the voice
+                        instead of HQ's reading-speed rule, and the music becomes a quiet bed that dips under the voice.
+                        Needs ./setup_voice.sh first. Each slide speaks its SAY: line (never printed on the slide), or
+                        its own words when it has none (see spokenLine).
+    --voice el:<id>     narrate with an ElevenLabs voice instead (the id from the ElevenLabs voice list). The audio is
+                        fetched through the "narration" GitHub Action (see narrate_el.mjs); if that fails for any
+                        reason the build falls back to the Kokoro voice in --fallback-voice and says so in report.json.
+    --el-model <id>     ElevenLabs model for API generation (default eleven_v4)
+    --el-urls <file>    JSON list of audio URLs, one per slide plus the end card, made by the ElevenLabs connector;
+                        without it the takes are generated with the ElevenLabs API (repo secret ELEVENLABS_API_KEY)
+    --el-whole 0        generate each slide's line separately instead of one continuous take (the default)
+    --el-tempo <n>      speed up (or slow down) the ElevenLabs takes without changing pitch (default 1; 1.1 = 10% faster)
+    --el-reuse <dir>    reuse the takes already in <dir>/voice-NN.wav from an earlier build of the same script (no credits)
+    --fallback-voice <n> Kokoro voice used when ElevenLabs fails (default bf_emma; "none" fails the build instead)
+    --speed <n>         voice speed (Kokoro only; default 1)
+    --voice-models <d>  folder with kokoro-v1.0.onnx and voices-v1.0.bin (default ./voice-models)
+    --bed-lufs <n>      music loudness under the voice (default -30; the voice itself is normalised to --lufs)
 
   Outputs (in --out):
     video.mp4  cover.jpg  caption.txt  pinned-comment.txt  timings.json  frames/NN-type.png  report.json
@@ -49,7 +69,8 @@ const mark = (k, since) => { lap[k] = +((Date.now() - since) / 1000).toFixed(2);
 
 /* ---------------- arguments ---------------- */
 const argv = process.argv.slice(2);
-const opt = {hq: path.join(HERE, "hq.html"), lufs: -16, tp: -1.5, xfade: 0, crf: 16, look: "auto", fileno: "000"};
+const opt = {hq: path.join(HERE, "hq.html"), lufs: -16, tp: -1.5, xfade: 0, look: "auto", fileno: "000",
+  speed: 1, "voice-models": path.join(HERE, "voice-models"), "bed-lufs": -30, "el-model": "eleven_v4", "el-tempo": 1, motion: "1", "fallback-voice": "bf_emma"};
 let input = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -61,7 +82,12 @@ for (let i = 0; i < argv.length; i++) {
   } else input = a;
 }
 if (!input) { console.error("usage: node build_video.mjs <script.txt|file.json> [--music track.mp3] [--out dir]"); process.exit(2); }
-opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
+opt.speed = Number(opt.speed); opt["el-tempo"] = Number(opt["el-tempo"]);
+if (!(opt["el-tempo"] >= 0.8 && opt["el-tempo"] <= 1.3)) { console.error("--el-tempo must be between 0.8 and 1.3"); process.exit(2); } opt["bed-lufs"] = Number(opt["bed-lufs"]);
+const KOKORO_RE = /^[ab][fm]_[a-z]+$/, EL_RE = /^el:[A-Za-z0-9]{10,40}$/;
+if (opt.voice !== undefined && !KOKORO_RE.test(String(opt.voice)) && !EL_RE.test(String(opt.voice))) { console.error("--voice must be a Kokoro voice name such as bf_emma, or el:<ElevenLabs voice id>"); process.exit(2); }
+if (opt["fallback-voice"] !== "none" && !KOKORO_RE.test(String(opt["fallback-voice"]))) { console.error("--fallback-voice must be a Kokoro voice name or none"); process.exit(2); }
+opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf ?? 16); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
 if (opt.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(opt.date))) { console.error("--date must look like 2026-10-14"); process.exit(2); }
 
 /* ---------------- read the File ---------------- */
@@ -173,7 +199,12 @@ const info = await page.evaluate(async () => {
   document.getElementById("capCopy").click();
   document.getElementById("pinCopy").click();
   await new Promise(r => setTimeout(r, 300));
-  return {fontsOk, dims, labels, srcs: imgs.map(i => i.src), count: document.getElementById("count").textContent,
+  /* the slides as HQ parsed them (type + text), plus the end card HQ adds, so narration lines match the frames one to one */
+  const parsed = window.PSHQ && window.PSHQ.parseScript ? window.PSHQ.parseScript(document.getElementById("script").value)
+    .map(s => ({type: s.type, text: s.text || "", say: s.say || ""})) : null;
+  if (parsed && parsed.length) parsed.push({type: "end", text: ""});
+  return {fontsOk, dims, labels, parsed, signoff: (document.getElementById("signoff") || {}).value || "",
+    srcs: imgs.map(i => i.src), count: document.getElementById("count").textContent,
     capBox: document.getElementById("caption").value, pin: document.getElementById("pinText").value, copied: window.__copied,
     loc: [document.getElementById("locPlace").value, document.getElementById("locCountry").value]};
 });
@@ -194,15 +225,45 @@ const slides = info.labels.map((lab, i) => {
   fs.writeFileSync(path.join(framesDir, name), Buffer.from(info.srcs[i].split(",")[1], "base64"));
   return {n: i + 1, type: m[2], secs: Number(m[3]), frame: "frames/" + name};
 });
+/* What the narrator says on each slide: the slide's SAY: line (her own short spoken script, written by the narrator
+   step and checked like any other claim), or, when a slide has none, the slide's own words. Either way the markup is
+   taken out and money, percentages and shouty costume words are written the way they are spoken. SOURCE and CLASSIFIED LOCATION lines are not read (they are
+   on screen and in the receipts); the end card reads the sign-off. */
+/* Acronyms read letter by letter or as their own word stay in capitals. Any other capitalised word of 3+ letters
+   (costume words like TOP SECRET, LEAKED) is lowered so the voice says it as a word instead of spelling it out.
+   Two-letter capitals (EU, US, UK, AI, BC) and words with no vowels (RCMP, CBC, NHS) always stay. */
+const KEEP_CAPS = new Set(["OECD", "NATO", "NASA", "UNHCR", "UNICEF", "CUSMA", "USMCA", "OPEC", "WHO", "CIA", "FBI", "IMF",
+  "CEO", "CEOS", "USA", "UAE", "IRS", "EPA", "FDA", "ICE", "OAS", "NAFTA", "FIFA", "IOC", "GDP", "MLA", "MLAS", "MPP", "MPS"]);
+const CURRENCY = {"US$": "US dollars", "CA$": "Canadian dollars", "C$": "Canadian dollars", "A$": "Australian dollars",
+  "NZ$": "New Zealand dollars", "£": "pounds", "€": "euros", "$": "dollars"};
+function spokenLine(sl, signoff) {
+  if (!sl) return "";
+  if (sl.type === "end") return signoff || "It was never hidden.";
+  /* the narrator's own SAY: line when the script has one; otherwise the slide's printed words */
+  let t = String(sl.say && sl.say.trim() ? sl.say : sl.text || "");
+  if (sl.type === "receipts" && !t.trim()) t = "Receipts below.";
+  t = t.replace(/\|\|[^|]+\|\|/g, "redacted")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/(^|[^\w/])_([^_]+)_(?!\w)/g, "$1$2")
+    .replace(/(US\$|CA\$|C\$|A\$|NZ\$|£|€|\$)\s?(\d[\d,]*(?:\.\d+)?)(\s?(?:thousand|million|billion|trillion))?/g,
+      (m, c, n, s) => `${n.replace(/,/g, "")}${s || ""} ${CURRENCY[c]}`)
+    .replace(/(\d)\s?%/g, "$1 percent")
+    .replace(/[“”"]/g, "")
+    .replace(/\b[A-Z][A-Z'’]{2,}\b/g, w => (KEEP_CAPS.has(w) || !/[AEIOUY]/.test(w) ? w : w.toLowerCase()));
+  return t.split("\n").map(s => s.trim()).filter(Boolean).map(s => (/[.!?:;)]$/.test(s) ? s : s + ".")).join(" ");
+}
+if (info.parsed && info.parsed.length === slides.length) slides.forEach((s, i) => { s.say = spokenLine(info.parsed[i], info.signoff); });
+else if (opt.voice) throw new Error(`HQ gave ${info.parsed ? info.parsed.length : 0} parsed slides for ${slides.length} frames, so narration can't be matched to frames.`);
+
 let at = 0;
 slides.forEach(s => { s.start = +at.toFixed(3); at += s.secs; s.end = +at.toFixed(3); });
-const total = +at.toFixed(3);
+let total = +at.toFixed(3);
 
 /* ---------------- caption + pinned comment (HQ's own output) ---------------- */
 const caption = info.copied[0] ?? "", pinned = info.copied[1] ?? info.pin;
 fs.writeFileSync(path.join(out, "caption.txt"), caption + "\n");
 fs.writeFileSync(path.join(out, "pinned-comment.txt"), pinned + "\n");
-const timingsJson = () => JSON.stringify({total_secs: total, slides: slides.map(({n, type, secs, start, end, frame}) => ({n, type, secs, start, end, frame}))}, null, 2) + "\n";
+const timingsJson = () => JSON.stringify({total_secs: total, slides: slides.map(({n, type, secs, start, end, frame, say, voice_secs}) => ({n, type, secs, start, end, frame, say, voice_secs}))}, null, 2) + "\n";
 
 /* ---------------- frames only: stop here (no audio, no encode) ---------------- */
 if (opt["frames-only"]) {
@@ -229,23 +290,110 @@ const FF = process.env.FFMPEG || "/usr/bin/ffmpeg", FP = process.env.FFPROBE || 
 
 /* ---------------- audio bed ---------------- */
 const audioPath = path.join(out, "audio.m4a");
-const fadeOut = Math.min(1.5, total / 4), fadeIn = 0.05;
+const fadeIn = 0.05, fadeOutFor = () => Math.min(1.5, total / 4); /* read at call time: --voice changes total */
 let audio = {};
 /* Two-pass EBU R128 normalisation (pass 1 measures, pass 2 applies one linear gain), then short fade in and a fade out.
    Linear mode keeps the track's own dynamics; a fixed gain also means the loop point never pumps. */
-function normalise(srcArgs, I, TP, LRA) {
+function normalise(srcArgs, I, TP, LRA, dst = audioPath, fades = true) {
+  const fadeOut = fadeOutFor();
   const ln = `loudnorm=I=${I}:TP=${TP}:LRA=${LRA}`;
   const p1 = run(FF, ["-hide_banner", "-nostats", ...srcArgs, "-t", String(total), "-af", ln + ":print_format=json", "-f", "null", "-"]);
   const meas = JSON.parse(p1.stderr.slice(p1.stderr.lastIndexOf("{"), p1.stderr.lastIndexOf("}") + 1));
   /* loudnorm only stays linear if the target LRA is at least the track's own LRA: widen it so music is never compressed */
   const lra2 = Math.max(LRA, Math.min(50, Math.ceil(+meas.input_lra + 1)));
   const af = `loudnorm=I=${I}:TP=${TP}:LRA=${lra2}:measured_I=${meas.input_i}:measured_TP=${meas.input_tp}:measured_LRA=${meas.input_lra}:measured_thresh=${meas.input_thresh}:offset=${meas.target_offset}:linear=true:print_format=json,` +
-             `aresample=48000,afade=t=in:d=${fadeIn},afade=t=out:st=${(total - fadeOut).toFixed(3)}:d=${fadeOut}`;
-  const p2 = run(FF, ["-y", "-hide_banner", "-nostats", ...srcArgs, "-t", String(total), "-af", af, "-ac", "2", "-c:a", "aac", "-b:a", "128k", audioPath]);
+             `aresample=48000` + (fades ? `,afade=t=in:d=${fadeIn},afade=t=out:st=${(total - fadeOut).toFixed(3)}:d=${fadeOut}` : "");
+  const p2 = run(FF, ["-y", "-hide_banner", "-nostats", ...srcArgs, "-t", String(total), "-af", af, "-ac", "2", "-c:a", "aac", "-b:a", "128k", dst]);
   const m2 = JSON.parse(p2.stderr.slice(p2.stderr.lastIndexOf("{"), p2.stderr.lastIndexOf("}") + 1));
   return {input_lufs: +meas.input_i, input_true_peak: +meas.input_tp, normalization: m2.normalization_type};
 }
-if (opt.music) {
+/* ---------------- narration (only with --voice) ---------------- */
+let voice = null;
+if (opt.voice) {
+  const vdir = path.join(out, "voice");
+  fs.rmSync(vdir, {recursive: true, force: true}); fs.mkdirSync(vdir, {recursive: true});
+  fs.writeFileSync(path.join(vdir, "lines.json"), JSON.stringify(slides.map(s => s.say || "")));
+  const kokoro = name => {
+    const models = path.resolve(opt["voice-models"]);
+    for (const f of ["kokoro-v1.0.onnx", "voices-v1.0.bin"])
+      if (!fs.existsSync(path.join(models, f))) throw new Error(`Voice model ${f} missing in ${models}. Run: ${path.join(HERE, "setup_voice.sh")}`);
+    const r = run(process.env.PYTHON || "python3", ["-I", path.join(HERE, "narrate.py"), "--models", models, "--voice", name,
+      "--speed", String(opt.speed), "--lines", path.join(vdir, "lines.json"), "--out", vdir]);
+    return {engine: "Kokoro v1.0 (kokoro-onnx)", ...JSON.parse(r.stdout.trim().split("\n").pop())};
+  };
+  if (EL_RE.test(opt.voice)) {
+    const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
+      "--lines", path.join(vdir, "lines.json"), "--out", vdir];
+    if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
+    else if (opt["el-whole"] !== "0") args.push("--whole");
+    const reuse = opt["el-reuse"] && path.resolve(opt["el-reuse"]);
+    const r = reuse ? {status: 0, stdout: JSON.stringify({engine: "ElevenLabs", voice: opt.voice.slice(3), model: "reused takes", source: "reuse",
+        clips: slides.map((s, i) => { const f = path.join(reuse, `voice-${String(i + 1).padStart(2, "0")}.wav`);
+          if (!(s.say || "").trim()) return null; if (!fs.existsSync(f)) throw new Error("--el-reuse: missing " + f);
+          const c = path.join(vdir, `src-${String(i + 1).padStart(2, "0")}.wav`); fs.copyFileSync(f, c); return {file: c, secs: 0}; })})}
+      : spawnSync(process.execPath, args, {encoding: "utf8", maxBuffer: 64 * 1024 * 1024});
+    if (r.status === 0) {
+      voice = {...JSON.parse(r.stdout.trim().split("\n").pop()), lang: "en-gb", tempo: opt["el-tempo"]};
+      /* tempo (pitch kept) and a fresh duration for every clip */
+      voice.clips = voice.clips.map((c, i) => { if (!c) return null;
+        const dst = path.join(vdir, `voice-${String(i + 1).padStart(2, "0")}.t.wav`);
+        run(FF, ["-y", "-hide_banner", "-loglevel", "error", "-i", c.file, "-af", `atempo=${opt["el-tempo"]}`, dst]);
+        const fin = path.join(vdir, `voice-${String(i + 1).padStart(2, "0")}.wav`); fs.renameSync(dst, fin);
+        if (c.file !== fin) fs.rmSync(c.file, {force: true});
+        return {file: fin, secs: +Number(run(FP, ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", fin]).stdout.trim()).toFixed(3)}; });
+    }
+    else {
+      const why = (r.stderr || "").trim().split("\n").pop() || "unknown error";
+      if (opt["fallback-voice"] === "none") throw new Error("ElevenLabs narration failed: " + why);
+      console.error(`ElevenLabs narration failed (${why}); falling back to Kokoro ${opt["fallback-voice"]}.`);
+      voice = {...kokoro(opt["fallback-voice"]), fallback_from: opt.voice, fallback_reason: why};
+    }
+  } else voice = kokoro(opt.voice);
+  /* The voice sets the pace: each slide lasts as long as its line plus a breath, with a floor so nothing flashes by.
+     A slide with nothing to say (rare) keeps HQ's time, capped at 3 s. */
+  const LEAD = 0.25, TAIL = 0.45, FLOOR = {receipts: 2.5, end: 2.5};
+  slides.forEach((s, i) => {
+    const c = voice.clips[i];
+    s.voice_secs = c ? c.secs : 0;
+    s.lead = i === 0 ? 0.15 : LEAD;
+    s.secs = c ? +Math.max(FLOOR[s.type] || 1.8, s.lead + c.secs + TAIL).toFixed(2) : Math.min(s.secs, 3);
+  });
+  at = 0; slides.forEach(s => { s.start = +at.toFixed(3); at += s.secs; s.end = +at.toFixed(3); }); total = +at.toFixed(3);
+  /* one narration track: every line placed at its slide's start plus a short lead */
+  const narr = path.join(vdir, "narration.wav");
+  const ins = [], parts = []; let k = 0;
+  slides.forEach((s, i) => { const c = voice.clips[i]; if (!c) return; ins.push("-i", c.file);
+    const ms = Math.round((s.start + s.lead) * 1000); parts.push(`[${k}:a]aresample=48000,adelay=${ms}|${ms}[n${k}]`); k++; });
+  if (!k) throw new Error("--voice was given but no slide has a line to speak.");
+  run(FF, ["-y", "-hide_banner", ...ins, "-filter_complex",
+    parts.join(";") + ";" + parts.map((p, j) => `[n${j}]`).join("") + `amix=inputs=${k}:normalize=0,apad,atrim=0:${total},pan=stereo|c0=c0|c1=c0[out]`,
+    "-map", "[out]", "-ar", "48000", narr]);
+}
+
+if (voice) {
+  /* voice normalised to --lufs; music (or the placeholder drone) as a quiet bed at --bed-lufs that also dips under each line */
+  const vNorm = path.join(out, "voice-norm.m4a"), bed = path.join(out, "bed.m4a");
+  const vMeas = normalise(["-i", path.join(out, "voice", "narration.wav")], opt.lufs, opt.tp, 11, vNorm, false);
+  let bedInfo;
+  if (opt.music) bedInfo = {source: path.resolve(opt.music), ...normalise(["-stream_loop", "-1", "-i", opt.music], opt["bed-lufs"], -6, 11, bed)};
+  else {
+    const raw = path.join(out, "drone.wav");
+    const gen = `sine=f=55:r=48000:d=${total}[a];sine=f=82.41:r=48000:d=${total}[b];anoisesrc=c=brown:r=48000:a=0.5:d=${total},lowpass=f=400[c];` +
+      `[a]volume=0.5[a2];[b]volume=0.25[b2];[c]volume=0.35[c2];[a2][b2][c2]amix=inputs=3:normalize=0,tremolo=f=0.2:d=0.4,pan=stereo|c0=c0|c1=c0`;
+    run(FF, ["-y", "-hide_banner", "-filter_complex", gen, "-t", String(total), raw]);
+    bedInfo = {source: "placeholder (lavfi sine + brown noise)", ...normalise(["-i", raw], opt["bed-lufs"] - 2, -6, 7, bed)};
+    fs.rmSync(raw, {force: true});
+  }
+  run(FF, ["-y", "-hide_banner", "-i", vNorm, "-i", bed, "-filter_complex",
+    "[0:a]asplit=2[v][sc];[1:a][sc]sidechaincompress=threshold=0.02:ratio=4:attack=20:release=400[b];" +
+    `[v][b]amix=inputs=2:normalize=0:duration=first,alimiter=limit=${Math.pow(10, opt.tp / 20).toFixed(3)}:level=false[mix]`,
+    "-map", "[mix]", "-t", String(total), "-ac", "2", "-c:a", "aac", "-b:a", "160k", audioPath]);
+  fs.rmSync(vNorm, {force: true}); fs.rmSync(bed, {force: true});
+  audio = {source: bedInfo.source, bed_lufs: opt["bed-lufs"], bed_input_lufs: bedInfo.input_lufs, target_lufs: opt.lufs, target_tp: opt.tp,
+    voice: {engine: voice.engine, voice: voice.voice, model: voice.model, source: voice.source, lang: voice.lang, speed: voice.speed, tempo: voice.tempo, synthetic: true,
+      fallback_from: voice.fallback_from, fallback_reason: voice.fallback_reason,
+      voice_input_lufs: vMeas.input_lufs, lines: slides.map(s => s.say || "")}};
+} else if (opt.music) {
   /* licensed track: -stream_loop -1 repeats a short track, -t trims a long one to the video length */
   audio = {source: path.resolve(opt.music), target_lufs: opt.lufs, target_tp: opt.tp,
     ...normalise(["-stream_loop", "-1", "-i", opt.music], opt.lufs, opt.tp, 11)};
@@ -266,15 +414,24 @@ const vArgs = ["-y", "-hide_banner"];
 slides.forEach((s, i) => vArgs.push("-loop", "1", "-framerate", "30", "-t", String(s.secs + (X && i < slides.length - 1 ? X : 0)), "-i", path.join(out, s.frame)));
 vArgs.push("-i", audioPath);
 /* RGB PNG to BT.709 limited-range 4:2:0 with explicit tags, so the accent colours are not shifted by a BT.601 guess downstream */
-const prep = i => `[${i}:v]fps=30,scale=1080:1920:flags=lanczos:out_color_matrix=bt709:out_range=tv,format=yuv420p,setsar=1[v${i}]`;
+const MOTION = opt.motion !== "0";
+/* Motion: only while a slide lands. zoom = 1 + 6% easing out over the first 0.3 s, then exactly 1 (still).
+   Centred, so the edges lose at most 3% on each side for those few frames. */
+const zoom = () => `1+0.06*pow(max(0,1-t/0.3),2)`;
+const prep = i => MOTION
+  ? `[${i}:v]fps=30,scale=w='trunc(1080*(${zoom()})/2)*2':h=-2:eval=frame:flags=bicubic,crop=1080:1920,` +
+    `scale=1080:1920:out_color_matrix=bt709:out_range=tv,format=yuv420p,setsar=1[v${i}]`
+  : `[${i}:v]fps=30,scale=1080:1920:flags=lanczos:out_color_matrix=bt709:out_range=tv,format=yuv420p,setsar=1[v${i}]`;
 let graph = slides.map((s, i) => prep(i)).join(";") + ";";
-if (!X) graph += slides.map((s, i) => `[v${i}]`).join("") + `concat=n=${slides.length}:v=1:a=0[vout]`;
+const vOut = MOTION ? "vraw" : "vout";
+if (!X) graph += slides.map((s, i) => `[v${i}]`).join("") + `concat=n=${slides.length}:v=1:a=0[${vOut}]`;
 else {
   let prev = "v0", acc = 0;
-  for (let i = 1; i < slides.length; i++) { acc += slides[i - 1].secs; const o = i === slides.length - 1 ? "vout" : `x${i}`;
+  for (let i = 1; i < slides.length; i++) { acc += slides[i - 1].secs; const o = i === slides.length - 1 ? vOut : `x${i}`;
     graph += `[${prev}][v${i}]xfade=transition=fade:duration=${X}:offset=${acc.toFixed(3)}[${o}];`; prev = o; }
   graph = graph.replace(/;$/, "");
 }
+if (MOTION) graph += `;[vraw]null[vout]`;
 const mp4 = path.join(out, "video.mp4");
 vArgs.push("-filter_complex", graph, "-map", "[vout]", "-map", `${slides.length}:a`,
   "-c:v", "libx264", "-profile:v", "high", "-preset", "slow", "-tune", "stillimage", ...(opt.kbps ? ["-b:v", `${opt.kbps}k`, "-minrate", `${opt.kbps}k`, "-maxrate", `${opt.kbps}k`, "-bufsize", `${opt.kbps * 2}k`, "-x264-params", "nal-hrd=cbr:force-cfr=1"]

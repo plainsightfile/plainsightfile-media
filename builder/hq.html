@@ -694,7 +694,7 @@ STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL an
 - The last slide starts with "RECEIPTS: " followed by a short line, then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
 - Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words. Highlight only what the eye must land on: the number, the contradiction, or the one quoted word that carries the joke. Never a whole clause or a source name. A limiting qualifier ("not fraud", "estimate") stays on the same slide in full-size type whether or not it is highlighted. A slide may have no highlight. ||words|| draws a redaction bar and is not a highlight.
 
-LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY this, nothing else):
 - Line 1: "DEVICE: " plus the name of the device you used.
@@ -724,7 +724,7 @@ Rules:
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
 - Write for an international English-speaking audience: name the country, explain local institutions briefly, label currencies (C$, US$, £, €).
 
-LINE BREAKS: inside each slide, put each beat on its own line (the costume line, then the puncture line; a quote, then who said it; a number, then what it means). Usually 2 or 3 short lines per slide, never one long run-on sentence. The SOURCE and CLASSIFIED LOCATION lines still come last.
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY the script, nothing else):
 - Line 1: "DEVICE: Spin and record" (or the name of the toolkit device you used instead).
@@ -768,6 +768,7 @@ showLinked();
 
 /* ---------- parsing ---------- */
 const NOTE_RE=/^[\s*_]*(SOURCE|CLASSIFIED LOCATION)[*_]*\s*[:\uFF1A]/i;
+const SAY_RE=/^[\s*_]*SAY[*_]*\s*[:\uFF1A][*_]*\s*/i;
 const STAMPS=["LEAKED","TOP SECRET","CLASSIFIED","EYES ONLY","CONFIDENTIAL"];
 function scriptStamp(){const m=scriptEl.value.match(/^[\s*_]*STAMP[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);const w=m?m[1].replace(/[*_.]+$/,"").trim().toUpperCase():"";return STAMPS.includes(w)?w:"CLASSIFIED"}
 function scriptDevice(){const m=scriptEl.value.match(/^[\s*_]*DEVICE[*_]*\s*[:\uFF1A][*_]*\s*(.+)$/im);return m?m[1].replace(/[*_]+$/,"").trim():""}
@@ -779,12 +780,19 @@ function parseScript(src){
     const m=b.match(/^[\s*_#>\-\u2022]*(?:\d+[.)]\s*)?(?:slide\s*\d+\s*[:.\-]?\s*)?[*_]*\s*(HOOK|REVEAL|RECEIPTS|SLIDE|SPIN|TRANSLATION|TAKE|RECORD|CASE\s+STATUS)(?:\s+SLIDE)?\s*[*_]*\s*(?:[:\uFF1A]|\n|$)[\s*_]*/i);
     if(m){type=m[1].toLowerCase().replace(/\s+/g,""); if(type==="slide")type="body"; if(type==="casestatus")type="status"; text=b.slice(m[0].length);}
     else if(i===0) type="hook";
-    const items=[]; const lines=[]; const notes=[];
-    /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type */
-    text.split("\n").forEach(l=>{ if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
+    const items=[]; const lines=[]; const notes=[]; const say=[]; const parts=[];
+    /* "SOURCE:" and "CLASSIFIED LOCATION:" lines print small near the foot of the slide, not in the headline type.
+       "SAY:" lines are the narrator's spoken script for that slide: never printed, read by the video builder. */
+    text.split("\n").forEach(l=>{ const sm=l.match(SAY_RE); if(sm){say.push(l.slice(sm[0].length).trim());return}
+      if(type==="receipts" && /^\s*[-•]\s+/.test(l)) items.push(l.replace(/^\s*[-•]\s+/,"").trim());
       else if(type!=="receipts" && NOTE_RE.test(l)){const mm=l.trim().replace(/^[*_]+|[*_]+$/g,"").match(/^(SOURCE|CLASSIFIED LOCATION)\s*[:\uFF1A]\s*(.*)$/i);if(mm)notes.push({label:mm[1].toUpperCase()+":",text:mm[2].replace(/[*_]+$/,"").trim()})}
-      else if(l.trim()) lines.push(l.trim()); });
-    return {type, text:lines.join("\n"), items, notes};
+      else if(l.trim()){
+        /* in-slide structure: "## " a small header (kicker), "# " the headline, any other line body text.
+           Markers are taken out of the text, so every other use of the slide text sees plain words. */
+        const hm=l.trim().match(/^(#{1,2})\s+(.*)$/);
+        if(hm&&type!=="receipts"){lines.push(hm[2].trim());parts.push({k:hm[1].length===2?"kick":"head",t:hm[2].trim()})}
+        else{lines.push(l.trim());parts.push({k:"body",t:l.trim()})}} });
+    return {type, text:lines.join("\n"), items, notes, say:say.join(" "), parts:parts.some(x=>x.k==="head")?parts:null};
   });
 }
 function tokenize(text){
@@ -1339,6 +1347,36 @@ function emphasisIssues(slides){
     runs.forEach(n=>{if(n>3)out.push(`slide ${i+1}: highlight of ${n} words (max 3)`)})});
   return out;
 }
+/* Headlines (Alex, October 16, 2026): ALL CAPS, at most two lines, in the same place and at the same size on every
+   slide of a video, so the eye always knows where to land. The size is the largest that fits EVERY headline of the
+   video in two lines (between HEAD_MIN and HEAD_MAX); a headline that needs more than two lines even at HEAD_MIN is
+   flagged by headlineIssues so the writer shortens it. */
+/* GRID_TOP: where the small header sits on every structured slide. Chosen so a typical slide (header, two-line
+   headline, three or four lines of text) sits a little above the middle of the readable band (y 372 to 1376),
+   which reads as balanced; the sources stay pinned at the foot. */
+const GRID_TOP=540,HEAD_TOP=GRID_TOP+102;
+const HEAD_MAX=150,HEAD_MIN=72,HEAD_LH=1.12,BODY_SIZE=54,BODY_MIN=42,BODY_LH=1.25;
+const headFont=s=>`900 ${s}px ${DISP}`;
+let N9_HEAD=null;
+function headText(sl){return sl.parts?sl.parts.filter(p=>p.k==="head").map(p=>p.t).join(" ").toUpperCase():""}
+function headFits(ctx,sl,s){
+  const hx=TTN.left,toks=tokenize(headText(sl));ctx.font=headFont(s);
+  const wOf=i=>n9Right(HEAD_TOP+i*s*HEAD_LH,s*1.1)-hx; /* the second line may pass y 840, where the button rail starts */
+  const lines=n9Wrap(ctx,toks,wOf,s*0.12);
+  const widest=Math.max(0,...toks.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width+((t.s==="e"||t.s==="r")?s*0.24:0)));
+  return lines.length<=2&&widest<=wOf(1);
+}
+function headSizeFor(ctx,sl){for(let s=HEAD_MAX;s>=HEAD_MIN;s-=2)if(headFits(ctx,sl,s))return s;return null}
+function n9PrepHeads(slides){
+  const ctx=document.createElement("canvas").getContext("2d");let size=HEAD_MAX;const over=[];
+  slides.forEach((sl,i)=>{if(!sl.parts||sl.type==="status")return;const z=headSizeFor(ctx,sl);if(z===null)over.push(i);else size=Math.min(size,z)});
+  N9_HEAD={size,over,structured:slides.some(sl=>sl.parts)};return N9_HEAD;
+}
+function headlineIssues(slides){
+  const h=n9PrepHeads(slides),out=h.over.map(i=>`slide ${i+1}: the headline needs more than 2 lines; shorten it (about 28 characters)`);
+  slides.forEach((sl,i)=>{if(sl.parts&&sl.parts.filter(p=>p.k==="head").length>1)out.push(`slide ${i+1}: more than one "# " headline line`)});
+  return out;
+}
 function renderSignal916(sl,idx,total){
   const c=document.createElement("canvas");c.width=TTN.w;c.height=TTN.h;const ctx=c.getContext("2d");
   const T=theme(),col=n9Cols(T);
@@ -1359,8 +1397,8 @@ function renderSignal916(sl,idx,total){
     spaced(ctx,"0px");
     if(used+28<left){stampBeside=true;stampBottom=TOP-14+n9Stamp(ctx,T,scriptStamp(),TOP-14)}
   }
-  if(tag){y+=n9Tag(ctx,T,tag,X,y)+40}
-  if(sl.type==="hook"&&(locParts().place||locParts().country)){sigLoc(ctx,T,X,y);y+=46+40}
+  if(tag&&!(sl.type==="status"&&N9_HEAD&&N9_HEAD.structured)){y+=n9Tag(ctx,T,tag,X,y)+40}
+  if(sl.type==="hook"&&!sl.parts&&(locParts().place||locParts().country)){sigLoc(ctx,T,X,y);y+=46+40}
   if(sl.type==="hook"){if(stampBeside)y=Math.max(y,stampBottom+30);else y+=n9Stamp(ctx,T,scriptStamp(),y-20)+24}
 
   if(sl.type==="receipts"){
@@ -1388,6 +1426,20 @@ function renderSignal916(sl,idx,total){
     ctx.font=`400 44px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,ny+120);spaced(ctx,"0px");
     n9Foot(ctx,T);return c;
   }
+  if(sl.type==="status"&&N9_HEAD&&N9_HEAD.structured){
+    /* same grid as the other slides: CASE STATUS tag at GRID_TOP, one finding per row in the headline type,
+       starting where every headline starts, at the video's headline size or smaller if the rows need it */
+    n9Tag(ctx,T,"CASE STATUS",X,GRID_TOP);
+    const rows=fixQuotes(sl.text).split(/(?<=[.!?”"])\s+/).map(s=>s.trim()).filter(Boolean).map(r=>tokenize(r.toUpperCase()));
+    const band=BOT-HEAD_TOP,lh=HEAD_LH;let best=null;
+    for(let s=N9_HEAD.size;s>=56;s-=2){ctx.font=headFont(s);const pad=s*0.12,gap=s*0.5;let yy=HEAD_TOP;const L=[];
+      rows.forEach(tk=>{const lines=n9Wrap(ctx,tk,i=>n9Right(yy+i*s*lh,s*1.1)-X,pad);L.push(lines);yy+=lines.length*s*lh+gap});
+      best={s,pad,L,gap};if(yy-gap-HEAD_TOP<=band)break}
+    let yy=HEAD_TOP;
+    best.L.forEach((lines,i)=>{yy+=drawLines(ctx,{s:best.s,lines,pad:best.pad},headFont,X,yy,lh,col);
+      if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X,yy+best.gap/2-1,TTN.railRight-X,2);yy+=best.gap}});
+    n9Foot(ctx,T);return c;
+  }
   if(sl.type==="status"){
     /* ledger: one row per finding, all at one size, rows spread down the band */
     const f=s=>`700 ${s}px ${SGF}`,IND=48,lh=1.1;
@@ -1403,6 +1455,31 @@ function renderSignal916(sl,idx,total){
       ctx.fillStyle=T.fg;ctx.fillRect(X,yy+best.s*0.05,10,h-best.s*0.14);yy+=h;
       if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X+IND,yy+gap/2-1,TTN.railRight-X-IND,2);yy+=gap}});
     n9Foot(ctx,T);return c;
+  }
+  /* Structured slide (Alex, October 16, 2026: headers, subheaders and text instead of colons):
+     kicker as a small tag, the headline big, the body in lighter, smaller type under it. */
+  if(sl.parts&&sl.type!=="status"){
+    if(!N9_HEAD)n9PrepHeads(parseScript(scriptEl.value));
+    const kick=sl.parts.filter(p=>p.k==="kick").map(p=>p.t).join(" · ");
+    const body=sl.parts.filter(p=>p.k==="body").map(p=>p.t).join("\n");
+    /* fixed grid: kicker row, then the headline box (always two lines tall), then the body */
+    y=GRID_TOP;
+    if(kick)n9Tag(ctx,T,kick.replace(/[*_]/g,"").toUpperCase(),X,y);
+    const HY=HEAD_TOP,hx=X; /* every headline starts at the same point, the REVEAL too */
+    const hs=N9_HEAD.size,hp=hs*0.12;ctx.font=headFont(hs);
+    const hl=n9Wrap(ctx,tokenize(headText(sl)),i=>n9Right(HY+i*hs*HEAD_LH,hs*1.1)-hx,hp).slice(0,2);
+    const hh=drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,hx,HY,HEAD_LH,col);
+    const BY=HY+2*hs*HEAD_LH+Math.round(hs*0.38);
+    const exH=n9Exhibit(ctx,T,notes,idx,false,true),exTop=BOT-exH;
+    const isHookLoc=sl.type==="hook"&&(locParts().place||locParts().country),locH=isHookLoc?46+40:0;
+    let by=BY;
+    if(body){const bf=s=>`500 ${s}px ${SGF}`,bt=tokenize(body),room=(exH?exTop-60:BOT)-BY-locH;let bs=BODY_SIZE,bl;
+      for(;bs>=BODY_MIN;bs-=2){ctx.font=bf(bs);bl=n9Wrap(ctx,bt,i=>n9Right(BY+i*bs*BODY_LH,bs*1.1)-X,bs*0.12);if((bl.length+paraLines(bl))*bs*BODY_LH<=room)break}
+      bs=Math.max(bs,BODY_MIN);by+=drawLines(ctx,{s:bs,lines:bl,pad:bs*0.12},bf,X,BY,BODY_LH,col)}
+    if(isHookLoc)sigLoc(ctx,T,X,by+40);
+    if(exH)n9Exhibit(ctx,T,notes,idx,sl.type==="reveal",false,exTop);
+    n9Foot(ctx,T);
+    return c;
   }
   /* hook, reveal, body and the memo types: headline fills the band between the tags and the exhibit pinned at the bottom */
   const barred=sl.type==="reveal"||sl.type==="spin",weight=barred?500:700,f=s=>`${weight} ${s}px ${SGF}`;
@@ -1508,6 +1585,7 @@ async function renderAll(){
   const my=++renderToken;
   const slides=parseScript(scriptEl.value);
   if(slides.length)slides.push({type:"end",text:"",items:[],notes:[]});
+  n9PrepHeads(slides);
   const tm=timingInfo(slides),dev=scriptDevice();
   $("count").textContent=slides.length?`${slides.length} slides · ${fmtSecs(tm.pre)} before receipts`+(tm.pre>32?" (aim for 32 s or less)":"")+` · ${fmtSecs(tm.total)} total`+(dev?` · Device: ${dev}`:"")+" · "+(view==="tt"?TT_SIZES[ttSize]:"1080 × 1350")+(wordIssues(slides).length?" · "+wordIssues(slides).join("; "):"")+(emphasisIssues(slides).length?" · "+emphasisIssues(slides).join("; "):""):"No slides yet";
   $("count").classList.toggle("over",tm.pre>32||wordIssues(slides).length>0||emphasisIssues(slides).length>0);
@@ -2068,11 +2146,12 @@ function renderPacket(p){
     $("look").value=["auto","dark","light","classic"].includes(p.look)?p.look:"auto";
     $("locPlace").value=p.locPlace||"";$("locCountry").value=p.locCountry||"";$("script").value=p.script||"";ttSize="full";
     const slides=parseScript(p.script||"");if(slides.length)slides.push({type:"end",text:"",items:[],notes:[]});
+    n9PrepHeads(slides);
     return slides.map((sl,i)=>({url:renderTikTok(sl,i,slides.length).toDataURL("image/jpeg",0.86),secs:slideSecs(sl),alt:`Slide ${i+1}: ${String(sl.text||"").replace(/[*|]/g,"")}`}));
   }finally{ids.forEach(id=>$(id).value=keep[id]);ttSize=keepSize}
 }
 /* The automation (builder/hq_tool.mjs) runs these same functions headlessly, so drafts and checks follow one rulebook. */
-window.PSHQ=Object.assign(window.PSHQ||{},{renderPacket,parseScript,wordIssues,emphasisIssues,timingInfo,slideSecs,dashes,noDash,fixQuotes,takeLocation,
+window.PSHQ=Object.assign(window.PSHQ||{},{renderPacket,parseScript,wordIssues,emphasisIssues,headlineIssues,timingInfo,slideSecs,dashes,noDash,fixQuotes,takeLocation,
   tiktokCaption,cleanTags,draftRules,captionPrompt,isoDay,SHORTEN_RULES,CAP_LIMIT,BANNED_TAGS});
 return {
   loadStory(id,title,text,receipts,location){
