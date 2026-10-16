@@ -1351,21 +1351,26 @@ function emphasisIssues(slides){
    slide of a video, so the eye always knows where to land. The size is the largest that fits EVERY headline of the
    video in two lines (between HEAD_MIN and HEAD_MAX); a headline that needs more than two lines even at HEAD_MIN is
    flagged by headlineIssues so the writer shortens it. */
+/* GRID_TOP: where the small header sits on every structured slide. Chosen so a typical slide (header, two-line
+   headline, three or four lines of text) sits a little above the middle of the readable band (y 372 to 1376),
+   which reads as balanced; the sources stay pinned at the foot. */
+const GRID_TOP=540,HEAD_TOP=GRID_TOP+102;
 const HEAD_MAX=150,HEAD_MIN=72,HEAD_LH=1.12,BODY_SIZE=54,BODY_MIN=42,BODY_LH=1.25;
 const headFont=s=>`900 ${s}px ${DISP}`;
 let N9_HEAD=null;
 function headText(sl){return sl.parts?sl.parts.filter(p=>p.k==="head").map(p=>p.t).join(" ").toUpperCase():""}
 function headFits(ctx,sl,s){
   const hx=TTN.left,toks=tokenize(headText(sl));ctx.font=headFont(s);
-  const lines=n9Wrap(ctx,toks,()=>TTN.right-hx,s*0.12);
+  const wOf=i=>n9Right(HEAD_TOP+i*s*HEAD_LH,s*1.1)-hx; /* the second line may pass y 840, where the button rail starts */
+  const lines=n9Wrap(ctx,toks,wOf,s*0.12);
   const widest=Math.max(0,...toks.filter(t=>!t.nl).map(t=>ctx.measureText(t.t).width+((t.s==="e"||t.s==="r")?s*0.24:0)));
-  return lines.length<=2&&widest<=TTN.right-hx;
+  return lines.length<=2&&widest<=wOf(1);
 }
 function headSizeFor(ctx,sl){for(let s=HEAD_MAX;s>=HEAD_MIN;s-=2)if(headFits(ctx,sl,s))return s;return null}
 function n9PrepHeads(slides){
   const ctx=document.createElement("canvas").getContext("2d");let size=HEAD_MAX;const over=[];
   slides.forEach((sl,i)=>{if(!sl.parts||sl.type==="status")return;const z=headSizeFor(ctx,sl);if(z===null)over.push(i);else size=Math.min(size,z)});
-  N9_HEAD={size,over};return N9_HEAD;
+  N9_HEAD={size,over,structured:slides.some(sl=>sl.parts)};return N9_HEAD;
 }
 function headlineIssues(slides){
   const h=n9PrepHeads(slides),out=h.over.map(i=>`slide ${i+1}: the headline needs more than 2 lines; shorten it (about 28 characters)`);
@@ -1392,7 +1397,7 @@ function renderSignal916(sl,idx,total){
     spaced(ctx,"0px");
     if(used+28<left){stampBeside=true;stampBottom=TOP-14+n9Stamp(ctx,T,scriptStamp(),TOP-14)}
   }
-  if(tag){y+=n9Tag(ctx,T,tag,X,y)+40}
+  if(tag&&!(sl.type==="status"&&N9_HEAD&&N9_HEAD.structured)){y+=n9Tag(ctx,T,tag,X,y)+40}
   if(sl.type==="hook"&&!sl.parts&&(locParts().place||locParts().country)){sigLoc(ctx,T,X,y);y+=46+40}
   if(sl.type==="hook"){if(stampBeside)y=Math.max(y,stampBottom+30);else y+=n9Stamp(ctx,T,scriptStamp(),y-20)+24}
 
@@ -1421,6 +1426,20 @@ function renderSignal916(sl,idx,total){
     ctx.font=`400 44px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,ny+120);spaced(ctx,"0px");
     n9Foot(ctx,T);return c;
   }
+  if(sl.type==="status"&&N9_HEAD&&N9_HEAD.structured){
+    /* same grid as the other slides: CASE STATUS tag at GRID_TOP, one finding per row in the headline type,
+       starting where every headline starts, at the video's headline size or smaller if the rows need it */
+    n9Tag(ctx,T,"CASE STATUS",X,GRID_TOP);
+    const rows=fixQuotes(sl.text).split(/(?<=[.!?”"])\s+/).map(s=>s.trim()).filter(Boolean).map(r=>tokenize(r.toUpperCase()));
+    const band=BOT-HEAD_TOP,lh=HEAD_LH;let best=null;
+    for(let s=N9_HEAD.size;s>=56;s-=2){ctx.font=headFont(s);const pad=s*0.12,gap=s*0.5;let yy=HEAD_TOP;const L=[];
+      rows.forEach(tk=>{const lines=n9Wrap(ctx,tk,i=>n9Right(yy+i*s*lh,s*1.1)-X,pad);L.push(lines);yy+=lines.length*s*lh+gap});
+      best={s,pad,L,gap};if(yy-gap-HEAD_TOP<=band)break}
+    let yy=HEAD_TOP;
+    best.L.forEach((lines,i)=>{yy+=drawLines(ctx,{s:best.s,lines,pad:best.pad},headFont,X,yy,lh,col);
+      if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X,yy+best.gap/2-1,TTN.railRight-X,2);yy+=best.gap}});
+    n9Foot(ctx,T);return c;
+  }
   if(sl.type==="status"){
     /* ledger: one row per finding, all at one size, rows spread down the band */
     const f=s=>`700 ${s}px ${SGF}`,IND=48,lh=1.1;
@@ -1444,11 +1463,11 @@ function renderSignal916(sl,idx,total){
     const kick=sl.parts.filter(p=>p.k==="kick").map(p=>p.t).join(" · ");
     const body=sl.parts.filter(p=>p.k==="body").map(p=>p.t).join("\n");
     /* fixed grid: kicker row, then the headline box (always two lines tall), then the body */
-    y=TOP+4;
+    y=GRID_TOP;
     if(kick)n9Tag(ctx,T,kick.replace(/[*_]/g,"").toUpperCase(),X,y);
-    const HY=y+58+44,hx=X; /* every headline starts at the same point, the REVEAL too */
+    const HY=HEAD_TOP,hx=X; /* every headline starts at the same point, the REVEAL too */
     const hs=N9_HEAD.size,hp=hs*0.12;ctx.font=headFont(hs);
-    const hl=n9Wrap(ctx,tokenize(headText(sl)),()=>TTN.right-hx,hp).slice(0,2);
+    const hl=n9Wrap(ctx,tokenize(headText(sl)),i=>n9Right(HY+i*hs*HEAD_LH,hs*1.1)-hx,hp).slice(0,2);
     const hh=drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,hx,HY,HEAD_LH,col);
     const BY=HY+2*hs*HEAD_LH+Math.round(hs*0.38);
     const exH=n9Exhibit(ctx,T,notes,idx,false,true),exTop=BOT-exH;
