@@ -2479,7 +2479,7 @@ function player(p){
   const bar=elA("div","row");const prev=elA("button","small","Back"),play=elA("button","small primary","Play"),next=elA("button","small","Next");
   [prev,play,next].forEach(b=>b.type="button");
   const where=elA("span","meta","");bar.append(prev,play,next,where);
-  const note=elA("p","hint","Silent preview of the exact slides and timing. The posted video adds the music track.");
+  const note=elA("p","hint","Silent preview of the exact slides. The posted video adds the narration (Peach, ElevenLabs) and the music, and its slide timing follows her voice.");
   box.append(stage,ticks,bar,note);
   let frames=null,i=0,timer=null;
   function show(n){i=Math.max(0,Math.min(frames.length-1,n));img.src=frames[i].url;img.alt=frames[i].alt;
