@@ -30,7 +30,14 @@
                         instead of HQ's reading-speed rule, and the music becomes a quiet bed that dips under the voice.
                         Needs ./setup_voice.sh first. Each slide speaks its SAY: line (never printed on the slide), or
                         its own words when it has none (see spokenLine).
-    --speed <n>         voice speed (default 1)
+    --voice el:<id>     narrate with an ElevenLabs voice instead (the id from the ElevenLabs voice list). The audio is
+                        fetched through the "narration" GitHub Action (see narrate_el.mjs); if that fails for any
+                        reason the build falls back to the Kokoro voice in --fallback-voice and says so in report.json.
+    --el-model <id>     ElevenLabs model for API generation (default eleven_v4)
+    --el-urls <file>    JSON list of audio URLs, one per slide plus the end card, made by the ElevenLabs connector;
+                        without it the takes are generated with the ElevenLabs API (repo secret ELEVENLABS_API_KEY)
+    --fallback-voice <n> Kokoro voice used when ElevenLabs fails (default bf_emma; "none" fails the build instead)
+    --speed <n>         voice speed (Kokoro only; default 1)
     --voice-models <d>  folder with kokoro-v1.0.onnx and voices-v1.0.bin (default ./voice-models)
     --bed-lufs <n>      music loudness under the voice (default -30; the voice itself is normalised to --lufs)
 
@@ -57,7 +64,7 @@ const mark = (k, since) => { lap[k] = +((Date.now() - since) / 1000).toFixed(2);
 /* ---------------- arguments ---------------- */
 const argv = process.argv.slice(2);
 const opt = {hq: path.join(HERE, "hq.html"), lufs: -16, tp: -1.5, xfade: 0, crf: 16, look: "auto", fileno: "000",
-  speed: 1, "voice-models": path.join(HERE, "voice-models"), "bed-lufs": -30};
+  speed: 1, "voice-models": path.join(HERE, "voice-models"), "bed-lufs": -30, "el-model": "eleven_v4", "fallback-voice": "bf_emma"};
 let input = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -70,7 +77,9 @@ for (let i = 0; i < argv.length; i++) {
 }
 if (!input) { console.error("usage: node build_video.mjs <script.txt|file.json> [--music track.mp3] [--out dir]"); process.exit(2); }
 opt.speed = Number(opt.speed); opt["bed-lufs"] = Number(opt["bed-lufs"]);
-if (opt.voice !== undefined && !/^[ab][fm]_[a-z]+$/.test(String(opt.voice))) { console.error("--voice must be a Kokoro voice name such as bf_emma"); process.exit(2); }
+const KOKORO_RE = /^[ab][fm]_[a-z]+$/, EL_RE = /^el:[A-Za-z0-9]{10,40}$/;
+if (opt.voice !== undefined && !KOKORO_RE.test(String(opt.voice)) && !EL_RE.test(String(opt.voice))) { console.error("--voice must be a Kokoro voice name such as bf_emma, or el:<ElevenLabs voice id>"); process.exit(2); }
+if (opt["fallback-voice"] !== "none" && !KOKORO_RE.test(String(opt["fallback-voice"]))) { console.error("--fallback-voice must be a Kokoro voice name or none"); process.exit(2); }
 opt.lufs = Number(opt.lufs); opt.tp = Number(opt.tp); opt.xfade = Number(opt.xfade) / 1000; opt.crf = Number(opt.crf); opt.kbps = opt.kbps === undefined ? 6000 : Number(opt.kbps);
 if (opt.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(opt.date))) { console.error("--date must look like 2026-10-14"); process.exit(2); }
 
@@ -294,15 +303,30 @@ function normalise(srcArgs, I, TP, LRA, dst = audioPath, fades = true) {
 /* ---------------- narration (only with --voice) ---------------- */
 let voice = null;
 if (opt.voice) {
-  const models = path.resolve(opt["voice-models"]);
-  for (const f of ["kokoro-v1.0.onnx", "voices-v1.0.bin"])
-    if (!fs.existsSync(path.join(models, f))) throw new Error(`Voice model ${f} missing in ${models}. Run: ${path.join(HERE, "setup_voice.sh")}`);
   const vdir = path.join(out, "voice");
   fs.rmSync(vdir, {recursive: true, force: true}); fs.mkdirSync(vdir, {recursive: true});
   fs.writeFileSync(path.join(vdir, "lines.json"), JSON.stringify(slides.map(s => s.say || "")));
-  const r = run(process.env.PYTHON || "python3", ["-I", path.join(HERE, "narrate.py"), "--models", models, "--voice", opt.voice,
-    "--speed", String(opt.speed), "--lines", path.join(vdir, "lines.json"), "--out", vdir]);
-  voice = JSON.parse(r.stdout.trim().split("\n").pop());
+  const kokoro = name => {
+    const models = path.resolve(opt["voice-models"]);
+    for (const f of ["kokoro-v1.0.onnx", "voices-v1.0.bin"])
+      if (!fs.existsSync(path.join(models, f))) throw new Error(`Voice model ${f} missing in ${models}. Run: ${path.join(HERE, "setup_voice.sh")}`);
+    const r = run(process.env.PYTHON || "python3", ["-I", path.join(HERE, "narrate.py"), "--models", models, "--voice", name,
+      "--speed", String(opt.speed), "--lines", path.join(vdir, "lines.json"), "--out", vdir]);
+    return {engine: "Kokoro v1.0 (kokoro-onnx)", ...JSON.parse(r.stdout.trim().split("\n").pop())};
+  };
+  if (EL_RE.test(opt.voice)) {
+    const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
+      "--lines", path.join(vdir, "lines.json"), "--out", vdir];
+    if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
+    const r = spawnSync(process.execPath, args, {encoding: "utf8", maxBuffer: 64 * 1024 * 1024});
+    if (r.status === 0) voice = {...JSON.parse(r.stdout.trim().split("\n").pop()), lang: "en-gb"};
+    else {
+      const why = (r.stderr || "").trim().split("\n").pop() || "unknown error";
+      if (opt["fallback-voice"] === "none") throw new Error("ElevenLabs narration failed: " + why);
+      console.error(`ElevenLabs narration failed (${why}); falling back to Kokoro ${opt["fallback-voice"]}.`);
+      voice = {...kokoro(opt["fallback-voice"]), fallback_from: opt.voice, fallback_reason: why};
+    }
+  } else voice = kokoro(opt.voice);
   /* The voice sets the pace: each slide lasts as long as its line plus a breath, with a floor so nothing flashes by.
      A slide with nothing to say (rare) keeps HQ's time, capped at 3 s. */
   const LEAD = 0.25, TAIL = 0.45, FLOOR = {receipts: 2.5, end: 2.5};
@@ -344,7 +368,8 @@ if (voice) {
     "-map", "[mix]", "-t", String(total), "-ac", "2", "-c:a", "aac", "-b:a", "160k", audioPath]);
   fs.rmSync(vNorm, {force: true}); fs.rmSync(bed, {force: true});
   audio = {source: bedInfo.source, bed_lufs: opt["bed-lufs"], bed_input_lufs: bedInfo.input_lufs, target_lufs: opt.lufs, target_tp: opt.tp,
-    voice: {engine: "Kokoro v1.0 (kokoro-onnx)", voice: voice.voice, lang: voice.lang, speed: voice.speed, synthetic: true,
+    voice: {engine: voice.engine, voice: voice.voice, model: voice.model, source: voice.source, lang: voice.lang, speed: voice.speed, synthetic: true,
+      fallback_from: voice.fallback_from, fallback_reason: voice.fallback_reason,
       voice_input_lufs: vMeas.input_lufs, lines: slides.map(s => s.say || "")}};
 } else if (opt.music) {
   /* licensed track: -stream_loop -1 repeats a short track, -t trims a long one to the video length */
