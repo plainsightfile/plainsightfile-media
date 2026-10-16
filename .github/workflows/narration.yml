@@ -7,7 +7,8 @@
 #
 # Triggered by builder/narrate_el.mjs with a repository_dispatch, event_type "narrate", client_payload:
 #   id     unique run id (letters, digits, dashes)
-#   key    one-time passphrase (the encrypted result is pushed to branch narr/<id>)
+#   key    one-time passphrase (the encrypted result is force-pushed as <id>.bin to branch narration-out,
+#          which only ever holds the latest result)
 #   mode   "urls" : download already generated takes (the ElevenLabs connector made them)
 #          "tts"  : generate with the ElevenLabs API, needs the repo secret ELEVENLABS_API_KEY
 #   items  urls mode: list of https URLs (null for a silent slide)
@@ -82,13 +83,15 @@ jobs:
           K: ${{ github.event.client_payload.key }}
           ID: ${{ github.event.client_payload.id }}
         run: |
-          tar -C out -czf - . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -out narration.bin
+          tar -C out -czf - . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -out "$ID.bin"
           rm -rf out
           git init -q push && cd push
           git config user.name "plainsightfile-narration"; git config user.email "narration@users.noreply.github.com"
-          git checkout -q --orphan "narr/$ID"
-          mv ../narration.bin . && git add narration.bin && git commit -qm "encrypted narration $ID"
-          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "narr/$ID"
+          git checkout -q --orphan narration-out
+          mv "../$ID.bin" . && git add "$ID.bin" && git commit -qm "encrypted narration $ID"
+          R="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git push -q -f "$R" narration-out
+          for b in $(git ls-remote --heads "$R" 'narr/*' | awk '{print $2}'); do git push -q "$R" --delete "$b" || true; done
       - name: Report failure
         if: failure()
         env:
@@ -96,6 +99,6 @@ jobs:
         run: |
           git init -q fail && cd fail
           git config user.name "plainsightfile-narration"; git config user.email "narration@users.noreply.github.com"
-          git checkout -q --orphan "narr/$ID"
-          echo "failed: see run ${{ github.run_id }}" > FAILED && git add FAILED && git commit -qm "narration $ID failed"
-          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "narr/$ID" || true
+          git checkout -q --orphan narration-out
+          echo "failed: see run ${{ github.run_id }}" > "$ID.FAILED" && git add "$ID.FAILED" && git commit -qm "narration $ID failed"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" narration-out || true
