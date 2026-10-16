@@ -18,7 +18,8 @@
         -> the queue document (JSON) with status, extra-check reasons and hash
   node prep.mjs taken     --metricool posts.json --queue queue.json --exclude <docId>
         -> ["ISO", ...] times already used by other posts (for slot.mjs --taken)
-  node prep.mjs metricool --doc doc.json --url <public mp4 url> --when <ISO> [--test]
+  node prep.mjs metricool --doc doc.json --url <public mp4 url> --when <ISO> [--test] [--aigc]
+        (--aigc: the video has a synthetic narration voice, so TikTok's AI-generated content label goes on)
         -> {blogId, date, info}   arguments for Metricool createScheduledPost (info is the JSON string it wants)
 
   JSON inputs may be a bare object/array, an ArtifactData export ({id, data}), or {docs:[...]}.
@@ -175,7 +176,7 @@ if (cmd === "numbers") {
     /* Metricool requires a TikTok title. For a video, TikTok's own API calls the caption the "title", so it carries the
        full caption too (accepted at 754 characters in the October 14 test), whichever field Metricool sends. */
     tiktokData: {disableComment: false, disableDuet: true, disableStitch: true, privacyOption: opt.test ? "SELF_ONLY" : "PUBLIC_TO_EVERYONE",
-      commercialContentThirdParty: false, commercialContentOwnBrand: false, title: cap, autoAddMusic: false, isAigc: false}
+      commercialContentThirdParty: false, commercialContentOwnBrand: false, title: cap, autoAddMusic: false, isAigc: !!opt.aigc}
   };
   out({blogId: "7150125", date: when, info: JSON.stringify(info)});
 } else {
