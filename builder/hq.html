@@ -1436,7 +1436,7 @@ function renderSignal916(sl,idx,total){
     y=HEAD_TOP+drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,X,HEAD_TOP,HEAD_LH,col)+70;
     const D=64,IX=X+D+26,IW=TTN.railRight-IX,mf=s=>`500 ${s}px ${SGF}`;
     const itemToks=sl.items.map(it=>tokenize(it));
-    const pauseY=BOT-6,limit=pauseY-44,GAP=30;
+    const pauseY=BOT-6,limit=pauseY-80,GAP=30;
     let ms=44,tot=0;for(;ms>=28;ms-=2){ctx.font=mf(ms);tot=0;itemToks.forEach(tk=>{tot+=Math.max(D,wrap(ctx,tk,IW,0).length*ms*1.3)+GAP});if(y+tot<=limit)break}
     itemToks.forEach((tk,i)=>{ctx.font=mf(ms);const lines=wrap(ctx,tk,IW,0);
       ctx.fillStyle=T.acc;ctx.beginPath();ctx.arc(X+D/2,y+D/2,D/2,0,Math.PI*2);ctx.fill();
