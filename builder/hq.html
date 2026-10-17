@@ -401,7 +401,7 @@ _title_   = italics
       <section class="card">
         <div class="label"><span>Account</span></div>
         <label for="handle">Handle<input type="text" id="handle" value="@plainsightfile"></label>
-        <label for="signoff">Sign-off (end card and caption)<input type="text" id="signoff" value="It was never hidden. You just weren't told."></label>
+        <label for="signoff">Sign-off (end card and caption)<input type="text" id="signoff" value="That's your Rhea Lity check."></label>
         <label for="tags">Brand hashtags (added to every caption)<input type="text" id="tags" value="#plainsightfile"></label>
       </section>
       <section class="card">
@@ -647,7 +647,7 @@ RECEIPTS: This one's headed to court. Watch it.
 - Termination challenge filed in the Swedish Labour Court`
 };
 
-const PROMPT_RULES=`You write the slides for a short TikTok fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Dacted, a quick, cheeky British narrator. The account goes after misinformation: a false or misleading claim that is spreading, checked against the record that was hiding in plain sight all along. Two goals: someone who half-believed the claim leaves with the true picture and without feeling mocked; everyone else enjoys watching it get taken apart. The account never sows distrust: it shows that the truth is checkable, and how to check it.
+const PROMPT_RULES=`You write the slides for a short TikTok fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Lity, a quick, cheeky British narrator. The account goes after misinformation: a false or misleading claim that is spreading, checked against the record that was hiding in plain sight all along. Two goals: someone who half-believed the claim leaves with the true picture and without feeling mocked; everyone else enjoys watching it get taken apart. The account never sows distrust: it shows that the truth is checkable, and how to check it.
 
 FACTS (non-negotiable):
 - Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
@@ -695,7 +695,7 @@ Today's date: {TODAY}
 Source material:
 `;
 
-const MEMO_RULES=`You write a "Spot the Trick" episode for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Dacted, a quick, cheeky British narrator, that goes after misinformation. Each episode teaches ONE manipulation technique so viewers can spot it themselves next time (researchers call this prebunking: learning the trick protects people against claims they haven't seen yet). It is short, playful and a little bit of a game.
+const MEMO_RULES=`You write a "Spot the Trick" episode for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Lity, a quick, cheeky British narrator, that goes after misinformation. Each episode teaches ONE manipulation technique so viewers can spot it themselves next time (researchers call this prebunking: learning the trick protects people against claims they haven't seen yet). It is short, playful and a little bit of a game.
 
 FACTS (non-negotiable):
 - Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
@@ -1003,7 +1003,7 @@ function renderSlide(sl,idx,total,bg){
 const PAUSE_LINE="Pause to read. Full receipts in caption and pinned comment.";
 function endLines(){
   const next=nextNumber(filenoEl.value.trim()||"000");
-  return {signoff:signoffEl.value.trim()||"It was never hidden. You just weren't told.",next:`${typeWord().toUpperCase()} ${next} NEXT.`,follow:"Follow so it finds you."};
+  return {signoff:signoffEl.value.trim()||"That's your Rhea Lity check.",next:`${typeWord().toUpperCase()} ${next} NEXT.`,follow:"Follow so it finds you."};
 }
 function renderClassicEnd(idx,total,bg){
   const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
@@ -1912,7 +1912,7 @@ function buildCaptionLines(){
   out.push(brandTags().slice(0,5).join(" "));
   return out.join("\n");
 }
-const CAPTION_RULES=`Write the TikTok caption for this short fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Dacted. The account goes after misinformation: it checks a false or misleading claim against the record, with dry wit, and shows viewers how to check things themselves. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
+const CAPTION_RULES=`Write the TikTok caption for this short fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Lity. The account goes after misinformation: it checks a false or misleading claim against the record, with dry wit, and shows viewers how to check things themselves. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY facts in the slide script and source material. Never invent numbers, names, dates, quotes or sources.
@@ -1948,7 +1948,7 @@ const MEMO_CAPTION_PREFIX=`THIS POST IS A "SPOT THE TRICK" EPISODE: it teaches o
 `;
 function captionPrompt(){
   const brand=brandTags().slice(0,5);
-  return (postType()==="memo"?MEMO_CAPTION_PREFIX:"")+CAPTION_RULES.replace("{SIGNOFF}",signoffEl.value.trim()||"It was never hidden.")
+  return (postType()==="memo"?MEMO_CAPTION_PREFIX:"")+CAPTION_RULES.replace("{SIGNOFF}",signoffEl.value.trim()||"That's your Rhea Lity check.")
     .replace("{NUMLINE}",numLine())
     .replace("{BRAND}",brand.join(" ")||"(none)")
     .replace("{EXTRA}",String(Math.max(0,5-brand.length)))
@@ -2257,7 +2257,7 @@ async function setStatus(s,status){
 
 async function draftHooks(s,btn){
   if(!Platform.ai||!Platform.db||busy)return;busy=true;btn.disabled=true;const st=$("actStatus");st.className="status";st.textContent="Claude is drafting hooks…";
-  const prompt=`You write opening lines (hooks) for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Dacted that fact-checks misinformation with dry wit. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
+  const prompt=`You write opening lines (hooks) for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Lity that fact-checks misinformation with dry wit. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY the facts below. Never invent numbers, names, dates or claims.
@@ -2477,7 +2477,7 @@ function player(p){
   const bar=elA("div","row");const prev=elA("button","small","Back"),play=elA("button","small primary","Play"),next=elA("button","small","Next");
   [prev,play,next].forEach(b=>b.type="button");
   const where=elA("span","meta","");bar.append(prev,play,next,where);
-  const note=elA("p","hint","Silent preview of the exact slides. The posted video adds Rhea Dacted's narration and the music, and its slide timing follows her voice.");
+  const note=elA("p","hint","Silent preview of the exact slides. The posted video adds Rhea Lity's narration and the music, and its slide timing follows her voice.");
   box.append(stage,ticks,bar,note);
   let frames=null,i=0,timer=null;
   function show(n){i=Math.max(0,Math.min(frames.length-1,n));img.src=frames[i].url;img.alt=frames[i].alt;
