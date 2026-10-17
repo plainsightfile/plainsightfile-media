@@ -325,7 +325,7 @@ if (opt.voice) {
     const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
       "--lines", path.join(vdir, "lines.json"), "--out", vdir];
     if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
-    else if (opt["el-whole"] !== "0") args.push("--whole");
+    else if (opt["el-whole"] !== "0") args.push("--whole", "--debug", path.join(vdir, "split.json"));
     const reuse = opt["el-reuse"] && path.resolve(opt["el-reuse"]);
     const r = reuse ? {status: 0, stdout: JSON.stringify({engine: "ElevenLabs", voice: opt.voice.slice(3), model: "reused takes", source: "reuse",
         clips: slides.map((s, i) => { const f = path.join(reuse, `voice-${String(i + 1).padStart(2, "0")}.wav`);
@@ -351,7 +351,7 @@ if (opt.voice) {
   } else voice = kokoro(opt.voice);
   /* The voice sets the pace: each slide lasts as long as its line plus a breath, with a floor so nothing flashes by.
      A slide with nothing to say (rare) keeps HQ's time, capped at 3 s. */
-  const LEAD = 0.25, TAIL = 0.45, FLOOR = {receipts: 2.5, end: 2.5};
+  const LEAD = 0.2, TAIL = 0.35, FLOOR = {receipts: 2.5, end: 2.5};
   slides.forEach((s, i) => {
     const c = voice.clips[i];
     s.voice_secs = c ? c.secs : 0;

@@ -96,8 +96,25 @@ if (manifest.whole) {
     const lo = pos, hi = pos + t.length - 1; pos += t.length + 1; spans.push({i, start: st[lo], end: en[hi]}); });
   const whole = path.join(raw, "whole.mp3");
   const dur = Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", whole]).stdout.trim());
+  /* ElevenLabs' character timestamps can drift from the audio (October 16, 2026: cuts landed mid-word and the last
+     line came out 1.3 s long). So the timestamps only PREDICT each cut; the cut itself goes in the middle of the real
+     pause (silencedetect) nearest that prediction, after scaling the timeline to the audio's true length. */
+  const tEnd = en[en.length - 1] || dur, scale = tEnd > 0 ? Math.min(1.25, Math.max(0.8, (dur - 0.05) / tEnd)) : 1;
+  const sd = run("ffmpeg", ["-hide_banner", "-i", whole, "-af", "silencedetect=noise=-38dB:d=0.12", "-f", "null", "-"], {ok: true}).stderr || "";
+  const sil = []; let s0 = null;
+  sd.split("\n").forEach(l => { let m = l.match(/silence_start: ([\d.]+)/); if (m) s0 = +m[1];
+    m = l.match(/silence_end: ([\d.]+)/); if (m && s0 !== null) { sil.push({a: s0, b: +m[1], mid: (s0 + +m[1]) / 2}); s0 = null; } });
+  const cuts = [0];
+  for (let k = 1; k < spans.length; k++) {
+    const pred = ((spans[k - 1].end + spans[k].start) / 2) * scale, lo = cuts[k - 1] + 0.3;
+    const cand = sil.filter(x => x.mid > lo && x.b < dur - 0.1).sort((x, y) => Math.abs(x.mid - pred) - Math.abs(y.mid - pred))[0];
+    cuts.push(cand && Math.abs(cand.mid - pred) < 2.5 ? cand.mid : Math.max(lo, pred));
+  }
+  cuts.push(dur);
+  if (opt.debug) fs.writeFileSync(opt.debug, JSON.stringify({dur, tEnd, scale, silences: sil, spans, cuts}, null, 1));
+  if (opt.debug) fs.copyFileSync(whole, opt.debug + ".mp3");
   spans.forEach((sp, k) => {
-    const from = k === 0 ? 0 : (spans[k - 1].end + sp.start) / 2, to = k === spans.length - 1 ? dur : (sp.end + spans[k + 1].start) / 2;
+    const from = cuts[k], to = cuts[k + 1];
     const f = `voice-${String(sp.i + 1).padStart(2, "0")}.mp3`;
     run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", whole, "-ss", from.toFixed(3), "-to", to.toFixed(3), "-c:a", "pcm_s16le", path.join(raw, f.replace(".mp3", ".cut.wav"))]);
     fs.renameSync(path.join(raw, f.replace(".mp3", ".cut.wav")), path.join(raw, f));
@@ -106,12 +123,13 @@ if (manifest.whole) {
 }
 
 /* mp3 -> wav, with the leading and trailing near-silence trimmed (40 ms kept) like narrate.py does */
-const TRIM = "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.04";
+const TRIM = "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06";
+const FADE = "afade=t=in:d=0.015,areverse,afade=t=in:d=0.03,areverse"; /* no clicks at the cut points */
 const clips = manifest.clips.map((c, i) => {
   if (!c || !String(lines[i] || "").trim()) return null;
   if (!/^voice-\d{2}\.mp3$/.test(c)) die("unexpected file name in result");
   const dst = path.join(out, `voice-${String(i + 1).padStart(2, "0")}.wav`);
-  run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", path.join(raw, c), "-af", `${TRIM},areverse,${TRIM},areverse`, "-ac", "1", "-ar", "44100", dst]);
+  run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", path.join(raw, c), "-af", `${TRIM},areverse,${TRIM},areverse,${FADE}`, "-ac", "1", "-ar", "44100", dst]);
   const secs = +Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", dst]).stdout.trim()).toFixed(3);
   return {file: dst, secs};
 });
