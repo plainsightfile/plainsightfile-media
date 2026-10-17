@@ -162,7 +162,7 @@ if (cmd === "prompts") {
     else if (cap.length > 1200) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
     if (cap.length < 500) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
     const num = (p.type === "memo" ? "Memo" : "File") + " No. " + p.fileno;
-    if (!cap.includes(num)) issues.push(`caption does not include "${num}"`);
+    /* File/Memo numbers no longer appear in captions (Look A, October 16, 2026) */
     if (p.type === "memo" && !/^Spot the trick:/i.test(cap.trim())) issues.push('a Spot the Trick caption must begin with "Spot the trick: "');
     if (!/^\d{3,}$/.test(String(p.fileno || ""))) issues.push("number must be 3 or more digits");
     const pin = String(p.pinned || "");
