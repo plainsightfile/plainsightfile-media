@@ -5,18 +5,18 @@
 <style>
 /* Layout: one app, four tabs. Stories = wire desk (queue + open story). Studio = file bar, workflow steps on the left, live slide preview on the right. Sources = feed registry. Settings = account, backup, profile pictures. Styled in the Signal brand: grid paper, ink, lime. */
 :root{
-  --bg:#F3F4EF; --panel:#FBFBF8; --line:#D9DCD3; --fg:#0B0D10; --muted:#5E6670;
-  --accent:#3F7A00; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#B42318; --field:#FFFFFF; --ok:#2F6B3A; --warn:#8A5A00; --grid:rgba(11,13,16,.045);
+  --bg:#FFF8EE; --panel:#FFFCF6; --line:#E2D8C6; --fg:#16224A; --muted:#5A6385;
+  --accent:#B4480C; --hi:#FF7A2F; --hi-fg:#16224A; --err:#B42318; --field:#FFFFFF; --ok:#2F6B3A; --warn:#8A5A00; --grid:rgba(11,13,16,.045);
   --display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono","Courier New",Courier,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0B0D10; --panel:#14171B; --line:#2A2F36; --fg:#E9ECEF; --muted:#8A929B;
-  --accent:#C6FF3D; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}}
+  --bg:#0E1530; --panel:#16224A; --line:#2B3870; --fg:#FFF8EE; --muted:#AEB5CF;
+  --accent:#FF7A2F; --hi:#FF7A2F; --hi-fg:#16224A; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0B0D10; --panel:#14171B; --line:#2A2F36; --fg:#E9ECEF; --muted:#8A929B;
-  --accent:#C6FF3D; --hi:#C6FF3D; --hi-fg:#0B0D10; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}
+  --bg:#0E1530; --panel:#16224A; --line:#2B3870; --fg:#FFF8EE; --muted:#AEB5CF;
+  --accent:#FF7A2F; --hi:#FF7A2F; --hi-fg:#16224A; --err:#FF7A6E; --field:#101317; --ok:#7CC48A; --warn:#E0A83A; --grid:rgba(255,255,255,.035); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
@@ -1022,8 +1022,10 @@ function renderClassicEnd(idx,total,bg){
 /* ---------- Signal look ---------- */
 const SGF='"Space Grotesk","Helvetica Neue",Arial,sans-serif', JBM='"JetBrains Mono","Courier New",monospace';
 const SIGNAL={
-  dark:{bg:"#0B0D10",fg:"#E9ECEF",muted:"#8A929B",acc:"#C6FF3D",accInk:"#0B0D10",grid:"rgba(255,255,255,0.05)",rule:"#3A4048",meta:"#C6FF3D",bar:"#C6FF3D"},
-  light:{bg:"#F3F4EF",fg:"#0B0D10",muted:"#5E6670",acc:"#C6FF3D",accInk:"#0B0D10",grid:"rgba(11,13,16,0.07)",rule:"#C9CCC4",meta:"#3F7A00",bar:"#0B0D10"}
+  /* October 16, 2026: navy and tangerine, matching the lens logo (was black and lime). Contrast: paper on navy 14.6:1,
+     navy on tangerine (highlights) 5.9:1, tangerine on navy 5.9:1; on paper, small orange text uses #B4480C (5.1:1). */
+  dark:{bg:"#16224A",fg:"#FFF8EE",muted:"#AEB5CF",acc:"#FF7A2F",accInk:"#16224A",grid:"rgba(255,255,255,0.05)",rule:"#34407A",meta:"#FF7A2F",bar:"#FF7A2F"},
+  light:{bg:"#FFF8EE",fg:"#16224A",muted:"#5A6385",acc:"#FF7A2F",accInk:"#16224A",grid:"rgba(22,34,74,0.07)",rule:"#E2D8C6",meta:"#B4480C",bar:"#16224A"}
 };
 function lookMode(){
   const v=$("look").value;if(v==="classic"||v==="dark"||v==="light")return v;
