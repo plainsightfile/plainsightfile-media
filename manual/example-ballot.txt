@@ -1,0 +1,36 @@
+DEVICE: Half a fact
+LOCATION: North Carolina, United States
+HOOK:
+## FACT CHECK
+# Your ballot still *counts*
+In North Carolina, a poll worker's note won't cancel it.
+SOURCE: N.C. State Board of Elections
+SAY: Hi, I'm Rhea Lity. A poll worker wrote on your ballot? In North Carolina, that doesn't cancel it. Relax.
+---
+## THE CLAIM · FALSE
+# Ballot "disqualified"?
+Posts cite "a very reliable good friend" who did poll worker training.
+SOURCE: Associated Press, Oct 15, 2026
+SAY: Viral posts say any mark gets your ballot tossed. Their source? A very reliable good friend who did a training. Very official. Also false.
+---
+REVEAL:
+## THE TRICK · HALF A FACT
+# The law makes them write
+Some early votes must carry *a number*.
+SOURCE: N.C. Gen. Stat. § 163-166.45
+SAY: Here's the trick. Poll workers really do write on some ballots, and sometimes the law tells them to. Scandalous.
+---
+## THE RECORD
+# A number, not a *veto*
+It pulls a ballot if a challenge or protest holds up.
+SOURCE: N.C. State Board of Elections
+SAY: It's a number, not a veto. It pulls a ballot if a challenge or a protest holds up. A filing system, not a trapdoor.
+---
+CASE STATUS: In N.C., a note won't void it. Some are required. Verdict: false.
+SAY: So in North Carolina, a note won't void your ballot. Some are literally required. Verdict, false.
+---
+RECEIPTS: Check it yourself.
+- North Carolina State Board of Elections. "Fact: In NC, If an Election Worker Writes on Your Ballot, It Does Not Invalidate It." August 2, 2024.
+- N.C. Gen. Stat. § 163-166.45, "Retrievable ballots."
+- Goldin, Melissa. "FACT FOCUS: Social Media Posts Falsely Claim Ballots Marked by a Poll Worker Will Be Disqualified." Associated Press, October 15, 2026.
+SAY: Not in North Carolina? Ask your election office, not a friend who did a training.

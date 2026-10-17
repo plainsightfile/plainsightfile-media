@@ -15,7 +15,7 @@
   The build machine can reach GitHub but not ElevenLabs, so the network part runs in the "narration" GitHub Action
   (.github/workflows/narration.yml): this script sends it a repository_dispatch with a one-time key, waits for the
   encrypted result on branch narration-out, decrypts it, and trims each clip. Needs gh (authenticated), git, openssl,
-  ffmpeg/ffprobe.
+  ffmpeg/ffprobe. With ELEVENLABS_API_KEY in the environment it calls ElevenLabs directly instead (no courier).
 
   Prints one JSON object: {"engine": "ElevenLabs", "voice": id, "model": ..., "clips": [{"file", "secs"} | null, ...]}
   Exits non-zero with a message on any failure (build_video.mjs then falls back to Kokoro).
@@ -55,6 +55,28 @@ if (opt.urls) {
   payload = {id, key, mode: opt.whole ? "whole" : "tts", items: {voice_id: opt["voice-id"], model_id: opt.model, lines,
     ...(opt.settings ? {voice_settings: JSON.parse(opt.settings)} : {}), ...(opt.seed ? {seed: Number(opt.seed)} : {})}};
 }
+const raw = path.join(work, "raw"); fs.mkdirSync(raw);
+let manifest;
+if (process.env.ELEVENLABS_API_KEY && !opt.urls) {
+  /* Direct mode: where ElevenLabs is reachable (the one-click "make-video" GitHub Action, or Alex's own computer),
+     call the API here instead of going through the courier. Same request, same files, same splitting below. */
+  const it = payload.items, xi = process.env.ELEVENLABS_API_KEY;
+  const post = async (url, body) => { const r = await fetch(url, {method: "POST", headers: {"xi-api-key": xi, "Content-Type": "application/json"}, body: JSON.stringify(body)});
+    if (!r.ok) die(`ElevenLabs answered ${r.status}: ${(await r.text()).slice(0, 300)}`); return r; };
+  const base = {model_id: it.model_id, ...(it.voice_settings ? {voice_settings: it.voice_settings} : {}), ...(it.seed != null ? {seed: it.seed} : {})};
+  manifest = {id, clips: lines.map(() => null)};
+  if (opt.whole) {
+    const text = lines.map(l => String(l || "").trim()).filter(Boolean).join("\n");
+    const res = await (await post(`https://api.elevenlabs.io/v1/text-to-speech/${it.voice_id}/with-timestamps?output_format=mp3_44100_128`, {text, ...base})).json();
+    fs.writeFileSync(path.join(raw, "whole.mp3"), Buffer.from(res.audio_base64, "base64"));
+    fs.writeFileSync(path.join(raw, "alignment.json"), JSON.stringify({text, alignment: res.alignment, normalized_alignment: res.normalized_alignment}));
+    manifest.whole = "whole.mp3"; manifest.alignment = "alignment.json";
+  } else {
+    for (let i = 0; i < lines.length; i++) { const t = String(lines[i] || "").trim(); if (!t) continue;
+      const r = await post(`https://api.elevenlabs.io/v1/text-to-speech/${it.voice_id}?output_format=mp3_44100_128`, {text: t, ...base});
+      const f = `voice-${String(i + 1).padStart(2, "0")}.mp3`; fs.writeFileSync(path.join(raw, f), Buffer.from(await r.arrayBuffer())); manifest.clips[i] = f; }
+  }
+} else {
 const pf = path.join(work, "payload.json");
 fs.writeFileSync(pf, JSON.stringify({event_type: "narrate", client_payload: payload}), {mode: 0o600});
 
@@ -80,10 +102,10 @@ while (Date.now() < deadline && !blob) {
 if (!blob) die(`no result after ${opt.timeout} s (https://github.com/${REPO}/actions)`);
 
 /* decrypt and unpack */
-const raw = path.join(work, "raw"); fs.mkdirSync(raw);
 const tarball = run("openssl", ["enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-pass", "file:" + keyFile, "-in", blob], {binary: true}).stdout;
 run("tar", ["-xzf", "-", "-C", raw], {input: tarball});
-const manifest = JSON.parse(fs.readFileSync(path.join(raw, "manifest.json"), "utf8"));
+manifest = JSON.parse(fs.readFileSync(path.join(raw, "manifest.json"), "utf8"));
+}
 if (manifest.id !== id || manifest.clips.length !== lines.length) die("result does not match the request");
 
 /* one continuous take: cut it at the middle of the pause between each pair of lines */

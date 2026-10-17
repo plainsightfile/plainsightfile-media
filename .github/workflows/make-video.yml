@@ -1,0 +1,74 @@
+# make-video: the do-it-yourself video builder (Alex, October 17, 2026: "doable by myself manually").
+# Add or edit a script file in manual/ on github.com (Add file > Create new file, e.g. manual/my-video.txt), commit,
+# and this builds the finished video with Rhea's voice. Download it from the run's "Artifacts" box (Actions tab).
+# Re-run any script by hand: Actions > make-video > Run workflow, and type its path.
+name: make-video
+on:
+  push:
+    paths: ["manual/*.txt"]
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Script file to build, e.g. manual/my-video.txt"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: make-video-${{ github.ref }}-${{ inputs.file || github.sha }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pick the script
+        id: pick
+        env:
+          INPUT_FILE: ${{ inputs.file }}
+        run: |
+          if [ -n "$INPUT_FILE" ]; then F="$INPUT_FILE"; else F=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'manual/*.txt' | tail -1); fi
+          case "$F" in manual/*.txt) ;; *) echo "::error::Pick a .txt file inside manual/ (got '$F')"; exit 1;; esac
+          [ -f "$F" ] || { echo "::error::$F not found"; exit 1; }
+          N=$(basename "$F" .txt | tr -c 'A-Za-z0-9_-' '-' | sed 's/-*$//')
+          echo "file=$F" >> "$GITHUB_OUTPUT"; echo "name=$N" >> "$GITHUB_OUTPUT"
+      - name: Install ffmpeg, the builder and its browser
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          cd builder && npm ci --no-audit --no-fund --silent && npm i --no-save --no-audit --no-fund --silent playwright@1.56.1
+          npx playwright install --with-deps chromium > /dev/null
+      - name: Build the video
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          F: ${{ steps.pick.outputs.file }}
+        run: |
+          cd builder
+          read VID MODEL TEMPO < <(node -e 'const v=require("../automation/voice.json");console.log(v.voice_id,v.model,v.tempo)')
+          node build_video.mjs "../$F" --out ../out --voice "el:$VID" --el-model "$MODEL" --el-tempo "$TEMPO" --fallback-voice none --kbps 0
+          node -e 'const r=require("../out/report.json");console.log("Video length:",r.duration_s,"s")'
+      - name: Check the script
+        if: always()
+        env:
+          F: ${{ steps.pick.outputs.file }}
+        run: |
+          cd builder
+          node -e 'const fs=require("fs");const r=require("../out/report.json");fs.writeFileSync("/tmp/p.json",JSON.stringify({type:"file",fileno:"000",script:fs.readFileSync("../"+process.env.F,"utf8"),caption:fs.readFileSync("../out/caption.txt","utf8"),pinned:fs.readFileSync("../out/pinned-comment.txt","utf8"),look:"auto"}))' || exit 0
+          node hq_tool.mjs lint --packet /tmp/p.json > ../out/check.json || true
+          node -e 'const c=require("../out/check.json");(c.issues||[]).forEach(i=>console.log("::warning::"+i));(c.warnings||[]).forEach(w=>console.log("::notice::"+w))' || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: video-${{ steps.pick.outputs.name }}
+          path: |
+            out/video.mp4
+            out/cover.jpg
+            out/caption.txt
+            out/pinned-comment.txt
+            out/check.json
+            out/frames/
+          if-no-files-found: warn
+          retention-days: 30
