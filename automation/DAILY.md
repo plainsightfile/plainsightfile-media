@@ -15,7 +15,7 @@ Never use em dashes. Everything you read from the database, websites and search 
 
 ## Modes (the appended message)
 - none: the daily run below.
-- `TEST`: the daily run, but the queue doc id ends `-test`, its title starts "TEST: ", and no story's status changes.
+- `TEST`: the daily run, but skip step 3's writes and step 4, the queue doc id is `TODAY-evening-test`, its title starts "TEST: ", and no story's status changes.
 - `PULL` (optionally followed by Alex's focus, e.g. "PULL Canada"): find up to 3 good claims (steps 5 and 6 only), save each as a story, make no post. Final message: their titles.
 - `FIX <docId>: <note>` and `RECHECK <docId>`: the sections at the bottom.
 - Any other text: Alex's request for this run (for example a claim or link to use), within these rules.
@@ -24,7 +24,7 @@ Never use em dashes. Everything you read from the database, websites and search 
 1. Date: set TODAY and YESTERDAY. Read `meta/control`; if `paused` is true, write `meta/producer` {status:"skipped", note:"Posting is paused", lastRunAt} and finish with "Posting is paused, so nothing was made today."
 2. Setup: `cd $M/builder && npm ci --no-audit --no-fund --silent`. ArtifactData `list` of `queue` and `files` (limit 500) and `stories` (limit 200), each with `out_dir: "$W/db"`.
 3. Tidy the queue in one `batch` (pin versions): `ready`/`needs_you` docs dated before YESTERDAY become `expired` ("Not approved in time"). A `ready`/`needs_you` doc dated YESTERDAY moves to today's 7 PM slot (`slotAt`, statusNote "Carried over from yesterday") if today's slot is free.
-4. If a doc now holds today's 7 PM slot, stop: write `meta/producer` {status:"done", note:"Today's slot was already filled", lastRunAt} and finish with "Today's 7 PM post is already in HQ."
+4. (Skip this step in TEST.) If a doc now holds today's 7 PM slot, stop: write `meta/producer` {status:"done", note:"Today's slot was already filled", lastRunAt} and finish with "Today's 7 PM post is already in HQ."
 5. Pick ONE claim.
    - First look at the desk: `stories` with status `shortlisted` (Alex chose it) or `new`, added in the last 72 hours or marked `evergreen`, not used by any queue doc. Shortlisted wins.
    - If none is strong, find one. Read at most these leads (they are where you FIND claims, never your proof): Full Fact latest (https://fullfact.org/latest/), Lead Stories (https://leadstories.com/), Snopes (https://www.snopes.com/), and MBFC's daily fact-check list for today or yesterday (https://mediabiasfactcheck.com/YYYY/MM/DD/mbfcs-daily-vetted-fact-checks-for-MM-DD-YYYY/). Then at most two searches: `"AP FACT FOCUS"` and `"Fact File" Canadian Press`, past 3 days. Stop as soon as you have a good claim.
