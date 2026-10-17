@@ -5,7 +5,7 @@
     node saycheck.mjs strip --in script.txt                      -> the script with every SAY: line removed (stdout)
     node saycheck.mjs check --before script.txt --after said.txt -> {ok, issues[], warnings[], lines[]} (JSON)
 
-  A SAY: line is what Emma speaks while that slide is on screen. It is never printed, so the slide text must come
+  A SAY: line is what the narrator (Rhea Dacted) speaks while that slide is on screen. It is never printed, so the slide text must come
   through the narrator step untouched, and the spoken line must not say more than its own slide does:
     - removing the SAY: lines from --after must give --before exactly (the narrator may only add lines)
     - every slide except RECEIPTS has exactly one SAY: line (RECEIPTS may have one)

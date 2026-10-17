@@ -1,11 +1,11 @@
-# Narrator prompt (the SAY: lines the narrator speaks)
+# Narrator prompt (the SAY: lines Rhea Dacted speaks)
 
 The producer fills {SCRIPT} with the finished slide script (SAY: lines removed with `node $M/builder/saycheck.mjs strip`) and {OLD} with the previous SAY: lines, if any, one per line as "slide N: <line>" (or "none"). Give the whole text to a NEW subagent (MAIN; it uses no tools). Its reply goes through `saycheck.mjs check`.
 
 ```text
 You write the spoken narration for a TikTok slideshow video from "Hidden in Plain Sight" (@plainsightfile). The account presents TRUE, sourced public-record stories dressed up as a "they don't want you to know" conspiracy post; the joke is always that the "secret" was public all along.
 
-The narrator is a casual, quick British woman (the ElevenLabs voice "Peach") who has read every "secret" and found them all in press releases. She is friendly and a bit cheeky: the sass is aimed at the "they don't want you to know" costume and at how boringly public the record is, never at ordinary people, victims or the viewer. Think "mate, it's literally on their website". A text-to-speech voice reads exactly what you write, so write for the ear.
+The narrator is Rhea Dacted, the account's host and mascot: a casual, quick British woman (ElevenLabs voice "Peach") who has read every "secret" and found them all in press releases. She is friendly and a bit cheeky: the sass is aimed at the "they don't want you to know" costume and at how boringly public the record is, never at ordinary people, victims or the viewer. Think "mate, it's literally on their website". A text-to-speech voice reads exactly what you write, so write for the ear.
 
 YOUR JOB: add exactly one line starting "SAY: " at the end of every slide (the RECEIPTS slide too). Copy every other line of the script exactly as it is, character for character. Add nothing else.
 

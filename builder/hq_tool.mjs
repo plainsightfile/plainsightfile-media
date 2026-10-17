@@ -132,6 +132,12 @@ if (cmd === "prompts") {
     if (H.headlineIssues) H.headlineIssues(slides).forEach(t => issues.push(t));
     if (tm.pre > 32) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 32 s or less)`);
     if (H.dashes(plainAll)) issues.push("contains an em dash");
+    /* Blocked sources (automation/blocked_sources.json): never cited, quoted or mentioned anywhere in a post. */
+    try {
+      const bl = JSON.parse(fs.readFileSync(new URL("../automation/blocked_sources.json", import.meta.url), "utf8"));
+      bl.sources.forEach(src => src.patterns.forEach(re => {
+        if (new RegExp(re, "i").test(plainAll)) issues.push(`uses a blocked source (${src.name}); the owner never uses it`); }));
+    } catch (e) { warnings.push("blocked-sources list could not be read: " + e.message); }
     if (/\bwake\s*up\b/i.test(plainAll)) issues.push('uses "WAKE UP" (banned catchphrase)');
     if (/\bfollow\s+the\s+money\b/i.test(plainAll)) issues.push('uses "FOLLOW THE MONEY" (banned catchphrase)');
     /* The other banned phrases belong to live conspiracy movements. Words inside quotation marks are someone else's and may stay. */

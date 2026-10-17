@@ -1,0 +1,7 @@
+{
+  "note": "Sources the account never uses (Alex, October 16, 2026). Not as a receipt, not as a fact, figure, quote, ranking or award, not as reported by another outlet, and not mentioned at all. A story that rests on one of these is dropped. hq_tool lint fails any post whose script, caption or pinned comment matches a pattern below.",
+  "sources": [
+    {"name": "Canadian Taxpayers Federation", "also": ["CTF", "taxpayer.com", "Teddy Awards (its 'waste' awards)"],
+     "patterns": ["taxpayers?['’]?\\s+federation", "taxpayer\\.com", "\\bCTF\\b", "\\bteddy\\s+(waste\\s+)?awards?\\b", "\\bteddys\\b"]}
+  ]
+}

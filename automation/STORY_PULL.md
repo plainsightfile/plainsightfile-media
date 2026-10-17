@@ -61,5 +61,6 @@ Use the ArtifactData tool (load it with ToolSearch "select:ArtifactData" if need
 - One standard for everyone: judge claims by the evidence, applied identically across the political spectrum. Give the other side's response when available.
 - The satire and the call-outs aim at claims and at the powerful and those with reach, never at the people affected, private individuals, or the viewer, and never at anyone's identity or personal traits.
 - For stories involving grief, remembrance or victims, the angle must target institutions' and public figures' words and records, never the people affected; note this in cautions.
+- BLOCKED SOURCES: never use the Canadian Taxpayers Federation (CTF, taxpayer.com) in any way: not its reports, statements, figures, rankings or "Teddy" waste awards, not as quoted by another outlet, and do not mention it. If a fact only comes from it, leave the fact out; if the story rests on it, drop the story. (Full list: automation/blocked_sources.json.)
 - Do not modify or delete existing stories or sources, except the meta/pull status doc.
 - If a text message is appended to the prompt, it is a request from the owner for this run (for example a region or topic to focus on); follow it within these rules.
