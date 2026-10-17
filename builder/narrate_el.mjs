@@ -52,7 +52,8 @@ if (opt.urls) {
   if (urls.length !== lines.length) die(`--urls has ${urls.length} entries for ${lines.length} lines`);
   payload = {id, key, mode: "urls", items: urls};
 } else {
-  payload = {id, key, mode: opt.whole ? "whole" : "tts", items: {voice_id: opt["voice-id"], model_id: opt.model, lines}};
+  payload = {id, key, mode: opt.whole ? "whole" : "tts", items: {voice_id: opt["voice-id"], model_id: opt.model, lines,
+    ...(opt.settings ? {voice_settings: JSON.parse(opt.settings)} : {}), ...(opt.seed ? {seed: Number(opt.seed)} : {})}};
 }
 const pf = path.join(work, "payload.json");
 fs.writeFileSync(pf, JSON.stringify({event_type: "narrate", client_payload: payload}), {mode: 0o600});

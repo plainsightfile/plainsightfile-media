@@ -6,5 +6,10 @@
   "fallback_voice": "bf_emma",
   "note": "Takes are generated with the ElevenLabs API inside the narration GitHub Action (repo secret ELEVENLABS_API_KEY, added October 16, 2026). tempo 1.12 speeds Rhea up 12% without changing pitch (she is slower than Kokoro). If ElevenLabs fails, the build falls back to Kokoro bf_emma automatically.",
   "tempo": 1.12,
-  "narrator": "Rhea Lity"
+  "narrator": "Rhea Lity",
+  "voice_settings": {
+    "stability": 1.0,
+    "similarity_boost": 0.85
+  },
+  "seed": 1977
 }

@@ -60,6 +60,7 @@ jobs:
                       manifest["clips"].append(None); continue
                   body = {"text": text, "model_id": it.get("model_id", "eleven_multilingual_v2")}
                   if it.get("voice_settings"): body["voice_settings"] = it["voice_settings"]
+                  if it.get("seed") is not None: body["seed"] = int(it["seed"])
                   prev = " ".join(l for l in lines[:i] if l)[-300:]; nxt = " ".join(l for l in lines[i + 1:] if l)[:300]
                   if prev: body["previous_text"] = prev
                   if nxt: body["next_text"] = nxt
@@ -84,6 +85,7 @@ jobs:
               text = "\n".join((l or "").strip() for l in lines if (l or "").strip())
               body = {"text": text, "model_id": it.get("model_id", "eleven_v4")}
               if it.get("voice_settings"): body["voice_settings"] = it["voice_settings"]
+              if it.get("seed") is not None: body["seed"] = int(it["seed"])
               req = urllib.request.Request(
                   "https://api.elevenlabs.io/v1/text-to-speech/%s/with-timestamps?output_format=mp3_44100_128" % it["voice_id"],
                   data=json.dumps(body).encode(), method="POST",

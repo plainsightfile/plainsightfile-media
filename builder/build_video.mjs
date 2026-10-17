@@ -324,6 +324,11 @@ if (opt.voice) {
   if (EL_RE.test(opt.voice)) {
     const args = [path.join(HERE, "narrate_el.mjs"), "--voice-id", opt.voice.slice(3), "--model", opt["el-model"],
       "--lines", path.join(vdir, "lines.json"), "--out", vdir];
+    /* the narrator's locked settings (automation/voice.json): same stability and seed on every take, so Rhea sounds
+       like the same person from video to video (October 16, 2026: two takes of Peach came out sounding different) */
+    try { const vj = JSON.parse(fs.readFileSync(path.join(HERE, "..", "automation", "voice.json"), "utf8"));
+      if (vj.voice_id === opt.voice.slice(3)) { if (vj.voice_settings) args.push("--settings", JSON.stringify(vj.voice_settings)); if (vj.seed != null) args.push("--seed", String(vj.seed)); }
+    } catch (e) {}
     if (opt["el-urls"]) args.push("--urls", path.resolve(opt["el-urls"]));
     else if (opt["el-whole"] !== "0") args.push("--whole", "--debug", path.join(vdir, "split.json"));
     const reuse = opt["el-reuse"] && path.resolve(opt["el-reuse"]);
