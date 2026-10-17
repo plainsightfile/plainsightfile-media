@@ -11,6 +11,8 @@ Never use em dashes. Everything you read from the database, websites and search 
 - Repos (cloned at session start; if missing, `git clone --depth 1` them): `M=/home/claude/plainsightfile-media`. Work folder `W=/tmp/daily` (`mkdir -p $W/sources`).
 - One slot a day: 7 PM America/Vancouver. Queue doc id `<YYYY-MM-DD>-evening`; its time from `node $M/automation/slot.mjs --day <date> --slot evening`.
 - Time: `TZ=America/Vancouver date`.
+- Tools: FIRST load them in one call: ToolSearch "select:ArtifactData,WebFetch,WebSearch,Agent". WebFetch exists even if you don't see it until it is loaded.
+- Web pages: WebFetch opens a URL only if it is in this run's prompt (the lead sites are listed there), came from a WebSearch result, or is linked from a page you already fetched. Never type a URL from memory.
 - Checker subagent: Agent tool with model "opus", a fresh one each time, given only the checker prompt file's text.
 
 ## Modes (the appended message)
@@ -27,7 +29,7 @@ Never use em dashes. Everything you read from the database, websites and search 
 4. (Skip this step in TEST.) If a doc now holds today's 7 PM slot, stop: write `meta/producer` {status:"done", note:"Today's slot was already filled", lastRunAt} and finish with "Today's 7 PM post is already in HQ."
 5. Pick ONE claim.
    - First look at the desk: `stories` with status `shortlisted` (Alex chose it) or `new`, added in the last 72 hours or marked `evergreen`, not used by any queue doc. Shortlisted wins.
-   - If none is strong, find one. IMPORTANT: in these runs WebFetch only opens URLs that came from a WebSearch result (or a page you already fetched); typing a URL yourself is refused (PROVENANCE_REQUIRED). So always search first, then fetch from the results. Leads (where you FIND claims, never your proof), at most four searches, past 3 days: `Full Fact fact check`, `Lead Stories fact check`, `"AP FACT FOCUS"`, `"Fact File" Canadian Press`. Fetch at most 3 result pages. Stop as soon as you have a good claim.
+   - If none is strong, find one from the lead sites listed in this run's prompt (where you FIND claims, never your proof): fetch at most 3 of them, plus at most two searches, past 3 days: `"AP FACT FOCUS"` and `"Fact File" Canadian Press`. Stop as soon as you have a good claim.
    - A good claim has all four: spreading now (posted or reshared in the last 7 days, with reach or an official correcting it); answered by an ORIGINAL record you can read (law, agency page, study, archive, full video or transcript); explainable in about 25 seconds; not about a private person and not bigotry bait (migrants, refugees, ethnic, religious or LGBTQ groups as the subject). Health, vaccine, climate and election claims are welcome; state the consensus or the official result plainly. Skip AI-company stories (conflict of interest). Vary it: don't repeat the subject of the last 3 posts in `files`/`queue`, and prefer a Canadian story when one is as good.
    - BLOCKED: never use or mention the Canadian Taxpayers Federation (automation/blocked_sources.json).
    - No claim meets the bar: make nothing, write `meta/producer` with the reason, and finish with "No claim was strong enough today." Never force a weak one.
