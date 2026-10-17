@@ -264,9 +264,8 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
         <option value="memo">Spot the Trick (Memo)</option>
       </select></label>
       <label for="fileno" class="fb-num"><span id="numLabel">File No.</span><input type="text" id="fileno" value="001"></label>
-      <label for="look" title="Alternating: odd file numbers dark, even light">Look<select id="look">
-        <option value="auto">Alternating</option>
-        <option value="dark">Dark</option>
+      <label for="look" title="Lens (navy) is the account look; Light is kept for one-offs">Look<select id="look">
+        <option value="auto">Lens (navy)</option>
         <option value="light">Light</option>
         <option value="classic">Classic manila</option>
       </select></label>
@@ -1002,10 +1001,10 @@ function renderSlide(sl,idx,total,bg){
   return c;
 }
 
-const PAUSE_LINE="Pause to read. Full receipts in caption and pinned comment.";
+const PAUSE_LINE="Links in the caption and pinned comment.";
 function endLines(){
   const next=nextNumber(filenoEl.value.trim()||"000");
-  return {signoff:signoffEl.value.trim()||"That's your Rhea Lity check.",next:`${typeWord().toUpperCase()} ${next} NEXT.`,follow:"Follow so it finds you."};
+  return {signoff:signoffEl.value.trim()||"That's your Rhea Lity check.",next:"",follow:"Follow for the next one."};
 }
 function renderClassicEnd(idx,total,bg){
   const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
@@ -1030,14 +1029,12 @@ const SIGNAL={
   light:{bg:"#FFF8EE",fg:"#16224A",muted:"#5A6385",acc:"#FF7A2F",accInk:"#16224A",grid:"rgba(22,34,74,0.07)",rule:"#E2D8C6",meta:"#B4480C",bar:"#16224A"}
 };
 function lookMode(){
-  const v=$("look").value;if(v==="classic"||v==="dark"||v==="light")return v;
-  const n=parseInt((filenoEl.value.match(/\d+/)||["1"])[0],10);return n%2===1?"dark":"light";
+  /* Look A, "Lens" (Alex, October 16, 2026): navy on every video; no more odd/even alternation */
+  const v=$("look").value;if(v==="classic"||v==="light")return v;return "dark";
 }
 function theme(){return SIGNAL[lookMode()]||SIGNAL.dark}
 function signalBg(ctx,w,h,T){
-  ctx.fillStyle=T.bg;ctx.fillRect(0,0,w,h);ctx.strokeStyle=T.grid;ctx.lineWidth=1.5;
-  for(let x=0;x<=w;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
-  for(let y=0;y<=h;y+=90){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  ctx.fillStyle=T.bg;ctx.fillRect(0,0,w,h); /* plain ground: the graph-paper grid retired with the case-file look */
 }
 function drawBgFor(ctx,w,h,sl){
   const m=lookMode();
@@ -1075,11 +1072,11 @@ function sigLoc(ctx,T,x,y){
   ctx.textBaseline="alphabetic";spaced(ctx,"2px");let cx=x+46;
   const P=place?place.toUpperCase():"",C=country?(place?" / ":"")+country.toUpperCase():"";
   /* shrink to fit the 888px text column; drop the country only as a last resort */
-  let sz=34,showC=!!C;const width=z=>{ctx.font=`700 ${z}px ${JBM}`;let w=ctx.measureText(P).width;if(showC){ctx.font=`400 ${z}px ${JBM}`;w+=ctx.measureText(C).width}return w};
+  let sz=34,showC=!!C;const width=z=>{ctx.font=`700 ${z}px ${SGF}`;let w=ctx.measureText(P).width;if(showC){ctx.font=`400 ${z}px ${SGF}`;w+=ctx.measureText(C).width}return w};
   while(sz>24&&width(sz)>888-46)sz-=2;
   if(width(sz)>888-46&&P)showC=false;
-  if(P){ctx.font=`700 ${sz}px ${JBM}`;ctx.fillStyle=T.fg;ctx.fillText(P,cx,y+34);cx+=ctx.measureText(P).width}
-  if(showC){ctx.font=`400 ${sz}px ${JBM}`;ctx.fillStyle=T.muted;ctx.fillText(C,cx,y+34)}
+  if(P){ctx.font=`700 ${sz}px ${SGF}`;ctx.fillStyle=T.fg;ctx.fillText(P,cx,y+34);cx+=ctx.measureText(P).width}
+  if(showC){ctx.font=`400 ${sz}px ${SGF}`;ctx.fillStyle=T.muted;ctx.fillText(C,cx,y+34)}
   spaced(ctx,"0px");return 46;
 }
 function sigFoot(ctx,T,idx,total,swipe){
@@ -1107,7 +1104,7 @@ function renderSignal(sl,idx,total,bg){
   sigMeta(ctx,T,idx,total,sl);
   const X=96,MAXW=888,toks=tokenize(sl.text);
   const notes=(sl.notes||[]).slice();
-  if(sl.type==="hook")notes.push({label:postType()==="memo"?"SPOT THE TRICK.":"FACT CHECK.",text:"ALL SOURCED."});
+  /* (the hook's "FACT CHECK. ALL SOURCED." label retired with Look A: the header says it) */
   const np=sl.type==="receipts"||sl.type==="end"?null:prepNotes(ctx,notes);
   const lim=b=>Math.min(b,np?np.top-28:b); /* lowest the headline type may reach */
   drawNotes(ctx,T,np);
@@ -1265,16 +1262,27 @@ function n9Ticks(ctx,T,idx,total,y){
   const X=TTN.left,MAXW=TTN.right-TTN.left,gap=8,w=(MAXW-gap*(total-1))/total;
   for(let i=0;i<total;i++){ctx.fillStyle=i===idx?T.acc:i<idx?T.muted:T.rule;ctx.fillRect(X+i*(w+gap),y,w,i===idx?10:6)}
 }
+/* The lens logo (concept 1): tangerine ring and handle, a paper R. The disc is the page colour, so on navy it vanishes. */
+function n9Lens(ctx,T,x,y,size){
+  const k=size/400;ctx.save();ctx.translate(x,y);ctx.scale(k,k);
+  ctx.fillStyle="#16224A";ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=T.acc;ctx.lineWidth=36;ctx.beginPath();ctx.arc(182,178,102,0,Math.PI*2);ctx.stroke();
+  ctx.save();ctx.translate(266,309);ctx.rotate(-Math.PI/4);ctx.fillStyle=T.acc;ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(-22,-59,44,118,22);else ctx.rect(-22,-59,44,118);ctx.fill();ctx.restore();
+  ctx.fillStyle="#FFF8EE";ctx.font=`900 156px ${DISP}`;ctx.textAlign="center";ctx.textBaseline="alphabetic";ctx.fillText("R",182,232);
+  ctx.restore();ctx.textAlign="left";
+}
 function n9Meta(ctx,T,idx,total,sl){
-  /* Decluttered: progress ticks on every slide; the File/Memo number and date only on the hook. */
-  const X=TTN.left,R=TTN.right,fno=(filenoEl.value.trim()||"000");
-  if(sl.type==="hook"){ctx.textBaseline="alphabetic";ctx.font=`400 28px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.muted;
-    ctx.textAlign="left";ctx.fillText(`${typeWord().toUpperCase()} ${fno}`,X,316);ctx.textAlign="right";ctx.fillText(isoDay(),R,316);ctx.textAlign="left";spaced(ctx,"0px")}
-  n9Ticks(ctx,T,idx,total,342);
+  /* Look A (October 16): the logo and the account name on every slide, where the File number and date used to be. */
+  const X=TTN.left;
+  if(sl.type!=="end"){n9Lens(ctx,T,X,250,64);
+    ctx.textBaseline="alphabetic";ctx.font=`700 30px ${SGF}`;spaced(ctx,"4px");ctx.fillStyle=T.fg;ctx.textAlign="left";
+    ctx.fillText("THE RHEA LITY CHECK",X+84,293);spaced(ctx,"0px")}
+  n9Ticks(ctx,T,idx,total,348);
 }
 function n9Foot(ctx,T){
   /* the handle stays on every slide so reposts and cross-posts carry the account name */
-  ctx.font=`400 28px ${JBM}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
+  ctx.font=`500 30px ${SGF}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";spaced(ctx,"1px");
   ctx.textAlign="left";ctx.fillText(handleEl.value.trim(),TTN.left,N9.handleY);spaced(ctx,"0px");
 }
 /* Brand band under TikTok's caption row: decorative only, fine to be partly covered. */
@@ -1297,12 +1305,13 @@ function n9Band(ctx,T){
 function n9Exhibit(ctx,T,notes,idx,doc,measureOnly,y){
   /* Decluttered (October 14): sources print as one or two quiet lines, no box, no exhibit number. */
   if(!notes||!notes.length)return 0;
-  const X=TTN.left,MAXW=TTN.railRight-TTN.left,ts=28,lh=1.35,gap=10;
-  const rows=notes.map(n=>{ctx.font=`400 ${ts}px ${JBM}`;return {lines:wrap(ctx,[{t:n.label.replace(/[:.]$/,"").toUpperCase(),s:"L"}].concat(tokenize(n.text)),MAXW,0)}});
+  const X=TTN.left,MAXW=TTN.railRight-TTN.left,ts=30,lh=1.35,gap=10;
+  const lab=l=>{const u=l.replace(/[:.]$/,"").toUpperCase();return u==="CLASSIFIED LOCATION"?"Find it":u.charAt(0)+u.slice(1).toLowerCase()};
+  const rows=notes.map(n=>{ctx.font=`400 ${ts}px ${SGF}`;return {lines:wrap(ctx,[{t:lab(n.label),s:"L"}].concat(tokenize(n.text)),MAXW,0)}});
   let h=0;rows.forEach((r,i)=>{h+=r.lines.length*ts*lh+(i<rows.length-1?gap:0)});
   if(measureOnly)return h;
   let cy=y;spaced(ctx,"0.5px");
-  rows.forEach(r=>{drawLines(ctx,{s:ts,lines:r.lines,pad:0},s=>`400 ${s}px ${JBM}`,X,cy,lh,{text:T.muted,lab:T.muted,emText:T.muted,emBg:null,redact:T.muted});cy+=r.lines.length*ts*lh+gap});
+  rows.forEach(r=>{drawLines(ctx,{s:ts,lines:r.lines,pad:0},s=>`400 ${s}px ${SGF}`,X,cy,lh,{text:T.muted,lab:T.muted,emText:T.muted,emBg:null,redact:T.muted});cy+=r.lines.length*ts*lh+gap});
   spaced(ctx,"0px");
   return h;
 }
@@ -1331,14 +1340,30 @@ function n9Stamp(ctx,T,word,y,measureOnly){
   ctx.translate(cx,cy);ctx.rotate(ang);ctx.globalAlpha=0.9;ctx.drawImage(off,-off.width/2,-off.height/2);ctx.restore();spaced(ctx,"0px");
   return Math.ceil(bh);
 }
-function n9Cols(T){return {text:T.fg,emBg:T.acc,emText:T.accInk,emLine:T.accInk,redact:T.fg,lab:T.muted}}
+function n9Cols(T){return T===SIGNAL.dark?{text:T.fg,emBg:null,emText:T.acc,redact:T.fg,lab:T.muted} /* Lens: tangerine words */
+  :{text:T.fg,emBg:T.acc,emText:T.accInk,emLine:T.accInk,redact:T.fg,lab:T.muted}}
 /* Status tag: no longer a lime box (it read as a highlight). A small lime square plus spaced mono text. */
-function n9Tag(ctx,T,text,x,y){
-  ctx.font=`700 32px ${JBM}`;spaced(ctx,"3px");ctx.textBaseline="alphabetic";
-  ctx.fillStyle=T.acc;ctx.fillRect(x,y+15,22,22);ctx.strokeStyle=T.accInk;ctx.lineWidth=2;ctx.strokeRect(x+1,y+16,20,20);
-  ctx.fillStyle=T.fg;ctx.fillText(text,x+40,y+37);spaced(ctx,"0px");
-  ctx.fillStyle=T.rule;ctx.fillRect(x,y+56,ctx.measureText(text).width+40,2);
+function n9Tag(ctx,T,text,x,y,color){
+  ctx.font=`700 36px ${SGF}`;spaced(ctx,"4px");ctx.textBaseline="alphabetic";
+  ctx.strokeStyle=T.acc;ctx.lineWidth=6;ctx.beginPath();ctx.arc(x+13,y+25,10,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=color||T.meta;ctx.fillText(text,x+44,y+38);spaced(ctx,"0px");
   return 58;
+}
+/* Verdict pill for the bottom line: "VERDICT · FALSE" in navy on tangerine. Returns its height. */
+function n9Pill(ctx,T,text,x,y){
+  ctx.font=`700 40px ${SGF}`;spaced(ctx,"4px");const w=ctx.measureText(text).width+60,h=80;
+  ctx.fillStyle=T.acc;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,40);else ctx.rect(x,y,w,h);ctx.fill();
+  ctx.fillStyle=T.accInk;ctx.textBaseline="alphabetic";ctx.fillText(text,x+30,y+54);spaced(ctx,"0px");return h;
+}
+/* Verdict lens on the claim slide: the logo's ring around the verdict word(s). */
+function n9VerdictRing(ctx,T,verdict,x,y,d){
+  const cx=x+d/2,cy=y+d/2,bw=Math.round(d*0.085);
+  ctx.strokeStyle=T.acc;ctx.lineWidth=bw;ctx.beginPath();ctx.arc(cx,cy,d/2-bw/2,0,Math.PI*2);ctx.stroke();
+  const words=verdict.toUpperCase().split(/\s+/).filter(Boolean),inner=(d-2*bw)*0.8;
+  let s=Math.round(d*0.3);ctx.font=headFont(s);
+  while(s>30&&(Math.max(...words.map(w=>ctx.measureText(w).width))>inner||words.length*s*0.95>inner)){s-=2;ctx.font=headFont(s)}
+  ctx.fillStyle=T.acc;ctx.textAlign="center";ctx.textBaseline="alphabetic";
+  const top=cy-words.length*s*0.95/2;words.forEach((w,i)=>ctx.fillText(w,cx,top+(i+0.8)*s*0.95));ctx.textAlign="left";
 }
 /* Lint: at most 2 highlights per slide (1 on the hook), each 1 to 3 words. */
 function emphasisIssues(slides){
@@ -1383,8 +1408,8 @@ function renderSignal916(sl,idx,total){
   const T=theme(),col=n9Cols(T);
   signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
   const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
-  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:postType()==="memo"?"SPOT THE TRICK.":"FACT CHECK.",text:"ALL SOURCED."});
-  const TAGS={hook:postType()==="memo"?"SPOT THE TRICK":null,status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
+  const notes=(sl.notes||[]).slice();/* (the hook's "FACT CHECK. ALL SOURCED." label retired with Look A: the header says it) */
+  const TAGS={hook:postType()==="memo"?"SPOT THE TRICK":null,status:"THE BOTTOM LINE",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
   const tag=TAGS[sl.type]||null;
   let y=TOP+4;
   /* hook stamp: beside the status and location rows when they leave room on the right, otherwise in its own row */
@@ -1403,42 +1428,51 @@ function renderSignal916(sl,idx,total){
   if(sl.type==="hook"){if(stampBeside)y=Math.max(y,stampBottom+30);else y+=n9Stamp(ctx,T,scriptStamp(),y-20)+24}
 
   if(sl.type==="receipts"){
-    const tf=s=>`700 ${s}px ${SGF}`;const tr=n9Fit(ctx,tokenize(sl.text),tf,X,y,380,1.08,120,52,0);
-    y+=drawLines(ctx,{s:tr.s,lines:tr.lines,pad:tr.pad},tf,X,y,1.08,col)+56;
-    const mf=s=>`400 ${s}px ${JBM}`,letters="ABCDEFGH",IW=TTN.railRight-X;
-    const itemToks=sl.items.map((it,i)=>[{t:">",s:"L"},{t:`SRC_${letters[i]||i+1}`,s:"L"}].concat(tokenize(it)));
-    const pauseY=BOT-6,limit=pauseY-80;
-    let ms=52,tot=0;for(;ms>=24;ms-=2){ctx.font=mf(ms);tot=0;itemToks.forEach(tk=>{tot+=wrap(ctx,tk,IW,0).length*ms*1.45+60});if(y+tot<=limit)break}
-    const extra=Math.max(0,limit-y-tot)/(itemToks.length+1);y+=extra;
-    ctx.setLineDash([8,8]);
-    itemToks.forEach(tk=>{ctx.font=mf(ms);y+=drawLines(ctx,{s:ms,lines:wrap(ctx,tk,IW,0),pad:0},mf,X,y,1.45,col)+24;
-      ctx.strokeStyle=T.rule;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X,y);ctx.lineTo(X+IW,y);ctx.stroke();y+=36+extra});
-    ctx.setLineDash([]);
-    let fs=32;ctx.font=`400 ${fs}px ${JBM}`;while(ctx.measureText(PAUSE_LINE+"_").width>IW&&fs>18){fs-=2;ctx.font=`400 ${fs}px ${JBM}`}
-    ctx.fillStyle=T.muted;ctx.fillText(PAUSE_LINE,X,pauseY);ctx.fillStyle=T.meta;ctx.fillText("_",X+ctx.measureText(PAUSE_LINE).width,pauseY);
+    /* Look A: SOURCES header, a "Check it yourself" headline on the grid, numbered tangerine discs (no SRC_A) */
+    if(!N9_HEAD)n9PrepHeads(parseScript(scriptEl.value));
+    n9Tag(ctx,T,"SOURCES",X,GRID_TOP);
+    const hs=Math.min(N9_HEAD?N9_HEAD.size:130,130),hp=hs*0.12;ctx.font=headFont(hs);
+    const hl=n9Wrap(ctx,tokenize(fixQuotes(sl.text).replace(/[*_]/g,"").toUpperCase()),i=>n9Right(HEAD_TOP+i*hs*HEAD_LH,hs*1.1)-X,hp).slice(0,2);
+    y=HEAD_TOP+drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,X,HEAD_TOP,HEAD_LH,col)+70;
+    const D=64,IX=X+D+26,IW=TTN.railRight-IX,mf=s=>`500 ${s}px ${SGF}`;
+    const itemToks=sl.items.map(it=>tokenize(it));
+    const pauseY=BOT-6,limit=pauseY-44,GAP=30;
+    let ms=44,tot=0;for(;ms>=28;ms-=2){ctx.font=mf(ms);tot=0;itemToks.forEach(tk=>{tot+=Math.max(D,wrap(ctx,tk,IW,0).length*ms*1.3)+GAP});if(y+tot<=limit)break}
+    itemToks.forEach((tk,i)=>{ctx.font=mf(ms);const lines=wrap(ctx,tk,IW,0);
+      ctx.fillStyle=T.acc;ctx.beginPath();ctx.arc(X+D/2,y+D/2,D/2,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=T.accInk;ctx.font=headFont(44);ctx.textAlign="center";ctx.textBaseline="alphabetic";ctx.fillText(String(i+1),X+D/2,y+D/2+16);ctx.textAlign="left";
+      const h=drawLines(ctx,{s:ms,lines,pad:0},mf,IX,y+Math.max(0,(D-ms*1.3)/2),1.3,col);y+=Math.max(D,h)+GAP});
+    ctx.font=`400 30px ${SGF}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";ctx.fillText(PAUSE_LINE,X,pauseY);
     n9Foot(ctx,T);return c;
   }
   if(sl.type==="end"){
-    const E=endLines(),ef=s=>`700 ${s}px ${SGF}`,tail=48+72+40;
-    const r=n9Fit(ctx,tokenize(E.signoff),ef,X,y,BOT-y-tail-90,1.04,N9.maxS,60,0.35);
-    drawLines(ctx,{s:r.s,lines:r.lines,pad:r.pad},ef,X,r.y,1.04,col);
-    let ny=r.y+r.h+90;
-    ctx.font=`700 52px ${JBM}`;spaced(ctx,"2px");ctx.fillStyle=T.meta;ctx.textBaseline="alphabetic";ctx.fillText(E.next,X,ny+48);
-    ctx.font=`400 44px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,ny+120);spaced(ctx,"0px");
+    /* Look A end card: the logo, then the sign-off in the headline type. "Rhea Lity" keeps to one line, in tangerine. */
+    const E=endLines();n9Lens(ctx,T,X,430,300);
+    const so=fixQuotes(E.signoff).replace(/[*_]/g,"").toUpperCase(),m=so.match(/^(.*?)(RHEA LITY)(.*)$/);
+    const L=m?[m[1].trim(),m[2],m[3].trim()].filter(Boolean):null,top=800,maxW=TTN.railRight-X;
+    if(L){let s=150;ctx.font=headFont(s);while(s>70&&Math.max(...L.map(t=>ctx.measureText(t).width))>maxW){s-=2;ctx.font=headFont(s)}
+      ctx.textBaseline="alphabetic";L.forEach((t,i)=>{ctx.fillStyle=t==="RHEA LITY"?T.acc:T.fg;ctx.fillText(t,X,top+s*0.82+i*s*1.04)});
+      y=top+L.length*s*1.04;}
+    else{const r=n9Fit(ctx,tokenize(so),headFont,X,top,420,1.04,150,70,0);drawLines(ctx,{s:r.s,lines:r.lines,pad:r.pad},headFont,X,top,1.04,col);y=top+r.h}
+    ctx.font=`500 54px ${SGF}`;ctx.fillStyle=T.muted;ctx.textBaseline="alphabetic";ctx.fillText(E.follow,X,y+90);
     n9Foot(ctx,T);return c;
   }
   if(sl.type==="status"&&N9_HEAD&&N9_HEAD.structured){
     /* same grid as the other slides: CASE STATUS tag at GRID_TOP, one finding per row in the headline type,
        starting where every headline starts, at the video's headline size or smaller if the rows need it */
-    n9Tag(ctx,T,"CASE STATUS",X,GRID_TOP);
-    const rows=fixQuotes(sl.text).split(/(?<=[.!?”"])\s+/).map(s=>s.trim()).filter(Boolean).map(r=>tokenize(r.toUpperCase()));
+    n9Tag(ctx,T,"THE BOTTOM LINE",X,GRID_TOP);
+    const all=fixQuotes(sl.text).split(/(?<=[.!?”"])\s+/).map(s=>s.trim()).filter(Boolean);
+    const vRow=all.find(r=>/^verdict\b/i.test(r)),verdict=vRow?vRow.replace(/^verdict\s*[:\uFF1A·-]?\s*/i,"").replace(/[.*_]+$/g,"").trim().toUpperCase():"";
+    const rows=all.filter(r=>r!==vRow).map(r=>tokenize(r.toUpperCase()));
+    const BAND_END=BOT-(verdict?120:0);
     const band=BOT-HEAD_TOP,lh=HEAD_LH;let best=null;
     for(let s=N9_HEAD.size;s>=56;s-=2){ctx.font=headFont(s);const pad=s*0.12,gap=s*0.5;let yy=HEAD_TOP;const L=[];
       rows.forEach(tk=>{const lines=n9Wrap(ctx,tk,i=>n9Right(yy+i*s*lh,s*1.1)-X,pad);L.push(lines);yy+=lines.length*s*lh+gap});
-      best={s,pad,L,gap};if(yy-gap-HEAD_TOP<=band)break}
+      best={s,pad,L,gap};if(yy-gap-HEAD_TOP<=BAND_END-HEAD_TOP)break}
     let yy=HEAD_TOP;
     best.L.forEach((lines,i)=>{yy+=drawLines(ctx,{s:best.s,lines,pad:best.pad},headFont,X,yy,lh,col);
       if(i<best.L.length-1){ctx.fillStyle=T.rule;ctx.fillRect(X,yy+best.gap/2-1,TTN.railRight-X,2);yy+=best.gap}});
+    if(verdict)n9Pill(ctx,T,"VERDICT · "+verdict,X,yy+50);
     n9Foot(ctx,T);return c;
   }
   if(sl.type==="status"){
@@ -1465,9 +1499,23 @@ function renderSignal916(sl,idx,total){
     const body=sl.parts.filter(p=>p.k==="body").map(p=>p.t).join("\n");
     /* fixed grid: kicker row, then the headline box (always two lines tall), then the body */
     y=GRID_TOP;
-    if(kick)n9Tag(ctx,T,kick.replace(/[*_]/g,"").toUpperCase(),X,y);
+    const KU=kick.replace(/[*_]/g,"").toUpperCase(),cm=KU.match(/^THE CLAIM\s*·\s*(FALSE|MISLEADING|MISSING CONTEXT|NO EVIDENCE)\s*$/);
+    if(kick)n9Tag(ctx,T,cm?"THE CLAIM":KU,X,y,cm?T.muted:null);
     const HY=HEAD_TOP,hx=X; /* every headline starts at the same point, the REVEAL too */
     const hs=N9_HEAD.size,hp=hs*0.12;ctx.font=headFont(hs);
+    if(cm){
+      /* the claim is shown once, in muted type, with the verdict ringed beside the text: never the claim alone */
+      const hl=n9Wrap(ctx,tokenize(headText(sl)),i=>n9Right(HY+i*hs*HEAD_LH,hs*1.1)-hx,hp).slice(0,2);
+      drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,hx,HY,HEAD_LH,Object.assign({},col,{text:T.muted}));
+      const BY=HY+2*hs*HEAD_LH+Math.round(hs*0.3);
+      const exH=n9Exhibit(ctx,T,notes,idx,false,true),exTop=exH?BOT-exH-40:BOT;
+      const d=Math.max(200,Math.min(300,exTop-BY));n9VerdictRing(ctx,T,cm[1],X,BY,d);
+      if(body){const bx=X+d+40,bw=TTN.railRight-bx,bf=s=>`500 ${s}px ${SGF}`,bt=tokenize(body);let bs=46,bl;
+        for(;bs>=32;bs-=2){ctx.font=bf(bs);bl=n9Wrap(ctx,bt,()=>bw,bs*0.12);if((bl.length+paraLines(bl))*bs*BODY_LH<=d)break}
+        const bh=(bl.length+paraLines(bl))*bs*BODY_LH;drawLines(ctx,{s:bs,lines:bl,pad:bs*0.12},bf,bx,BY+Math.max(0,(d-bh)/2),BODY_LH,col)}
+      if(exH)n9Exhibit(ctx,T,notes,idx,false,false,BOT-exH);
+      n9Foot(ctx,T);return c;
+    }
     const hl=n9Wrap(ctx,tokenize(headText(sl)),i=>n9Right(HY+i*hs*HEAD_LH,hs*1.1)-hx,hp).slice(0,2);
     const hh=drawLines(ctx,{s:hs,lines:hl,pad:hp},headFont,hx,HY,HEAD_LH,col);
     const BY=HY+2*hs*HEAD_LH+Math.round(hs*0.38);
@@ -1790,7 +1838,7 @@ function threadPosts(){
   const tag=thTag();
   const posts=[plain(hook.text)+" \u{1F9F5}"+(tag?"\n\n"+tag:"")];
   const so=signoffEl.value.trim();
-  const story=body.concat(rec&&plain(rec.text)?[plain(rec.text)]:[],[(so?so+"\n":"")+numLine()]);
+  const story=body.concat(rec&&plain(rec.text)?[plain(rec.text)]:[],(so?[so]:[]));
   pack(story,"\n\n").forEach(p=>posts.push(p));
   /* Receipts close the thread, in Chicago style with links. */
   if(recLines.length)pack(["Receipts:"].concat(recLines),"\n").forEach(p=>posts.push(p));
@@ -1845,7 +1893,7 @@ function storyFacts(){
 }
 /* ---------- TikTok caption: hard cap 2,000 characters (TikTok allows 2,200; v2 keeps room) ---------- */
 const CAP_LIMIT=2000;
-const SHORTEN_RULES=`Shorten this TikTok caption to at most {N} characters in total. Keep its paragraph layout and line breaks. Keep the first sentence, the "Receipts:" list, the comment question, the sign-off, the File No. or Memo No. and the hashtags exactly as they are. Cut or tighten the context sentences only, keeping the kicker and any "unknown", "denied" or other-side sentence; keep facts and attributions accurate and never add anything. Keep the blank lines between paragraphs. Never use em dashes. Output ONLY the caption.\n\nCaption:\n`;
+const SHORTEN_RULES=`Shorten this TikTok caption to at most {N} characters in total. Keep its paragraph layout and line breaks. Keep the first sentence, the "Receipts:" list, the comment question, the sign-off and the hashtags exactly as they are. Cut or tighten the context sentences only, keeping the kicker and any "unknown", "denied" or other-side sentence; keep facts and attributions accurate and never add anything. Keep the blank lines between paragraphs. Never use em dashes. Output ONLY the caption.\n\nCaption:\n`;
 function fitCaption(t,max){
   if(t.length<=max)return t;
   const blocks=t.split(/\n\s*\n/);
@@ -1894,7 +1942,7 @@ function buildCaptionLines(){
   const rec=sl.find(s=>s.type==="receipts");
   const body=sl.filter(s=>s.type==="body").map(s=>plain(s.text));
   const out=[];
-  out.push((postType()==="memo"?"Spot the trick: ":"")+plain(hook.text)+" 📁");
+  out.push((postType()==="memo"?"Spot the trick: ":"")+plain(hook.text)+" 🔎");
   out.push("");
   /* Longer read: build the body from the Facts box when a story was sent over; otherwise from the slides. */
   const facts=storyFacts();
@@ -1907,11 +1955,10 @@ function buildCaptionLines(){
     if(reveal) out.push(plain(reveal.text));
     if(body.length>1) out.push(body[body.length-1]);
   }
-  out.push("");out.push(`Which public document should ${typeWord()} ${nextNumber(filenoEl.value.trim()||"000")} read?`);
+  out.push("");out.push("Seen a claim you want Rhea to check? Drop it below.");
   if(rec&&rec.items.length){out.push("");out.push("Receipts:");rec.items.forEach(i=>out.push("• "+plain(i)));}
   out.push("");
   if(signoffEl.value.trim()) out.push(signoffEl.value.trim());
-  out.push(numLine());
   out.push("");
   out.push(brandTags().slice(0,5).join(" "));
   return out.join("\n");
@@ -1925,18 +1972,17 @@ Rules:
 - Name who spread the claim only when it is a person or organisation with real reach; never a private individual or ordinary user.
 - The sass lands on the claim and the trick, never on people who believed it, and never on the viewer.
 - One standard for everyone: the evidence, never the side.
-- Layout: short paragraphs separated by one blank line. One idea per paragraph, 1 to 3 sentences each. Follow the order below; each numbered item starts its own paragraph (items 7 and 8 share one).
+- Layout: short paragraphs separated by one blank line. One idea per paragraph, 1 to 3 sentences each. Follow the order below; each numbered item starts its own paragraph.
 
 IN THIS ORDER:
-1. First sentence: 100 characters or fewer, the true fact with the subject and the country, ends with 📁. No question marks, no fake urgency. It must be accurate even if it is the only thing someone sees.
+1. First sentence: 100 characters or fewer, the true fact with the subject and the country, ends with 🔎. No question marks, no fake urgency. It must be accurate even if it is the only thing someone sees.
 2. The claim and its verdict: what is being said, by whom (if they have reach), and why it is false or misleading. Repeat the subject's key words on purpose: TikTok search reads captions.
 3. The trick, named in plain words, and how to spot it next time, in one or two sentences.
 4. The other side's response if the material has one, fairly stated.
 5. One comment question that invites people to check or to share a claim they've seen (e.g. "Seen a claim you want Rhea to check? Drop it below."). Never about a group of people.
 6. "Receipts:" on its own line, then each source on its own line starting with "• ", as a Chicago-style bibliography entry (18th edition) without URL and without underscores. Use only authors, titles and dates stated in the material.
 7. This exact sign-off: {SIGNOFF}
-8. Then: {NUMLINE}
-9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject and one is #factcheck. No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
+8. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject and one is #factcheck. No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
 
 - Voice: active verbs, short sentences, attribution on every claim. No exclamation marks.
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
