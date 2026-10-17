@@ -119,7 +119,7 @@ if (cmd === "numbers") {
   if (p.type === "memo") reasons.push("Memo (opinion)");
   const comedy = ck.comedy && typeof ck.comedy === "object" ? ck.comedy : null;
   const flat = !!(comedy && Number(comedy.score) > 0 && Number(comedy.score) < 3);
-  const ok = ck.verdict === "PASS" && !flags.length && !issues.length && !flat;
+  const ok = ck.verdict === "PASS" && !flags.length && !issues.length; /* the joke score is shown, never blocks (no joke retry since Oct 17) */
   const now = new Date().toISOString();
   const {execFileSync} = await import("node:child_process");
   const slot = JSON.parse(execFileSync(process.execPath, [path.join(HERE, "slot.mjs"), "--day", opt.date, "--slot", opt.slot], {encoding: "utf8"}));

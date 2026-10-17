@@ -208,7 +208,7 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
 
   <section id="paneApprove" role="tabpanel" aria-labelledby="tabApprove" hidden>
     <div class="qbar">
-      <p class="tag" style="max-width:62ch;margin:0">Each morning the producer turns the best stories into finished posts: a File at noon and a Memo at 7 PM. Read the summary, watch the slides, approve. Nothing posts without your tap.</p>
+      <p class="tag" style="max-width:62ch;margin:0">Each morning the daily run finds one viral claim, checks it against the original record and builds tonight's 7 PM post. Read the summary, watch the slides, approve. Nothing posts without your tap.</p>
       <button class="small" id="pauseBtn" aria-pressed="false">Pause posting</button>
     </div>
     <p class="status" id="pauseNote" aria-live="polite"></p>
@@ -267,7 +267,6 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
       <label for="look" title="Lens (navy) is the account look; Light is kept for one-offs">Look<select id="look">
         <option value="auto">Lens (navy)</option>
         <option value="light">Light</option>
-        <option value="classic">Classic manila</option>
       </select></label>
       <label for="locPlace" class="fb-grow">Location<input type="text" id="locPlace" placeholder="City, region"></label>
       <label for="locCountry">Country<input type="text" id="locCountry" placeholder="Country"></label>
@@ -302,35 +301,37 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
         <textarea id="script" spellcheck="true"></textarea>
         <details>
           <summary>Script format</summary>
-<pre>DEVICE: Bathos drop                 (optional; not shown)
-LOCATION: City, Region / Country    (optional)
-STAMP: LEAKED                       (hook stamp: LEAKED, TOP SECRET,
-                                     CLASSIFIED, EYES ONLY, CONFIDENTIAL)
-HOOK: TOP SECRET: the boring public place.
-SOURCE: Publisher, Mon Year         (prints small)
+<pre>DEVICE: Half a fact                 (the trick; not shown)
+LOCATION: North Carolina, United States
+HOOK:
+## FACT CHECK                        (small header)
+# Your ballot still *counts*         (headline, max 28 characters)
+In North Carolina, a poll worker's note won't cancel it.
+SOURCE: N.C. State Board of Elections
+SAY: Hi, I'm Rhea Lity. ...           (Rhea's line; not printed)
 ---
-A normal slide. One idea each.
-SOURCE: Publisher, Mon Day
+## THE CLAIM · FALSE                 (or MISLEADING, MISSING CONTEXT, NO EVIDENCE)
+# Ballot "disqualified"?
+Who is spreading it, and how.
+SAY: ...
 ---
-REVEAL: The key fact, with a *key word*
-CLASSIFIED LOCATION: the real document or page
+REVEAL:
+## THE TRICK · HALF A FACT
+# The law makes them write
+...
 ---
-(Memos also take:)
-SPIN: "The official quote, word for word"
+## THE RECORD
+# A number, not a *veto*
+...
 ---
-RECORD: The documented fact beside it
+CASE STATUS: True fact. Short. Verdict: false.
 ---
-TAKE: Your view, clearly an opinion
----
-CASE STATUS: Accurate conclusion. Key caveat.
----
-RECEIPTS: Look it up yourself.
+RECEIPTS: Check it yourself.
 - Chicago-style citation, _Title in italics_
 
-The end card (sign-off, next File) is added for you.
+The end card (logo and sign-off) is added for you.
 
-*word*    = emphasis
-||word||  = redaction bar
+*word*    = tangerine highlight (max 2 a slide, 1 on the hook)
 _title_   = italics
 ---       = next slide</pre>
         </details>
@@ -365,10 +366,10 @@ _title_   = italics
       <section class="card">
         <div class="label"><span>4 · Approve</span></div>
         <label class="check"><input type="checkbox" id="c1"> Every claim, stated or implied, matches a source at the same strength</label>
-        <label class="check"><input type="checkbox" id="c2"> Slide 1 and the caption's first line are accurate, and read as satire, on their own</label>
+        <label class="check"><input type="checkbox" id="c2"> Slide 1 and the caption's first line are accurate on their own, and every slide is true if screenshotted alone</label>
         <label class="check"><input type="checkbox" id="c3"> Side-by-side facts share a referent; no unsourced cause, intent or guilt</label>
         <label class="check"><input type="checkbox" id="c4"> Numbers have unit, period and base; quotes are exact; "just" and "now" are true today</label>
-        <label class="check"><input type="checkbox" id="c5"> The other side's response is in, and the joke lands on the powerful</label>
+        <label class="check"><input type="checkbox" id="c5"> The false claim appears once, with its verdict; the sass lands on the claim, never on people who believed it</label>
         <label class="check"><input type="checkbox" id="c6"> Receipts and pinned comment are ready; the caption matches the slides</label>
         <div class="row" id="dashBox" hidden><span class="status err" id="dashMsg"></span><button class="small" id="dashFix">Replace with commas</button></div>
         <div class="approved" id="approved" hidden>Approved. Save and post.</div>
@@ -440,7 +441,7 @@ const $=id=>document.getElementById(id);
    A Mac version replaces only this block (e.g. a local database file,
    an Anthropic API key, a native save dialog). Nothing below it changes.
    ================================================================== */
-const PULL_TRIGGER="trig_011ra6FCrefqeoihApa9RTSz";
+const PULL_TRIGGER="trig_01RWLMBvwpSQ5VanD1uSkN7C"; /* the daily run, in PULL mode */
 const PRODUCE_TRIGGER="trig_01RWLMBvwpSQ5VanD1uSkN7C"; /* morning producer: drafts, checks and builds the day's posts; also handles Fix */
 const PUBLISH_TRIGGER="trig_01Fawa1d2NJ1iG98BJBK2Lfk"; /* publisher: started by Approve (and Pause); builds the video and schedules it */
 const Platform={
@@ -489,8 +490,8 @@ async function initPlatform(){
       json:p=>sample.json(p,{cache:false})
     };
     if(dl)Platform.save=(filename,data)=>dl.save({filename,data});
-    /* Update stories: starts the "Plain Sight story pull" task (a cloud Claude run that reads the feeds and files stories here). */
-    if(mcp)Platform.pull=text=>mcp.callTool("Claude Code Remote","fire_trigger",text?{trigger_id:PULL_TRIGGER,text}:{trigger_id:PULL_TRIGGER});
+    /* Update stories: starts the daily run in PULL mode (finds up to 3 claims and files them here; makes no post). Since October 17, 2026 the separate story pull is gone. */
+    if(mcp)Platform.pull=text=>mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PULL_TRIGGER,text:"PULL"+(text?" "+text:"")});
     if(mcp)Platform.fire=(trigger_id,text)=>mcp.callTool("Claude Code Remote","fire_trigger",text?{trigger_id,text}:{trigger_id});
   } else {
     Platform.db=localDb();
@@ -2437,7 +2438,7 @@ function renderSources(){
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function opml(){
   const rows=state.sources.filter(s=>s.feedUrl&&s.status!=="broken");
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0"><head><title>Plain Sight sources</title></head><body>\n'+
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0"><head><title>Rhea Lity Check sources</title></head><body>\n'+
     rows.map(s=>'  <outline type="rss" text="'+esc(s.name)+'" title="'+esc(s.name)+'" xmlUrl="'+esc(s.feedUrl)+'"/>').join("\n")+"\n</body></opml>\n";
 }
 $("copyOpml").addEventListener("click",e=>copyText(opml(),e.currentTarget,"Copy OPML for an RSS reader"));
@@ -2476,7 +2477,7 @@ $("importFile").addEventListener("change",async e=>{
     for(const coll of ["stories","sources"]){const o=j&&j[coll];if(!o||typeof o!=="object")continue;
       for(const id of Object.keys(o)){if(!/^[A-Za-z0-9_.~:@+-]{1,200}$/.test(id)||typeof o[id]!=="object")continue;await Platform.db.set(coll,id,o[id]);n++}}
     st.className="status";st.textContent="Imported "+n+" records.";
-  }catch(err){st.className="status err";st.textContent="That file couldn't be read as a Plain Sight backup."}
+  }catch(err){st.className="status err";st.textContent="That file couldn't be read as an HQ backup."}
   e.target.value="";
 });
 }

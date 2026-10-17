@@ -6,7 +6,7 @@
     taken.json: array of ISO times of other posts already scheduled or published (Metricool) or approved (queue).
   Prints {scheduledFor, local, reason}.
 
-  Rules (Alex, October 14, 2026): posts at noon and 7 PM Pacific; an unapproved post holds for the next slot.
+  Rules (Alex, October 14, 2026; one post a day at 7 PM Pacific since October 17): an unapproved post holds for the next slot.
   - Its own slot, if that is still at least LEAD minutes away.
   - Approved up to GRACE minutes after its slot: as soon as possible (now + LEAD, rounded up to 5 minutes).
   - Otherwise the next free daily slot.
@@ -59,7 +59,7 @@ if (!pick) {
   const p = localParts(now);
   for (let day = 0; day < 4 && !pick; day++) {
     const base = new Date(Date.UTC(+p.year, +p.month - 1, +p.day + day));
-    for (const [h, mi] of Object.values(SLOTS)) {
+    for (const [h, mi] of [SLOTS.evening]) { /* one post a day at 7 PM since October 17, 2026 */
       const t = at(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), h, mi);
       if (t >= earliest && free(t)) { pick = t; reason = (reason ? reason + "; " : "") + "next free slot"; break; }
     }
