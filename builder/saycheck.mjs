@@ -18,6 +18,7 @@
 import fs from "node:fs";
 import {BANNED, STRENGTHENERS, NUM_WORDS, splitSlides} from "./factdiff.mjs";
 
+const HOST_NAMES = new Set(["Rhea", "Lity", "L", "I'm", "I'll", "I've", "I'd"]);
 export const SAY_RE = /^[\s*_]*SAY[*_]*\s*[:：][*_]*\s*/i;
 export const stripSay = s => String(s || "").replace(/\r/g, "").split("\n").filter(l => !SAY_RE.test(l)).join("\n");
 
@@ -52,6 +53,7 @@ export function sayCheck(before, after) {
     BANNED.forEach(w => { if (has(say, w)) issues.push(`slide ${n}: banned phrase "${w}" in the SAY: line`); });
     /* capitalised words that are not the start of a sentence: names must already be in the script */
     straight(say).replace(/(^|[.!?:]\s+)[A-Z][\w']*/g, "$1").match(/\b[A-Z][a-zA-Z'.-]{2,}\b/g)?.forEach(w => {
+      if (HOST_NAMES.has(w.replace(/'s$/, ""))) return; /* the narrator's own name and catchphrase */
       if (!whole.includes(w.toLowerCase().replace(/'s$/, ""))) issues.push(`slide ${n}: SAY: line names "${w}", which is not in the script`); });
   });
   return {ok: !issues.length, issues, warnings, lines};
