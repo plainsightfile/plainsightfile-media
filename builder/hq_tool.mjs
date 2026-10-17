@@ -111,8 +111,10 @@ if (cmd === "prompts") {
   out(await withHQ(base("file"), page => page.evaluate(cap => { const H = window.PSHQ; return {prompt: H.SHORTEN_RULES.replace("{N}", String(H.CAP_LIMIT - 60)) + cap}; }, cap)));
 } else if (cmd === "lint") {
   const p = readJson(opt.packet);
+  /* read in Node and passed in: the checks below run inside HQ's page, which cannot read files */
+  let BLOCKED = null; try { BLOCKED = JSON.parse(fs.readFileSync(path.join(HERE, "..", "automation", "blocked_sources.json"), "utf8")); } catch (e) {}
   const report = opt.report ? readJson(opt.report) : null;
-  const r = await withHQ(Object.assign(base(p.type, p.fileno), {script: p.script || "", caption: p.caption || ""}), page => page.evaluate(([p]) => { const H = window.PSHQ;
+  const r = await withHQ(Object.assign(base(p.type, p.fileno), {script: p.script || "", caption: p.caption || ""}), page => page.evaluate(([p, BL]) => { const H = window.PSHQ;
     const issues = [], warnings = [];
     const slides = H.parseScript(p.script || "");
     const body = slides.slice(); if (slides.length) slides.push({type: "end", text: "", items: [], notes: []});
@@ -133,30 +135,23 @@ if (cmd === "prompts") {
     if (tm.pre > 32) issues.push(`${Math.round(tm.pre)} s before the receipts (aim for 32 s or less)`);
     if (H.dashes(plainAll)) issues.push("contains an em dash");
     /* Blocked sources (automation/blocked_sources.json): never cited, quoted or mentioned anywhere in a post. */
-    try {
-      const bl = JSON.parse(fs.readFileSync(new URL("../automation/blocked_sources.json", import.meta.url), "utf8"));
-      bl.sources.forEach(src => src.patterns.forEach(re => {
-        if (new RegExp(re, "i").test(plainAll)) issues.push(`uses a blocked source (${src.name}); the owner never uses it`); }));
-    } catch (e) { warnings.push("blocked-sources list could not be read: " + e.message); }
+    if (!BL || !Array.isArray(BL.sources)) issues.push("blocked-sources list could not be read");
+    else BL.sources.forEach(src => src.patterns.forEach(re => {
+      if (new RegExp(re, "i").test(plainAll)) issues.push(`uses a blocked source (${src.name}); the owner never uses it`); }));
     if (/\bwake\s*up\b/i.test(plainAll)) issues.push('uses "WAKE UP" (banned catchphrase)');
     if (/\bfollow\s+the\s+money\b/i.test(plainAll)) issues.push('uses "FOLLOW THE MONEY" (banned catchphrase)');
     /* The other banned phrases belong to live conspiracy movements. Words inside quotation marks are someone else's and may stay. */
     const unquoted = plainAll.replace(/[“"][^”"]*[”"]/g, " ");
     [["sheeple", /\bsheeple\b/i], ["cover-up", /\bcover[\s-]?up\b/i], ["rigged", /\brigged\b/i], ["tinfoil", /\btin[\s-]?foil\b/i]]
       .forEach(([w, re]) => { if (re.test(unquoted)) issues.push(`uses "${w}" (banned phrase) outside a quotation`); });
-    /* Costume words: 2 to 4 across the post, each once. "CLASSIFIED LOCATION:" is a required label, not a costume use. */
-    {
-      const COSTUME = ["TOP SECRET", "CLASSIFIED", "LEAKED", "EYES ONLY", "REDACTED", "THEY DON'T WANT YOU TO KNOW", "WHAT THEY'RE NOT TELLING YOU", "THE DOCUMENTS",
-        "OUR SOURCES", "DO YOUR OWN RESEARCH", "CONNECT THE DOTS", "WHO BENEFITS", "I'M JUST ASKING QUESTIONS"];
-      const sc = String(p.script || "").replace(/^\s*(DEVICE|LOCATION|STAMP)\s*:.*$/gim, "").replace(/[‘’]/g, "'").toUpperCase();
-      const used = COSTUME.map(c => [c, (sc.match(new RegExp(c.replace(/ /g, "\\s+") + (c === "CLASSIFIED" ? "(?!\\s+LOCATION)" : ""), "g")) || []).length]).filter(x => x[1] > 0);
-      used.filter(x => x[1] > 1).forEach(x => issues.push(`costume phrase "${x[0]}" used ${x[1]} times (each at most once)`));
-      if (used.length > 4) issues.push(`${used.length} costume phrases (2 to 4): ${used.map(x => x[0]).join(", ")}`);
-      else if (used.length < 2) warnings.push(`${used.length} costume phrase${used.length === 1 ? "" : "s"} (the guideline is 2 to 4)`);
-    }
-    const hook = body[0] ? body[0].text : "";
-    const stock = ["TOP SECRET", "CLASSIFIED", "DO YOUR OWN RESEARCH", "CONNECT THE DOTS", "WHO BENEFITS"].filter(c => hook.toUpperCase().includes(c));
-    if (stock.length > 1) issues.push("the hook uses more than one stock catchphrase: " + stock.join(", "));
+    /* October 16, 2026: the account goes after misinformation, so it never speaks in the misinformation genre's own scripts.
+       These phrases may appear only inside a quotation (the claim being checked). */
+    [["THEY DON'T WANT YOU TO KNOW", /they\s+don['’]?t\s+want\s+you\s+to\s+know/i], ["WHAT THEY'RE NOT TELLING YOU", /what\s+they['’]?re\s+not\s+telling\s+you/i],
+     ["DO YOUR OWN RESEARCH", /do\s+your\s+own\s+research/i], ["CONNECT THE DOTS", /connect\s+the\s+dots/i], ["JUST ASKING QUESTIONS", /just\s+asking\s+questions/i]]
+      .forEach(([w, re]) => { if (re.test(unquoted)) issues.push(`uses "${w}" outside a quotation (the account never speaks in the misinformation genre's scripts)`); });
+    /* the false claim is shown once, on a slide whose small header carries the verdict */
+    if (p.type !== "memo" && body.some(s => s.parts) && !/^\s*##\s*THE CLAIM\s*[·:\-]\s*(FALSE|MISLEADING|MISSING CONTEXT|NO EVIDENCE)\b/im.test(String(p.script || "")))
+      warnings.push('no "## THE CLAIM · <verdict>" slide (the claim should appear once, labelled with its verdict)');
     const cap = String(p.caption || "");
     const tags = cap.match(/#[\wÀ-ɏ]+/g) || [];
     const banned = tags.filter(t => H.BANNED_TAGS.includes(t.toLowerCase()));
@@ -168,13 +163,13 @@ if (cmd === "prompts") {
     if (cap.length < 500) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
     const num = (p.type === "memo" ? "Memo" : "File") + " No. " + p.fileno;
     if (!cap.includes(num)) issues.push(`caption does not include "${num}"`);
-    if (p.type === "memo" && !/^Opinion:/.test(cap.trim())) issues.push('a Memo caption must begin with "Opinion: "');
+    if (p.type === "memo" && !/^Spot the trick:/i.test(cap.trim())) issues.push('a Spot the Trick caption must begin with "Spot the trick: "');
     if (!/^\d{3,}$/.test(String(p.fileno || ""))) issues.push("number must be 3 or more digits");
     const pin = String(p.pinned || "");
     if (!pin) issues.push("no pinned comment");
     if (pin.length > 150) issues.push(`pinned comment is ${pin.length} characters (max 150)`);
     return {issues, warnings, stats: {slides: slides.length, secs_before_receipts: +tm.pre.toFixed(1), secs_total: +tm.total.toFixed(1), caption_chars: cap.length, pinned_chars: pin.length, hashtags: tags.length, types}};
-  }, [p]));
+  }, [p, BLOCKED]));
   if (report) {
     if (String(report.fileno) !== String(p.fileno)) r.issues.push(`video was built as No. ${report.fileno}, packet says ${p.fileno}`);
     if (report.blocked_requests && report.blocked_requests.length) r.warnings.push("render tried to reach: " + report.blocked_requests.join(", "));

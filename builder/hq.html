@@ -261,7 +261,7 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
     <div class="filebar">
       <label for="postType">Type<select id="postType">
         <option value="file">File</option>
-        <option value="memo">Memo (opinion)</option>
+        <option value="memo">Spot the Trick (Memo)</option>
       </select></label>
       <label for="fileno" class="fb-num"><span id="numLabel">File No.</span><input type="text" id="fileno" value="001"></label>
       <label for="look" title="Alternating: odd file numbers dark, even light">Look<select id="look">
@@ -647,97 +647,92 @@ RECEIPTS: This one's headed to court. Watch it.
 - Termination challenge filed in the Swedish Labour Court`
 };
 
-const PROMPT_RULES=`You write the slides for a TikTok slideshow video from "Hidden in Plain Sight" (@plainsightfile). The account presents TRUE, sourced information styled like a "they don't want you to know" conspiracy post. The punchline is always that the "secret" was public all along. Two audiences: conspiracy-minded viewers must come away with accurate information; ordinary viewers must get the joke and follow for the satire.
+const PROMPT_RULES=`You write the slides for a short TikTok fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Dacted, a quick, cheeky British narrator. The account goes after misinformation: a false or misleading claim that is spreading, checked against the record that was hiding in plain sight all along. Two goals: someone who half-believed the claim leaves with the true picture and without feeling mocked; everyone else enjoys watching it get taken apart. The account never sows distrust: it shows that the truth is checkable, and how to check it.
 
 FACTS (non-negotiable):
 - Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
-- Literal truth test: delete every stock satire phrase from a slide and read what is left. Every claim, including implied ones (who did what, to whom, when, how much, why), must match a source sentence at the same strength. If it fails, rewrite it. Never patch it with "allegedly".
-- Screenshot test: every slide, read alone, must be accurate and must not read as a sincere conspiracy post. Keep each claim, its actor and its limiting qualifier ("estimate", "not a fraud figure", "alleged by") on the same slide.
-- Same referent: facts placed side by side refer to the same thing (same deaths, document, period, place). A quote sits only beside the fact it was actually about.
-- Cause and intent: use "because", "caused", "led to", "to hide", "covered up" or "knew" only when a source says so. Otherwise use sequence words ("then", "weeks later").
-- Allegation level: state wrongdoing as fact only with a court ruling, official finding or admission. Otherwise name who alleges it or who is investigating, and stop there.
-- Numbers carry their unit, period and comparison base. Never merge figures from different years or measures in one sentence. Label currencies (C$, US$, £, €).
+- Literal truth test: every claim on every slide, including implied ones (who did what, to whom, when, how much, why), must match a source sentence at the same strength. If it fails, rewrite it. Never patch it with "allegedly".
+- Screenshot test: every slide, read alone, must be accurate. The false claim appears on ONE slide only, quoted, attributed and labelled with its verdict, so a screenshot of that slide still tells the truth.
+- The verdict is the one the evidence supports, in these words: FALSE (a primary source, official data, a ruling, or a fact-check that shows its evidence establishes it is false), MISLEADING (true parts arranged to give a false picture; say what is missing), MISSING CONTEXT, or NO EVIDENCE (nothing supports it; do not call it false). Never upgrade a verdict.
+- Who spread it: quote the claim word for word and name who spread it, where and when, only when that is a politician, official, outlet, company, organisation or account with real reach. Never a private individual or an ordinary user: then say "a viral post" or "posts shared widely" instead.
+- "Lied", "knowingly", "on purpose" or "to deceive" need a finding or admission. Otherwise say the claim is false, not that the person knew.
+- Same referent: facts placed side by side refer to the same thing (same document, period, place, measure).
+- Numbers carry their unit, period and comparison base. Never merge figures from different years or measures. Label currencies (C$, US$, £, €).
 - Quotes are word for word. Paraphrase never goes inside quotation marks.
 - Use "just", "now" or "this week" only if the source dates the event within 7 days of today's date (below).
-- Never state the false or exaggerated version of a claim, not even ironically or as a question.
-- If the material includes the institution's response, one slide gives it in its own words.
-- Health, vaccines, climate, elections, public debt or "elites": the conspiratorial register points only at an official's words or an institution's records, never at the science or the data. State the scientific consensus plainly by slide 2.
-- Aim at powerful institutions, companies and officials. Never mock ordinary people, the people affected, or the viewer. Parody the conspiracy post's style, never the people who read conspiracy posts: no "sheeple", no "tinfoil".
-- Write for an international English-speaking audience: name the country and explain local institutions in a few words (e.g. "Alberta's health agency").
-- Never use em dashes (the long dash). Use a period, comma or colon instead.
+- Health, vaccines, climate and elections: state the scientific consensus or the official result plainly, and point only at the claim and the evidence.
+- One standard for everyone: the test is the evidence, never which side of politics said it.
+- Write for an international English-speaking audience: name the country and explain local institutions in a few words. Never use em dashes (the long dash).
 - BLOCKED SOURCES: never use the Canadian Taxpayers Federation (CTF, taxpayer.com) in any way: not its reports, statements, figures, rankings or "Teddy" waste awards, not as quoted by another outlet, and do not mention it. If a fact only comes from it, leave the fact out; if the story rests on it, drop the story.
 
-SPINE (the account's stance; every accuracy rule still applies): this account is not afraid to call nonsense nonsense. When a politician, official, influencer, outlet, company or institution with real reach pushes a claim the sources show is false, or a view the sources show does documented harm, say so plainly in the account's own voice after the puncture: "That's false." "Not disputed. False." "Made up. Page 4 says otherwise." Never soften a clear falsehood into "questions remain".
-- Quote the claim and name who made it and when, then the record that answers it, on the same slide or the next. Calling a claim false, wrong, made up or nonsense needs a source that establishes it (official record, data, a ruling, or a fact-check that shows its evidence). Calling something dangerous or harmful needs a source that documents the harm. "Lied" or "knowingly" still need a finding or admission: say the claim is false, not that the person knew.
-- The contempt is for the claim and for the people with power or reach who push it. Blunt words about a claim or someone's public conduct are fine ("nonsense", "a made-up number", "a stupid claim"). Never insult anyone's identity, appearance, health or personal traits; never target private individuals or ordinary users; never mock the people who were misled or harmed, or the viewer.
-- One standard for everyone: the test is the evidence, never which side said it.
+HOW TO DEBUNK (this order is how corrections stick; follow it exactly):
+- Slide 1, HOOK: lead with the TRUE fact, never the myth. Readable in 3 seconds, names the subject and the country so viewers know what is being checked. The small header is "FACT CHECK". E.g. headline "# Canada didn't ban it" then "A viral post says it did. Here's what the law actually says."
+- Slide 2, the claim: the small header is "THE CLAIM · " plus the verdict (e.g. "## THE CLAIM · FALSE"). The headline quotes the claim's core in a few words, in quotation marks; the text says who spread it and where (see FACTS). This is the ONLY slide where the false claim appears. Last line: "SOURCE: " plus where the claim was posted or said, Mon Day.
+- Slide 3, REVEAL: what the record actually shows and how the claim misleads: what was cut, misread, made up, recycled or taken out of context. The small header is "THE TRICK" or "THE RECORD". Last line: "SOURCE: " plus the primary record or fact-check, Mon Day.
+- Optional slide 4: one more piece of evidence, or the other side's response in its own words if the material has one. Last line: "SOURCE: ...".
+- Then "CASE STATUS: ": the true fact again plus the verdict, one short sentence per finding, 6 to 14 words (e.g. "Not banned. A 2024 rule changed the labels. Verdict: false.").
+- The last slide starts with "RECEIPTS: " followed by a short line (e.g. "Check it yourself."), then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
+- 5 or 6 slides in total. HOOK, the claim slide, REVEAL and evidence slides carry 8 to 20 words each (header, headline and text together); SOURCE lines do not count. The video before RECEIPTS should run 15 to 25 seconds.
+- Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words, only on the number, the verdict word or the one detail that exposes the trick. Never highlight the false claim itself. ||words|| draws a redaction bar and is not a highlight.
 
-SATIRE (this is why anyone follows the account; every accuracy rule above still applies to every word):
-- The joke is a collision of two voices. THE COSTUME: the setup talks like a real "they don't want you to know" post, loud and dramatic: UPPERCASE alarm, "they", "the documents", "leaked", ominous one-line beats ("Hidden.", "Until now."). THE PUNCTURE: the payoff answers in flat, boring, sentence-case public record: the press release, the spreadsheet, page 4 of the annual report. The bigger the costume, the harder the puncture lands. Deadpan belongs to the puncture, never to the costume.
-- Costume words (they mock the genre, not the subject): TOP SECRET, CLASSIFIED, LEAKED, EYES ONLY, REDACTED, THEY DON'T WANT YOU TO KNOW, WHAT THEY'RE NOT TELLING YOU, THE DOCUMENTS, OUR SOURCES, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS, I'M JUST ASKING QUESTIONS. Use 2 to 4 across the post, each at most once, and answer every one with its boring public payoff on the SAME slide (e.g. "LEAKED: the employment figures. Leaked by: the government's own statistics office."). Never WAKE UP, FOLLOW THE MONEY, SHEEPLE, COVER-UP, RIGGED or any phrase that belongs to a live conspiracy movement.
-- The costume mocks the FORM of a conspiracy post and never invents its content: costume words point at the public record, never at an accusation. "LEAKED: the audit. Leaked by: the auditors' own website." is fine; "They hid the audit" is false and never allowed. Alarm words ("SHOCKING", "BOMBSHELL") may describe only how dull the source is, never the subject ("SHOCKING: it's on page 4." yes; "a shocking failure" no).
-- Give most slides a beat: a costume line, then a puncture line. A slide that is only a fact gets a costume line or merges with its neighbour.
-- Pick ONE primary comic device from this toolkit and build the post around it:
-  Bathos drop (huge conspiratorial build, then the dullest possible location) / Two-line ledger (the official's words and the documented fact side by side, no comment) / Minutes of the meeting (the story as an agenda item and its resolution) / The tally (a deadpan scoreboard of two numbers that should not both exist) / Also official (the "official story vs. the truth" trope, except both halves are on the record) / Take them at their word (treat the euphemism as literally true and keep going) / Investigation procedure (detective language for something that took one click) / Redaction reveal (||redacted|| text that turns out to be the publisher) / Understatement (the mildest bureaucratic note in response to a big gap).
-- Add ONE self-aware beat where the account winks at its own genre without adding a fact (e.g. "In fairness, which conspiracy accounts never are:" or "Our sources: their website.").
-- Add a callback: the hook's costume phrase comes back, answered, in CASE STATUS or the last body slide.
-- Punchlines are short. Cut every word that serves neither the setup nor the puncture. Numbers and quotes still sit side by side without comment: the comedy comes from the framing, not from adjectives.
-- Before you finish, read each slide as a stranger scrolling past. Would they smile? If not, make the costume bigger or the puncture flatter.
-- Any "classified location", "hidden in" or page reference must be literally true and from the material. If the source gives no page, name the document instead.
+TONE (this is why anyone watches; every accuracy rule above still applies):
+- The sass is aimed at the claim and the trick, never at the people who believed it, and never at the viewer: someone who believed it should feel smart for checking, not stupid. No "sheeple", no "tinfoil", no "wake up".
+- Deadpan wit: the boring true answer, understatement ("Shocking, I know: it's in the law."), and naming the trick plainly. One self-aware beat is welcome.
+- Blunt about claims and about people with reach who push them ("a made-up number", "that's false"); never insult identity, appearance, health or personal traits.
+- Never use the misinformation genre's own scripts in the account's voice: no "they don't want you to know", "what they're not telling you", "do your own research", "connect the dots" or "just asking questions", except inside the quoted claim. Point viewers to the record instead ("Check it yourself: the law is on canada.ca").
+- Read each slide as a stranger scrolling past. Would they keep watching? If not, make the true fact land faster and the line shorter.
 
-STRUCTURE (6 to 8 slides in total, including CASE STATUS and RECEIPTS. REVEAL and body slides carry 12 to 22 words, one idea each; CASE STATUS carries 8 to 16; SOURCE and CLASSIFIED LOCATION lines print as exhibit tags and do not count. If a slide falls short, add the qualifier, the actor or the date from the material, never filler. The video before RECEIPTS should run 22 to 32 seconds at 4 words per second plus half a second per slide):
-- Slide 1, HOOK: 8 to 14 words, readable in 2 seconds, names the institution and the country. It contains BOTH halves of the joke: an UPPERCASE costume setup that genuinely sounds like a conspiracy post, and its boring public payoff in sentence case (e.g. "LEAKED: the EU budget audit. Leaked by: the EU, in a press release." or "THEY SAID ONLY ONE YEAR BEAT TODAY. The official spreadsheet says *two*."). If the hook would still work as a sincere conspiracy post with the payoff deleted, rewrite it. It sets up a say-vs-record gap or a specific number. Last line of the hook slide: "SOURCE: Publisher or document, Mon Year".
-- Slide 2 states the stakes, or the question the REVEAL answers.
-- The REVEAL slide lands by slide 3 at the latest. Its last line: "CLASSIFIED LOCATION: " plus the real document or page.
-- Every other fact slide ends with a short line "SOURCE: Publisher, Mon Day" naming where that fact comes from.
-- Where the material says where the record is published, include one "Do your own research:" beat pointing there.
-- The second-to-last slide starts with "CASE STATUS: " and states the accurate conclusion and its key caveat in flat words, one short sentence per finding, 8 to 16 words; it may carry the callback (e.g. "Leak source: the EU. Accounts clean. Spending adverse, seventh year. Not fraud.").
-- The last slide starts with "RECEIPTS: " followed by a short line, then 2 or 3 lines each starting with "- " citing the most primary sources in the material.
-- Highlight with *asterisks*: at most 2 highlights per slide (1 on the HOOK), each 1 to 3 words. Highlight only what the eye must land on: the number, the contradiction, or the one quoted word that carries the joke. Never a whole clause or a source name. A limiting qualifier ("not fraud", "estimate") stays on the same slide in full-size type whether or not it is highlighted. A slide may have no highlight. ||words|| draws a redaction bar and is not a highlight.
-
-LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the verdict (e.g. "## FACT CHECK", "## THE CLAIM · FALSE", "## THE TRICK", "## THE RECORD"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY this, nothing else):
-- Line 1: "DEVICE: " plus the name of the device you used.
-- Line 2: "LOCATION: City, Region / Country" for where the story happened (country only, or a region like European Union, if there is no single city). Use only places stated in the material.
-- Line 3: "STAMP: " plus one of LEAKED, TOP SECRET, CLASSIFIED, EYES ONLY or CONFIDENTIAL. It prints as a rubber stamp on the hook with the footnote "*PUBLIC RECORD", so pick the one that fits the hook's joke.
-- Then the slides, labelled as above, separated by a line containing only ---
-- Format each receipt as a Chicago-style bibliography entry (18th edition), without the URL. Report: Last, First, and First Last. _Title of Report_. Publisher, Month Day, Year. News article: Last, First. "Headline in Title Case." _Publication_, Month Day, Year. Press release: Organization. "Title." Press release, Month Day, Year. Wrap italic titles in _underscores_. Use only authors, titles and dates stated in the material; if an author is not given, start with the title or the organization. Never invent a detail. Prefer the primary document; a news article with loaded headline wording cannot be the only receipt for a contested number.
+- Line 1: "DEVICE: " plus the misinformation technique this post exposes (e.g. Cherry-picking, Old photo, Fake quote, Cropped clip, Misleading chart, Fake expert, Made-up number, Out of context).
+- Line 2: "LOCATION: City, Region / Country" for where the claim is about (country only, or a region like European Union, if there is no single city). Use only places stated in the material.
+- Then the slides, labelled as above (the claim slide and any evidence slide carry no label), separated by a line containing only ---
+- Format each receipt as a Chicago-style bibliography entry (18th edition), without the URL. Report: Last, First, and First Last. _Title of Report_. Publisher, Month Day, Year. News article or fact-check: Last, First. "Headline in Title Case." _Publication_, Month Day, Year. Press release: Organization. "Title." Press release, Month Day, Year. Wrap italic titles in _underscores_. Use only authors, titles and dates stated in the material; if an author is not given, start with the title or the organization. Never invent a detail. Prefer the primary document (the law, the data, the original full video or quote) over a report about it.
 
 Today's date: {TODAY}
 
 Source material:
 `;
 
-const MEMO_RULES=`You write MEMO slides for a TikTok slideshow video from "Hidden in Plain Sight" (@plainsightfile), an account known for TRUE, sourced Files styled like "they don't want you to know" posts. A memo is the account's COMMENTARY: a clearly labelled opinion, dry and sharp, that informed viewers enjoy and conspiracy-minded viewers still come away better informed from.
+const MEMO_RULES=`You write a "Spot the Trick" episode for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Dacted, a quick, cheeky British narrator, that goes after misinformation. Each episode teaches ONE manipulation technique so viewers can spot it themselves next time (researchers call this prebunking: learning the trick protects people against claims they haven't seen yet). It is short, playful and a little bit of a game.
 
-Rules:
-- It is opinion, but every FACT it uses must come from the source material below and be attributable. Never invent numbers, names, dates, quotes or sources.
-- Facts follow the account's integrity rules: every claim, including implied ones, matches a source sentence at the same strength; each slide read alone is accurate and does not read as a sincere conspiracy post; side-by-side facts refer to the same thing; no cause, intent or guilt unless a source states it; quotes are word for word; numbers carry unit, period and base; never state the false version of a claim, even ironically or as a question.
-- Opinion can be sharp: comment freely on true, stated facts about public matters. Punch up at institutions, officials, corporations and anyone with reach who pushes a false or harmful claim. Never mock ordinary people, victims or the viewer, and never insult identity, appearance or personal traits.
-- Elections and referendums: a Memo may take a side on a current vote, including how the account would vote, stated plainly as the account's view. Give the other side's strongest argument fairly from the material, use the ballot's own wording for the options, and never misstate how, when or where to vote.
-- Spine: a Memo is where the account calls it. If the sources show a claim is false, the TAKE says so plainly ("That's false. Not 'contested'. False."); if they document harm, say what the harm is. Name who pushed it and quote them. Calling a claim false needs a source that establishes it; "lied" or "knowingly" still need a finding or admission. One standard for everyone: the evidence, never the side.
-- Be fair: if the material includes the other side's explanation, acknowledge it.
-- Health, vaccines, climate, elections, public debt or "elites": aim only at an official's words or an institution's records, never at the science or the data.
-- 5 to 8 slides in total, including CASE STATUS and RECEIPTS. Body slides 12 to 22 words, one idea each; if a slide falls short, add the qualifier, the actor or the date from the material, never filler. Highlight with *asterisks*: at most 2 per slide (1 on the HOOK), each 1 to 3 words, only on the number, the contradiction or the one quoted word that carries the point; never a whole clause or the opinion itself.
-- Satire voice: the setup wears the conspiracy-post COSTUME (loud, UPPERCASE, "they", "leaked", "the documents") and the public record PUNCTURES it in flat sentence case, on the same slide. Costume words: TOP SECRET, CLASSIFIED, LEAKED, EYES ONLY, REDACTED, THEY DON'T WANT YOU TO KNOW, WHAT THEY'RE NOT TELLING YOU, THE DOCUMENTS, OUR SOURCES, DO YOUR OWN RESEARCH, CONNECT THE DOTS, WHO BENEFITS, I'M JUST ASKING QUESTIONS. Use 2 to 4 across the memo, each once, each answered on its own slide. They point at the public record, never at an accusation ("LEAKED: the figures. Leaked by: the statistics office." yes; "they hid the figures" never). Never WAKE UP, FOLLOW THE MONEY, SHEEPLE, COVER-UP or RIGGED. Facts and quotes stay deadpan; alarm words may describe only how dull the source is.
-- Comedy: most slides get a beat (costume, then puncture). Include one self-aware wink at the genre that adds no fact (e.g. "In fairness, which conspiracy accounts never are:") and a callback to the hook in the TAKE or CASE STATUS. The TAKE is the sharpest line in the memo: short, dry, and following only from facts shown. Read each slide as a stranger scrolling past; if they wouldn't smile, sharpen it.
-- Never use em dashes (the long dash). Use a period, comma or colon instead.
-- Write for an international English-speaking audience: name the country, explain local institutions briefly, label currencies (C$, US$, £, €).
+FACTS (non-negotiable):
+- Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
+- Literal truth test: every claim on every slide, including implied ones (who did what, to whom, when, how much, why), must match a source sentence at the same strength. If it fails, rewrite it. Never patch it with "allegedly".
+- Screenshot test: every slide, read alone, must be accurate. The false claim appears on ONE slide only, quoted, attributed and labelled with its verdict, so a screenshot of that slide still tells the truth.
+- The verdict is the one the evidence supports, in these words: FALSE (a primary source, official data, a ruling, or a fact-check that shows its evidence establishes it is false), MISLEADING (true parts arranged to give a false picture; say what is missing), MISSING CONTEXT, or NO EVIDENCE (nothing supports it; do not call it false). Never upgrade a verdict.
+- Who spread it: quote the claim word for word and name who spread it, where and when, only when that is a politician, official, outlet, company, organisation or account with real reach. Never a private individual or an ordinary user: then say "a viral post" or "posts shared widely" instead.
+- "Lied", "knowingly", "on purpose" or "to deceive" need a finding or admission. Otherwise say the claim is false, not that the person knew.
+- Same referent: facts placed side by side refer to the same thing (same document, period, place, measure).
+- Numbers carry their unit, period and comparison base. Never merge figures from different years or measures. Label currencies (C$, US$, £, €).
+- Quotes are word for word. Paraphrase never goes inside quotation marks.
+- Use "just", "now" or "this week" only if the source dates the event within 7 days of today's date (below).
+- Health, vaccines, climate and elections: state the scientific consensus or the official result plainly, and point only at the claim and the evidence.
+- One standard for everyone: the test is the evidence, never which side of politics said it.
+- Write for an international English-speaking audience: name the country and explain local institutions in a few words. Never use em dashes (the long dash).
 - BLOCKED SOURCES: never use the Canadian Taxpayers Federation (CTF, taxpayer.com) in any way: not its reports, statements, figures, rankings or "Teddy" waste awards, not as quoted by another outlet, and do not mention it. If a fact only comes from it, leave the fact out; if the story rests on it, drop the story.
 
-LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the costume word (e.g. "## TOP SECRET", "## THE CATCH", "## EU SPENDING, 2025", "## THE COMMISSION'S ANSWER"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Costume words go in the ## header and the boring public answer goes in the headline, so "LEAKED: the figures" becomes "## LEAKED" then "# The figures". Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
+- The example: either a real, current or recurring claim from the material (every FACTS rule applies, and it is quoted and labelled with its verdict on one slide only), or a harmless example made up for the lesson. A made-up example must be obviously fictional (an invented product, town or company, e.g. "Zippo-Cola" or "the town of Muddleford"), must say "Made-up example" on its slide, and must never resemble a real claim about a real person, group or institution.
+
+STRUCTURE (5 or 6 slides; 8 to 20 words each, header, headline and text together; 15 to 25 seconds before RECEIPTS):
+- Slide 1, HOOK: the game. The small header is "SPOT THE TRICK". Show or describe the example and ask the viewer to find the trick (e.g. headline "# Crime up 50%?" then "This chart is technically true. Spot the trick before slide 3.").
+- Slide 2: a hint, or the example in full. Small header "THE EXAMPLE" (with "· MADE UP" when it is invented).
+- Slide 3, REVEAL: the trick named in plain words and shown on the example (e.g. "## THE TRICK" "# The chart starts at 90" "So a small change looks huge.").
+- Slide 4: how to spot it next time, one test the viewer can use in five seconds (e.g. "## YOUR DEFENCE" "# Check where the axis starts").
+- Then "CASE STATUS: " with the trick and the defence in two short sentences (e.g. "Trick: a chopped axis. Defence: check where it starts.").
+- The last slide starts with "RECEIPTS: " then 1 to 3 lines starting with "- ": the source for a real example, and/or a source that explains the technique, if the material has one.
+- Highlights: at most 2 per slide (1 on the HOOK), 1 to 3 words each, on the trick or the defence.
+
+TONE: playful, quick, never smug. The viewer is a fellow detective, not a target. Sass at the trick and at people with reach who use it; never at people who fell for it. No "sheeple", "wake up" or "do your own research".
+
+LAYOUT (every slide except CASE STATUS and RECEIPTS): build the slide from a header, a headline and text, never from "Label: text" colons. Line 1, "## " plus a SMALL HEADER of 1 to 4 words: what the slide is about or the verdict (e.g. "## FACT CHECK", "## THE CLAIM · FALSE", "## THE TRICK", "## THE RECORD"). Line 2, "# " plus the HEADLINE: the one thing the eye must land on, 2 to 6 words and at most 28 characters (it prints in capitals, in two lines at most, at the same size on every slide), a number, a quote or a plain claim, usually carrying the highlight (e.g. "# *3.8%* broke the rules"). Exactly one "# " line per slide. Then 1 or 2 short lines of TEXT in plain sentences: the qualifier, the actor, the date, the puncture (e.g. "That's with the recovery fund set aside. The limit is *2%*."). Write no colons in headers, headlines or text except inside a quotation. Word counts include the header, headline and text. The SOURCE and CLASSIFIED LOCATION lines still come last. CASE STATUS stays one short sentence per finding, without colons.
 
 Output format (output ONLY the script, nothing else):
-- Line 1: "DEVICE: Spin and record" (or the name of the toolkit device you used instead).
-- Line 2: "LOCATION: City, Region / Country" if the story has a place (omit the line if not).
-- Line 3: "STAMP: " plus one of LEAKED, TOP SECRET, CLASSIFIED, EYES ONLY or CONFIDENTIAL (printed as a rubber stamp on the hook with the footnote "*PUBLIC RECORD").
-- Separate slides with a line containing only ---
-- First slide starts with "HOOK: ": 8 to 14 words, names the institution, contains both the costume setup and its boring public payoff (e.g. "THEY SAID ONLY ONE YEAR BEAT TODAY. The official spreadsheet says *two*."), and works as a screenshot on its own. Last line of the hook slide: "SOURCE: Publisher or document, Mon Year".
-- The core device: one or two pairs of a slide starting "SPIN: " (an official's exact words, in quotation marks, with who said it) followed by a slide starting "RECORD: " (a documented fact from the material that sits beside it). A slide starting "TRANSLATION: " is allowed only to put jargon into plain English, never to guess at motive or intent.
-- Then one slide starting "TAKE: " with the account's view in one or two sentences. It must follow from facts already shown and add no new facts.
-- Then one slide starting "CASE STATUS: " with the verdict in five words or fewer, in bureaucratic register (e.g. "Open. Embarrassingly well documented.").
-- The last slide starts with "RECEIPTS: " then 1 to 3 lines starting with "- ", Chicago-style bibliography entries (18th edition) without URLs, italic titles in _underscores_, using only authors, titles and dates stated in the material.
+- Line 1: "DEVICE: " plus the technique (e.g. Chopped axis, Cherry-picking, Fake expert, Emotional bait, False choice, Old photo, Fake quote).
+- Line 2: "LOCATION: City, Region / Country" only if a real example has a place (omit the line if not).
+- Then the slides, labelled as above (unlabelled slides carry no label), separated by a line containing only ---
+- Format each receipt as a Chicago-style bibliography entry (18th edition), without the URL. Report: Last, First, and First Last. _Title of Report_. Publisher, Month Day, Year. News article or fact-check: Last, First. "Headline in Title Case." _Publication_, Month Day, Year. Press release: Organization. "Title." Press release, Month Day, Year. Wrap italic titles in _underscores_. Use only authors, titles and dates stated in the material; if an author is not given, start with the title or the organization. Never invent a detail. Prefer the primary document (the law, the data, the original full video or quote) over a report about it.
 
 Today's date: {TODAY}
 
@@ -949,7 +944,7 @@ function renderSlide(sl,idx,total,bg){
   if(sl.type==="hook"){
     if(bg)ctx.drawImage(INK_TEX,0,0);
     header(ctx,PAPER_DIM,PAPER_DIM,idx,total);
-    stamp(ctx,postType()==="memo"?"OPINION":"HIDDEN",postType()==="memo"?265:250,300,-7,90,RED,idx+11);
+    stamp(ctx,postType()==="memo"?"THE TRICK":"CHECKED",postType()==="memo"?265:250,300,-7,90,RED,idx+11);
     const f=dispFont(900), t2=tokenize(sl.text.toUpperCase());
     const res=fit(ctx,t2,f,900,700,0.98,190,60);
     const h=res.lines.length*res.s*0.98;
@@ -1108,7 +1103,7 @@ function renderSignal(sl,idx,total,bg){
   sigMeta(ctx,T,idx,total,sl);
   const X=96,MAXW=888,toks=tokenize(sl.text);
   const notes=(sl.notes||[]).slice();
-  if(sl.type==="hook")notes.push({label:postType()==="memo"?"OPINION.":"SATIRE.",text:"ALL SOURCED."});
+  if(sl.type==="hook")notes.push({label:postType()==="memo"?"SPOT THE TRICK.":"FACT CHECK.",text:"ALL SOURCED."});
   const np=sl.type==="receipts"||sl.type==="end"?null:prepNotes(ctx,notes);
   const lim=b=>Math.min(b,np?np.top-28:b); /* lowest the headline type may reach */
   drawNotes(ctx,T,np);
@@ -1121,7 +1116,7 @@ function renderSignal(sl,idx,total,bg){
     ctx.font=`400 40px ${JBM}`;spaced(ctx,"1px");ctx.fillStyle=T.fg;ctx.fillText(E.follow,X,y+104);spaced(ctx,"0px");
     sigFoot(ctx,T,idx,total,false);
   } else if(sl.type==="hook"){
-    let y=172;y+=sigTag(ctx,T,postType()==="memo"?"STATUS: OPINION":"STATUS: HIDDEN",X,y)+30;
+    let y=172;y+=sigTag(ctx,T,postType()==="memo"?"SPOT THE TRICK":"FACT CHECK",X,y)+30;
     const lh=sigLoc(ctx,T,X,y);if(lh)y+=lh+34;else y+=10;
     const f=s=>`700 ${s}px ${SGF}`;const res=fit(ctx,toks,f,MAXW,lim(H-200)-y,1.05,124,56);
     drawLines(ctx,res,f,X,y,1.05,col);
@@ -1384,8 +1379,8 @@ function renderSignal916(sl,idx,total){
   const T=theme(),col=n9Cols(T);
   signalBg(ctx,TTN.w,TTN.h,T);n9Band(ctx,T);n9Meta(ctx,T,idx,total,sl);
   const X=TTN.left,TOP=N9.top,BOT=N9.exBottom;
-  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:postType()==="memo"?"OPINION.":"SATIRE.",text:"ALL SOURCED."});
-  const TAGS={hook:postType()==="memo"?"OPINION":null,status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
+  const notes=(sl.notes||[]).slice();if(sl.type==="hook")notes.push({label:postType()==="memo"?"SPOT THE TRICK.":"FACT CHECK.",text:"ALL SOURCED."});
+  const TAGS={hook:postType()==="memo"?"SPOT THE TRICK":null,status:"CASE STATUS",record:"THE RECORD",spin:"THE SPIN",translation:"TRANSLATION",take:"THE TAKE"};
   const tag=TAGS[sl.type]||null;
   let y=TOP+4;
   /* hook stamp: beside the status and location rows when they leave room on the right, otherwise in its own row */
@@ -1563,7 +1558,7 @@ const TYPE_NAME={hook:"Hook",body:"Slide",reveal:"Reveal",receipts:"Receipts",sp
 /* Pacing (prototype): 3 words per second plus 1 second per slide, plus 0.5 s when the slide carries an exhibit
    (SOURCE / CLASSIFIED LOCATION, or the hook's SATIRE label). Only tokens with a letter or digit count as words,
    so a "." left behind by *emphasis*. is not a word. Every timed slide holds 3 to 8 seconds (hook at least 4). */
-const WORDS={hook:[8,14],body:[12,22],reveal:[12,22],status:[8,16],record:[12,22],spin:[8,22],translation:[8,22],take:[12,26]};
+const WORDS={hook:[8,16],body:[8,20],reveal:[8,20],status:[6,14],record:[8,20],spin:[8,20],translation:[8,20],take:[8,20]}; /* October 16, 2026: short fact-check format, 15 to 25 s */
 function wordCount(t){return String(t).replace(/[*|_]/g," ").split(/\s+/).filter(w=>/[\p{L}\p{N}]/u.test(w)).length}
 function slideSecs(sl){
   if(sl.type==="receipts")return 4;if(sl.type==="end")return 3;
@@ -1895,7 +1890,7 @@ function buildCaptionLines(){
   const rec=sl.find(s=>s.type==="receipts");
   const body=sl.filter(s=>s.type==="body").map(s=>plain(s.text));
   const out=[];
-  out.push((postType()==="memo"?"Opinion: ":"")+plain(hook.text)+" 📁");
+  out.push((postType()==="memo"?"Spot the trick: ":"")+plain(hook.text)+" 📁");
   out.push("");
   /* Longer read: build the body from the Facts box when a story was sent over; otherwise from the slides. */
   const facts=storyFacts();
@@ -1917,39 +1912,38 @@ function buildCaptionLines(){
   out.push(brandTags().slice(0,5).join(" "));
   return out.join("\n");
 }
-const CAPTION_RULES=`Write the TikTok caption for this slideshow video. The account presents TRUE, verifiable information as satire of "they don't want you to know" conspiracy posts: the dramatic secret is always something that was public all along. The caption reads like a conspiracy-post caption that keeps tripping over the public record: the costume voice ("LEAKED", "they", "the documents") sets something up, and a sourced fact punctures it, in the same sentence or the next. Ordinary viewers should want to keep reading; conspiracy-minded viewers should come away with accurate information.
+const CAPTION_RULES=`Write the TikTok caption for this short fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Dacted. The account goes after misinformation: it checks a false or misleading claim against the record, with dry wit, and shows viewers how to check things themselves. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY facts in the slide script and source material. Never invent numbers, names, dates, quotes or sources.
-- Every claim, stated or implied, must pass the literal truth test: it matches a source sentence at the same strength. Side-by-side facts refer to the same thing. No cause, intent or guilt unless a source states it. Numbers carry unit, period and base. Quotes are word for word, with who said them and when.
-- If something is an allegation, say who alleges it and include the other side's response.
-- Aim the irony at powerful institutions, companies and officials, never at ordinary people, the people affected, or the viewer.
-- Never state the false or exaggerated version of a claim, not even ironically or as a question.
-- Layout: short paragraphs separated by one blank line, so it's easy to read on a phone. One idea per paragraph, 1 to 3 sentences each. Follow the order below; each numbered item starts its own paragraph (items 7 and 8 share one).
+- Lead with the TRUE fact. Mention the false claim at most once, quoted, attributed and labelled with its verdict (false, misleading, missing context, no evidence). Never state it as true, not even ironically or as a question.
+- Every claim, stated or implied, matches a source sentence at the same strength. Numbers carry unit, period and base. Quotes are word for word, with who said them and when. "Lied" or "knowingly" need a finding or admission.
+- Name who spread the claim only when it is a person or organisation with real reach; never a private individual or ordinary user.
+- The sass lands on the claim and the trick, never on people who believed it, and never on the viewer.
+- One standard for everyone: the evidence, never the side.
+- Layout: short paragraphs separated by one blank line. One idea per paragraph, 1 to 3 sentences each. Follow the order below; each numbered item starts its own paragraph (items 7 and 8 share one).
 
 IN THIS ORDER:
-1. First sentence: 100 characters or fewer, names the institution and the country, ends with 📁. Sharp through contrast, not outrage: a jarring contrast, a surprising number or an exact quote. Loaded verbs need proof: "buried" (the fact sits deep in a document), "quietly" (no announcement was found), "admitted" (the actor said it themselves). Never "cover-up", "lied" or "hid" unless an official finding says so. No question marks, no "you won't believe", no fake urgency. It must be accurate, and read as satire, even if it is the only thing someone sees.
-   It may open in costume if the puncture is in the same sentence.
-   Good patterns: "LEAKED: the UK's employment figures. Leaked by: the UK's statistics office. 📁" / "The Pentagon asked who should decide its next weapons. It picked people who sell them. 📁" / "A prison chief called the villas a 'sports facility.' The inmates were paying rent. 📁"
-2. Context: 2 or 3 sentences on what happened and why it matters, including the other side's response, fairly stated. Repeat the hook's key words (institution, place, topic) on purpose: TikTok search reads captions.
-3. What is still unknown, if anything, in one sentence.
-4. Kicker: one short line landing the irony on a fact already stated. It may call back to the hook's catchphrase, now answered (e.g. "The money was in the annual report.").
-5. One comment question about a document, an institution or the next File. Never about a group of people, never "who's to blame" (e.g. "Which public document should File 008 read?").
+1. First sentence: 100 characters or fewer, the true fact with the subject and the country, ends with 📁. No question marks, no fake urgency. It must be accurate even if it is the only thing someone sees.
+2. The claim and its verdict: what is being said, by whom (if they have reach), and why it is false or misleading. Repeat the subject's key words on purpose: TikTok search reads captions.
+3. The trick, named in plain words, and how to spot it next time, in one or two sentences.
+4. The other side's response if the material has one, fairly stated.
+5. One comment question that invites people to check or to share a claim they've seen (e.g. "Seen a claim you want Rhea to check? Drop it below."). Never about a group of people.
 6. "Receipts:" on its own line, then each source on its own line starting with "• ", as a Chicago-style bibliography entry (18th edition) without URL and without underscores. Use only authors, titles and dates stated in the material.
 7. This exact sign-off: {SIGNOFF}
 8. Then: {NUMLINE}
-9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject (e.g. #euaudit) and one is the country or region (e.g. #europeanunion). No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
+9. Last: these hashtags exactly: {BRAND}, plus up to {EXTRA} lowercase hashtags. At least one is the exact search term for the subject and one is #factcheck. No more than 5 hashtags in total. Never #fyp, #foryou, #viral, #conspiracy, #wakeup or #truth.
 
-- Voice: active verbs, short sentences, attribution on every claim. Where the sources establish that a claim is false, say so plainly ("That claim is false."), naming who made it; call it harmful only when a source documents the harm. Contempt for false claims and the powerful people pushing them is fine; never insult identity, appearance or personal traits, private individuals, the misled or the viewer. Two to four costume beats in the whole caption, each punctured by a sourced fact; costume words point at the public record, never at an accusation. No exclamation marks.
+- Voice: active verbs, short sentences, attribution on every claim. No exclamation marks.
 - Never use em dashes (the long dash). Use a period, comma or colon instead.
-- Write for an international English-speaking audience: name the country, explain local institutions in a few words, label currencies (C$, US$, £, €).
 - BLOCKED SOURCES: never use the Canadian Taxpayers Federation (CTF, taxpayer.com) in any way: not its reports, statements, figures, rankings or "Teddy" waste awards, not as quoted by another outlet, and do not mention it. If a fact only comes from it, leave the fact out; if the story rests on it, drop the story.
+- Write for an international English-speaking audience: name the country, explain local institutions in a few words, label currencies (C$, US$, £, €).
 - Length: 500 to 1,200 characters in total, hashtags included. HARD LIMIT: 2,000.
 - Output ONLY the caption text.
 
 Slide script:
 `;
-const MEMO_CAPTION_PREFIX=`THIS POST IS A MEMO: the account's labelled commentary, not a news file. Adjust the rules below as follows. The first sentence must begin with "Opinion: ". Give the facts first (attributed, from the material) and then the account's view, clearly marked as its view. Be fair to the other side where the material allows. Punch up, never at ordinary people.
+const MEMO_CAPTION_PREFIX=`THIS POST IS A "SPOT THE TRICK" EPISODE: it teaches one manipulation technique. Adjust the rules below as follows. The first sentence must begin with "Spot the trick: " and name the technique. If the example is made up, say so plainly in the second paragraph. Item 2 describes the example (and the verdict only if it is a real claim). Item 3 is the heart of it: the trick and the five-second defence.
 
 `;
 function captionPrompt(){
@@ -2236,15 +2230,19 @@ function studioText(s){
   const L=[];L.push("STORY: "+(s.title||""));
   L.push("SOURCE: "+(s.sourceName||"")+" ("+(TYPE[s.sourceType]||"")+"), "+whenText(s));
   L.push("","FACTS:");arr(s.facts).forEach(f=>L.push("- "+f));
+  if(s.claim){L.push("","THE CLAIM: "+s.claim+(s.claimant?" (spread by: "+s.claimant+")":"")+(s.claim_where?" ["+s.claim_where+"]":""))}
+  if(s.verdict){L.push("","VERDICT: "+String(s.verdict).toUpperCase())}
+  if(s.technique){L.push("","TECHNIQUE: "+s.technique)}
+  if(s.evergreen){L.push("","EVERGREEN: this myth keeps coming back; avoid \"just\" or \"this week\" unless the source dates a new wave.")}
   if(s.reveal){L.push("","KEY FACT: "+s.reveal)}
-  if(s.gap){L.push("","THE GAP (what they say vs what the record shows): "+s.gap)}
-  if(s.callout){L.push("","CALL-OUT: a claim the record shows is false or harmful. Quote it, answer it with the evidence, and say plainly what it is.")}
-  if(s.falsity_evidence){L.push("","EVIDENCE AGAINST THE CLAIM: "+s.falsity_evidence)}
+  if(s.gap){L.push("","CLAIM VS RECORD: "+s.gap)}
+  if(s.callout){L.push("","CALL-OUT: a public figure with reach pushed this claim. Quote it once, answer it with the evidence, and say plainly what it is.")}
+  if(s.falsity_evidence){L.push("","THE EVIDENCE: "+s.falsity_evidence)}
   if(s.institution_response){L.push("","INSTITUTION'S RESPONSE: "+s.institution_response)}
   if(s.strongest_caveat){L.push("","STRONGEST CAVEAT (must appear on a slide): "+s.strongest_caveat)}
-  if(s.narrative_echo){L.push("","NARRATIVE-ECHO TOPIC: aim the conspiratorial register only at officials' words or records, never at the science or data; state the consensus plainly by slide 2.")}
+  if(s.narrative_echo){L.push("","SENSITIVE TOPIC (health, climate, elections): state the scientific consensus or official result plainly, and aim only at the claim and the evidence.")}
   if(s.search_phrase){L.push("","SEARCH PHRASE (use in the hook, caption and one hashtag): "+s.search_phrase)}
-  if(s.format==="memo"||s.format==="file"){L.push("","SUGGESTED FORMAT: "+(s.format==="memo"?"Memo (set Type to Memo before drafting)":"File"))}
+  if(s.format==="memo"||s.format==="file"){L.push("","SUGGESTED FORMAT: "+(s.format==="memo"?"Spot the Trick (set Type to Spot the Trick before drafting)":"Fact check (File)"))}
   L.push("","SOURCES:");arr(s.receipts).forEach(r=>L.push("- "+(r.cite||r.label)+" ["+(KIND[r.kind]||r.kind||"")+"] "+(r.url||"")));
   if(arr(s.cautions).length){L.push("","CHECK BEFORE POSTING:");arr(s.cautions).forEach(c=>L.push("- "+c))}
   return L.join("\n");
@@ -2259,20 +2257,17 @@ async function setStatus(s,status){
 
 async function draftHooks(s,btn){
   if(!Platform.ai||!Platform.db||busy)return;busy=true;btn.disabled=true;const st=$("actStatus");st.className="status";st.textContent="Claude is drafting hooks…";
-  const prompt=`You write hooks for "Hidden in Plain Sight" (@plainsightfile), a TikTok account that presents TRUE, verifiable information styled like a "they don't want you to know" post. The punchline is always that the "secret" was public. Ordinary viewers should get the joke; conspiracy-minded viewers should come away with accurate information.
+  const prompt=`You write opening lines (hooks) for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Dacted that fact-checks misinformation with dry wit. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY the facts below. Never invent numbers, names, dates or claims.
-- Each hook is 8 to 14 words, readable in 2 seconds, and names the institution and the country.
-- Each hook contains BOTH halves of the joke: a short UPPERCASE conspiratorial setup and its boring public payoff in sentence case (a named report, website, press release, filing, or a page number from the facts). If a hook still works as a sincere conspiracy post with the payoff deleted, rewrite it.
-- Each hook sets up a say-vs-record gap or a specific number from the facts.
-- Literal truth test: every claim, including implied ones, matches a fact at the same strength. No cause, intent or guilt unless the facts state it. Quotes word for word. Never state the false version of a claim, not even ironically or as a question.
-- At most one stock catchphrase per hook, chosen from TOP SECRET, CLASSIFIED, DO YOUR OWN RESEARCH, CONNECT THE DOTS, or WHO BENEFITS (with the answer in the same hook). Never WAKE UP or FOLLOW THE MONEY. Use a different catchphrase in each hook, and at least one hook uses none, getting its effect from contrast, a ledger ("Official description: ... Arrangement: ..."), minutes ("Agenda item: ... Resolution: ...") or understatement instead.
-- On health, vaccines, climate, elections, public debt or "elites" stories, point the setup only at an official's words or an institution's records, never at the science or the data.
-- Aim at powerful institutions, companies and officials, never at ordinary people or the viewer.
-- The reveal line is one or two sentences: the key true fact, plus the other side's response if the facts include one. Attribute anything that is an allegation or someone's characterization.
-- Never use em dashes (the long dash). Use a period, comma or colon instead.
-- Write for an international English-speaking audience (Canada, the U.S., the U.K., Europe and beyond): name the country, explain local institutions in a few words (e.g. "Alberta's health agency"), and label currencies (C$, US$, £, €).
+- Each hook is 8 to 16 words, readable in 3 seconds, and LEADS WITH THE TRUE FACT, naming the subject and the country (e.g. "Canada did not ban wood stoves. Here's what the rule actually says."). Never lead with the myth.
+- Each hook must pass the literal truth test: every claim, including implied ones, matches a fact at the same strength. No intent ("lied", "knowingly") unless the facts state a finding. Never state the false claim as true, not even ironically or as a question.
+- Never use "they don't want you to know", "do your own research", "connect the dots", "wake up" or "sheeple".
+- Health, vaccines, climate or elections: state the consensus or official result plainly.
+- The wit lands on the claim and the trick, never on people who believed it or the viewer.
+- The reveal line is one or two sentences: the true fact, plus the verdict on the claim, plus the other side's response if the facts include one.
+- Never use em dashes (the long dash). Write for an international English-speaking audience.
 
 Return JSON only: {"hooks":["...","...","..."],"reveal":"..."}
 
