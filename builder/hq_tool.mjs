@@ -76,7 +76,7 @@ async function withHQ(prefs, fn) {
     return r;
   } finally { await browser.close(); }
 }
-const base = (type, fileno) => ({postType: type === "memo" ? "memo" : "file", fileno: String(fileno || "000"), tags: "#plainsightfile", tab: "studio", view: "tt", ttSize2: "full", look: "auto"});
+const base = (type, fileno) => ({postType: type === "memo" ? "memo" : "file", fileno: String(fileno || "000"), tags: "#therhealitycheck", tab: "studio", view: "tt", ttSize2: "full", look: "auto"});
 
 if (cmd === "prompts") {
   const story = readJson(opt.story);
@@ -157,7 +157,7 @@ if (cmd === "prompts") {
     const banned = tags.filter(t => H.BANNED_TAGS.includes(t.toLowerCase()));
     if (banned.length) issues.push("banned hashtags: " + banned.join(" "));
     if (tags.length > 5) issues.push(`${tags.length} hashtags (5 or fewer)`);
-    if (!tags.map(t => t.toLowerCase()).includes("#plainsightfile")) issues.push("caption is missing #plainsightfile");
+    if (!tags.map(t => t.toLowerCase()).includes("#therhealitycheck")) issues.push("caption is missing #therhealitycheck");
     if (cap.length > H.CAP_LIMIT) issues.push(`caption is ${cap.length} characters (cap ${H.CAP_LIMIT})`);
     else if (cap.length > 1200) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);
     if (cap.length < 500) warnings.push(`caption is ${cap.length} characters (aim 500 to 1,200)`);

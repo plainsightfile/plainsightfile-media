@@ -161,7 +161,7 @@ page.on("pageerror", e => errors.push(e.message));
    20:00 UTC is midday in Vancouver in both PST and PDT, so the Vancouver calendar day is always the one asked for. */
 if (opt.date) await page.clock.setFixedTime(new Date(opt.date + "T20:00:00Z"));
 const prefs = {script: file.script, fileno: file.fileno, look: file.look, view: "tt", tab: "studio", ttSize2: "full", showGuide: "0",
-  caption: file.caption, story: file.story, postType: file.type, tags: "#plainsightfile"};
+  caption: file.caption, story: file.story, postType: file.type, tags: "#therhealitycheck"};
 if (file.locPlace !== null) prefs.locPlace = file.locPlace;
 if (file.locCountry !== null) prefs.locCountry = file.locCountry;
 await page.addInitScript(([prefs]) => {

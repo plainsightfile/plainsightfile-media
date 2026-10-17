@@ -1,6 +1,6 @@
 # automation
 
-The daily pipeline for @plainsightfile. Nothing here posts without Alex's Approve tap in Plain Sight HQ.
+The daily pipeline for @therhealitycheck. Nothing here posts without Alex's Approve tap in Plain Sight HQ.
 
 | Step | Who | When |
 |---|---|---|

@@ -1,4 +1,4 @@
-<title>Plain Sight HQ</title>
+<title>Rhea Lity HQ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap">
@@ -179,8 +179,8 @@ label.btnlink.small{padding:7px 10px;font-size:13px}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Plain Sight <span>HQ</span></h1>
-      <p class="tag">Hidden in Plain Sight · @plainsightfile</p>
+      <h1>Rhea Lity <span>HQ</span></h1>
+      <p class="tag">The Rhea Lity Check · @therhealitycheck</p>
     </div>
     <div class="pullbox" id="pullBox">
       <div class="row">
@@ -400,9 +400,9 @@ _title_   = italics
     <div class="settings">
       <section class="card">
         <div class="label"><span>Account</span></div>
-        <label for="handle">Handle<input type="text" id="handle" value="@plainsightfile"></label>
+        <label for="handle">Handle<input type="text" id="handle" value="@therhealitycheck"></label>
         <label for="signoff">Sign-off (end card and caption)<input type="text" id="signoff" value="That's your Rhea Lity check."></label>
-        <label for="tags">Brand hashtags (added to every caption)<input type="text" id="tags" value="#plainsightfile"></label>
+        <label for="tags">Brand hashtags (added to every caption)<input type="text" id="tags" value="#therhealitycheck"></label>
       </section>
       <section class="card">
         <div class="label"><span>Backup</span></div>
@@ -647,7 +647,7 @@ RECEIPTS: This one's headed to court. Watch it.
 - Termination challenge filed in the Swedish Labour Court`
 };
 
-const PROMPT_RULES=`You write the slides for a short TikTok fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Lity, a quick, cheeky British narrator. The account goes after misinformation: a false or misleading claim that is spreading, checked against the record that was hiding in plain sight all along. Two goals: someone who half-believed the claim leaves with the true picture and without feeling mocked; everyone else enjoys watching it get taken apart. The account never sows distrust: it shows that the truth is checkable, and how to check it.
+const PROMPT_RULES=`You write the slides for a short TikTok fact-check video from "The Rhea Lity Check" (@therhealitycheck), hosted by Rhea Lity, a quick, cheeky British narrator. The account goes after misinformation: a false or misleading claim that is spreading, checked against the record that was hiding in plain sight all along. Two goals: someone who half-believed the claim leaves with the true picture and without feeling mocked; everyone else enjoys watching it get taken apart. The account never sows distrust: it shows that the truth is checkable, and how to check it.
 
 FACTS (non-negotiable):
 - Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
@@ -695,7 +695,7 @@ Today's date: {TODAY}
 Source material:
 `;
 
-const MEMO_RULES=`You write a "Spot the Trick" episode for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Lity, a quick, cheeky British narrator, that goes after misinformation. Each episode teaches ONE manipulation technique so viewers can spot it themselves next time (researchers call this prebunking: learning the trick protects people against claims they haven't seen yet). It is short, playful and a little bit of a game.
+const MEMO_RULES=`You write a "Spot the Trick" episode for "The Rhea Lity Check" (@therhealitycheck), a TikTok account hosted by Rhea Lity, a quick, cheeky British narrator, that goes after misinformation. Each episode teaches ONE manipulation technique so viewers can spot it themselves next time (researchers call this prebunking: learning the trick protects people against claims they haven't seen yet). It is short, playful and a little bit of a game.
 
 FACTS (non-negotiable):
 - Use ONLY facts stated in the source material below. Never invent numbers, names, dates, quotes, page numbers or sources.
@@ -752,10 +752,10 @@ const store=(k,v)=>Platform.pref.set(k,v), load=k=>Platform.pref.get(k);
 const savedScript=load("script");scriptEl.value=savedScript!==null?savedScript:"";
 const signoffEl=$("signoff");
 const oldHandle=load("handle");
-handleEl.value=(oldHandle&&oldHandle!=="@public.record")?oldHandle:handleEl.value;
+handleEl.value=(oldHandle&&oldHandle!=="@public.record"&&oldHandle!=="@plainsightfile")?oldHandle:handleEl.value;
 const oldFile=load("fileno");
 filenoEl.value=(oldFile&&oldFile!=="014")?oldFile:filenoEl.value;
-const oldSign=load("signoff"); if(oldSign!==null) signoffEl.value=oldSign;
+const oldSign=load("signoff"); if(oldSign!==null&&!/^It was never hidden/.test(oldSign)) signoffEl.value=oldSign;
 $("story").value=load("story")||"";
 let linked=load("linked")||null;
 function setLinked(id,title,receipts){linked=id||null;store("linked",linked||"");store("linkedTitle",title||"");store("linkedReceipts",JSON.stringify(Array.isArray(receipts)?receipts:[]));showLinked()}
@@ -1746,7 +1746,7 @@ function renderAvatars(){
     const img=document.createElement("img");img.src=cv.toDataURL("image/png");img.alt=`Profile picture option: ${a.label}`;
     const cap=document.createElement("figcaption");const lab=document.createElement("span");lab.textContent=a.label;cap.appendChild(lab);
     if(Platform.save){const b=document.createElement("button");b.className="small";b.textContent="Save";
-      b.addEventListener("click",async()=>{b.disabled=true;try{await Platform.save(`plainsightfile-avatar-${a.k}.png`,await toBlob(cv));b.textContent="Saved"}catch(e){b.textContent="Save"}finally{b.disabled=false}});
+      b.addEventListener("click",async()=>{b.disabled=true;try{await Platform.save(`therhealitycheck-avatar-${a.k}.png`,await toBlob(cv));b.textContent="Saved"}catch(e){b.textContent="Save"}finally{b.disabled=false}});
       cap.appendChild(b)}
     fig.append(img,cap);frag.appendChild(fig);
   });
@@ -1755,7 +1755,7 @@ function renderAvatars(){
 
 /* ---------- caption ---------- */
 const capEl=$("caption"), tagsEl=$("tags");
-const oldTags=load("tags"); if(oldTags!==null) tagsEl.value=oldTags.trim()==="#hiddeninplainsight #plainsightfile"?"#plainsightfile":oldTags;
+const oldTags=load("tags"); if(oldTags!==null) tagsEl.value=/plainsightfile/.test(oldTags)?"#therhealitycheck":oldTags;
 capEl.value=load("caption")||"";
 function plain(t){return t.replace(/(^|[^\w/])_([^_]+)_(?!\w)/g,"$1$2").replace(/\|\|([^|]+)\|\|/g,"[redacted]").replace(/\*([^*]+)\*/g,"$1").replace(/\s*\n\s*/g," ").trim()}
 
@@ -1912,7 +1912,7 @@ function buildCaptionLines(){
   out.push(brandTags().slice(0,5).join(" "));
   return out.join("\n");
 }
-const CAPTION_RULES=`Write the TikTok caption for this short fact-check video from "Hidden in Plain Sight" (@plainsightfile), hosted by Rhea Lity. The account goes after misinformation: it checks a false or misleading claim against the record, with dry wit, and shows viewers how to check things themselves. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
+const CAPTION_RULES=`Write the TikTok caption for this short fact-check video from "The Rhea Lity Check" (@therhealitycheck), hosted by Rhea Lity. The account goes after misinformation: it checks a false or misleading claim against the record, with dry wit, and shows viewers how to check things themselves. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY facts in the slide script and source material. Never invent numbers, names, dates, quotes or sources.
@@ -2257,7 +2257,7 @@ async function setStatus(s,status){
 
 async function draftHooks(s,btn){
   if(!Platform.ai||!Platform.db||busy)return;busy=true;btn.disabled=true;const st=$("actStatus");st.className="status";st.textContent="Claude is drafting hooks…";
-  const prompt=`You write opening lines (hooks) for "Hidden in Plain Sight" (@plainsightfile), a TikTok account hosted by Rhea Lity that fact-checks misinformation with dry wit. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
+  const prompt=`You write opening lines (hooks) for "The Rhea Lity Check" (@therhealitycheck), a TikTok account hosted by Rhea Lity that fact-checks misinformation with dry wit. Someone who half-believed the claim should leave with the true picture and without feeling mocked.
 
 Rules:
 - Use ONLY the facts below. Never invent numbers, names, dates or claims.
