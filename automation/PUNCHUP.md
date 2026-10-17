@@ -5,7 +5,7 @@ How it works: the true fact lands first and fast, the claim gets shown once with
 Improve the script:
 1. HOOK: the TRUE fact in 3 seconds, naming the subject and country. Never lead with the myth. Make it the line that stops the scroll.
 2. Cut every word that doesn't serve the fact, the verdict or the trick. Shorter lines land harder.
-3. One witty beat on most slides: an understatement, a deadpan aside, a plain naming of the trick. One self-aware beat in the whole post is welcome.
+3. Turn the sass UP: a cheeky beat on most slides. Roast how dramatic, lazy or confident the claim is, deliver the true answer like it's obvious, and give the evidence slide a mic-drop line. One self-aware beat in the whole post is welcome.
 4. The claim slide keeps its "THE CLAIM · <verdict>" header and is the only slide with the claim. CASE STATUS repeats the true fact.
 5. Spot the Trick: keep it a game. The hook dares the viewer to spot it; the defence slide gives a five-second test.
 
