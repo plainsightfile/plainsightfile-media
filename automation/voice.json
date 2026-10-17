@@ -2,14 +2,16 @@
   "engine": "elevenlabs",
   "voice_id": "3cuC1hNj9E2jcHlIvndN",
   "voice_name": "Peach - Casual & Friendly British Voice (the voice of Rhea Lity, the account's narrator and mascot; chosen by Alex on October 16, 2026)",
-  "model": "eleven_v4",
+  "model": "eleven_multilingual_v2",
   "fallback_voice": "bf_emma",
-  "note": "Takes are generated with the ElevenLabs API inside the narration GitHub Action (repo secret ELEVENLABS_API_KEY, added October 16, 2026). tempo 1.12 speeds Rhea up 12% without changing pitch (she is slower than Kokoro). If ElevenLabs fails, the build falls back to Kokoro bf_emma automatically.",
+  "note": "Takes are generated with the ElevenLabs API inside the narration GitHub Action (repo secret ELEVENLABS_API_KEY). Model eleven_multilingual_v2 since October 17, 2026 (Alex: eleven_v4 drifted to an American accent on US stories; v2 keeps Peach British). tempo 1.12 speeds Rhea up 12% without changing pitch. Fixed seed and voice_settings keep takes consistent. If ElevenLabs fails, the build falls back to Kokoro bf_emma automatically.",
   "tempo": 1.12,
   "narrator": "Rhea Lity",
   "voice_settings": {
-    "stability": 1.0,
-    "similarity_boost": 0.85
+    "stability": 0.5,
+    "similarity_boost": 0.9,
+    "style": 0.3,
+    "use_speaker_boost": true
   },
   "seed": 1977
 }
