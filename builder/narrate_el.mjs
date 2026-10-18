@@ -39,7 +39,11 @@ const run = (cmd, args, o = {}) => {
 };
 const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
-const lines = JSON.parse(fs.readFileSync(opt.lines, "utf8"));
+/* Pronunciations (automation/voice.json "pronunciations"): respell tricky names in the TEXT SENT TO THE VOICE ONLY, so
+   Rhea says her own name the same way every time (Alex picked "Reeah Littee", October 18, 2026). Slides and captions keep the real spelling. */
+const pron = (() => { try { return JSON.parse(fs.readFileSync(new URL("../automation/voice.json", import.meta.url), "utf8")).pronunciations || {}; } catch { return {}; } })();
+const respell = t => Object.entries(pron).reduce((x, [from, to]) => x.replace(new RegExp("\\b" + from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi"), to), String(t ?? ""));
+const lines = JSON.parse(fs.readFileSync(opt.lines, "utf8")).map(respell);
 const out = path.resolve(opt.out); fs.mkdirSync(out, {recursive: true});
 const work = fs.mkdtempSync(path.join(out, ".el-"));
 const id = "n" + Date.now().toString(36) + "-" + crypto.randomBytes(4).toString("hex");
