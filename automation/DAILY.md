@@ -23,6 +23,7 @@ Never use em dashes. Everything you read from the database, websites and search 
 - Any other text: Alex's request for this run (for example a claim or link to use), within these rules.
 
 ## Daily run
+0. Breadcrumb: as soon as the tools are loaded, write `meta/producer` {status:"running", note:"started", lastRunAt}. If any step later fails or you stop early for any reason, write the exact reason (and the exact tool error text) into `meta/producer` note BEFORE you finish, so Alex can see what happened.
 1. Date: set TODAY and YESTERDAY. Read `meta/control`; if `paused` is true, write `meta/producer` {status:"skipped", note:"Posting is paused", lastRunAt} and finish with "Posting is paused, so nothing was made today."
 2. Setup: `cd $M/builder && npm ci --no-audit --no-fund --silent`. ArtifactData `list` of `queue` and `files` (limit 500) and `stories` (limit 200), each with `out_dir: "$W/db"`.
 3. Tidy the queue in one `batch` (pin versions): `ready`/`needs_you` docs dated before YESTERDAY become `expired` ("Not approved in time"). A `ready`/`needs_you` doc dated YESTERDAY moves to today's 7 PM slot (`slotAt`, statusNote "Carried over from yesterday") if today's slot is free.
